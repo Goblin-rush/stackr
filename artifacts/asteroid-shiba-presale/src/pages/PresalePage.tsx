@@ -280,24 +280,27 @@ export default function PresalePage() {
             </div>
           </div>
 
-          {/* Photo grid — all real images, no cropping */}
+          {/* Photo grid */}
           <div className="grid grid-cols-2 gap-2.5">
-            <img
-              src="/liv1.jpg"
-              alt="Liv Perrotto with Asteroid aboard SpaceX Dragon"
-              className="col-span-2 w-full h-64 sm:h-80 object-cover object-center rounded-2xl"
-            />
-            <img
-              src="/plush-airport.png"
-              alt="Asteroid plush with Inspiration4 mission bag"
-              className="w-full h-44 sm:h-56 object-cover object-center rounded-xl"
-            />
+            {/* Featured: Liv holding Asteroid plush */}
             <img
               src="/liv2.jpg"
-              alt="Liv Perrotto with Asteroid plush"
+              alt="Liv Perrotto holding Asteroid plush"
+              className="col-span-2 w-full h-64 sm:h-80 object-cover object-center rounded-2xl"
+            />
+            {/* Plush at airport */}
+            <img
+              src="/plush-airport.png"
+              alt="Asteroid plush with Inspiration4 mission bag at the airport"
               className="w-full h-44 sm:h-56 object-cover object-center rounded-xl"
             />
-            {/* Full image — no crop, show entire photo */}
+            {/* Liv's original design letter */}
+            <img
+              src="/liv1.jpg"
+              alt="Liv Perrotto's original design notes for Asteroid"
+              className="w-full h-44 sm:h-56 object-cover object-center rounded-xl"
+            />
+            {/* Full image of Liv holding the framed drawing */}
             <img
               src="/liv-design.png"
               alt="Liv Perrotto holding her original hand-drawn Asteroid design with Polaris Dawn authentication"
