@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check, Menu, X } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const CONTRACT_ADDRESS = '0xf280B16EF293D8e534e370794ef26bF312694126';
@@ -132,7 +132,7 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCa
 export default function PresalePage() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
+
   const [ethAmount, setEthAmount] = useState('0.1');
   const ethPrice = 3200;
   const tokenPrice = 0.0000008;
@@ -172,25 +172,7 @@ export default function PresalePage() {
               <a key={l.href} href={l.href} className="hover:text-white transition-colors">{l.label}</a>
             ))}
           </div>
-          <div className="flex items-center gap-2">
-            <a href="#presale" className="text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-lg bg-[#1a9bfc] hover:bg-[#2aaeff] text-white transition-colors">
-              Buy $ASTEROID
-            </a>
-            <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 text-white/60 hover:text-white">
-              {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
-            </button>
-          </div>
         </div>
-        {menuOpen && (
-          <div className="md:hidden border-t border-white/[0.06] bg-[#080c14]/95 backdrop-blur-xl">
-            {navLinks.map(l => (
-              <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
-                className="block px-4 py-3.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.03] border-b border-white/[0.04] transition-colors">
-                {l.label}
-              </a>
-            ))}
-          </div>
-        )}
       </nav>
 
       {/* ── HERO (mobile: title only over image) ── */}
@@ -341,19 +323,37 @@ export default function PresalePage() {
           <div id="charity">
             <div className="space-y-6">
 
-              {/* Tokenomics boxes */}
+              {/* Tokenomics */}
               <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3">Tokenomics</p>
-                <div className="grid grid-cols-2 gap-2.5">
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-4">Token Supply Allocation</p>
+
+                {/* Stacked bar */}
+                <div className="flex rounded-xl overflow-hidden h-4 mb-5">
+                  <div className="h-full bg-[#1a9bfc]" style={{ width: '40%' }} />
+                  <div className="h-full bg-[#a855f7]" style={{ width: '30%' }} />
+                  <div className="h-full bg-[#22c55e]" style={{ width: '20%' }} />
+                  <div className="h-full bg-[#f97316]" style={{ width: '10%' }} />
+                </div>
+
+                <div className="space-y-3">
                   {[
-                    { pct: '40%', label: 'Presale', color: '#1a9bfc' },
-                    { pct: '30%', label: 'Liquidity', color: '#a855f7' },
-                    { pct: '20%', label: 'Marketing', color: '#22c55e' },
-                    { pct: '10%', label: 'Charity (St. Jude)', color: '#f97316' },
-                  ].map(({ pct, label, color }) => (
-                    <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 text-center">
-                      <div className="text-3xl font-extrabold mb-1" style={{ color }}>{pct}</div>
-                      <div className="text-xs text-white/50">{label}</div>
+                    { pct: '40%', label: 'Presale', sub: 'Sold to early supporters during presale', color: '#1a9bfc', w: '40%' },
+                    { pct: '30%', label: 'Liquidity Pool', sub: 'Locked on Uniswap for 1 year', color: '#a855f7', w: '30%' },
+                    { pct: '20%', label: 'Buyback Reserve', sub: 'Used to automatically buy back $ASTEROID from the market', color: '#22c55e', w: '20%' },
+                    { pct: '10%', label: 'St. Jude Charity', sub: 'Sent directly to St. Jude on-chain, publicly verifiable', color: '#f97316', w: '10%' },
+                  ].map(({ pct, label, sub, color, w }) => (
+                    <div key={label} className="space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                          <span className="text-sm font-semibold text-white">{label}</span>
+                        </div>
+                        <span className="text-sm font-extrabold" style={{ color }}>{pct}</span>
+                      </div>
+                      <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: w, backgroundColor: color, opacity: 0.7 }} />
+                      </div>
+                      <p className="text-[11px] text-white/35 pl-4">{sub}</p>
                     </div>
                   ))}
                 </div>
