@@ -316,12 +316,12 @@ export default function PresalePage() {
 
           <div className="text-center mb-10 space-y-1">
             <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">Token Info & Presale</p>
-            <h2 className="text-3xl sm:text-4xl font-extrabold">Everything in One Place</h2>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Token Details</h2>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
 
-            {/* LEFT — Tokenomics + Roadmap + Charity */}
+            {/* LEFT — Tokenomics + Charity */}
             <div className="space-y-6" id="charity">
 
               {/* Tokenomics boxes */}
@@ -347,7 +347,7 @@ export default function PresalePage() {
                 {[
                   { label: 'Total Supply', value: '420,690,000,000' },
                   { label: 'Network', value: 'Ethereum Mainnet' },
-                  { label: 'Buy / Sell Tax', value: '0% / 0%' },
+                  { label: 'Token Type', value: 'Strategy Token' },
                   { label: 'Liquidity Lock', value: '1 Year' },
                 ].map(({ label, value }) => (
                   <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 flex justify-between items-center">
@@ -386,92 +386,6 @@ export default function PresalePage() {
                 </a>
               </div>
 
-              {/* Roadmap */}
-              <div>
-                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-4">Roadmap & Fund Usage</p>
-                <div className="space-y-3">
-                  {[
-                    {
-                      phase: 'Phase 1', title: 'Launchpad', active: true,
-                      budget: '~$200,000 of presale funds',
-                      allocation: [
-                        { label: 'DEX Liquidity (Uniswap)', pct: '30%', note: 'Locked 1 year — ensures stable trading from day one' },
-                        { label: 'St. Jude Donation', pct: '10%', note: 'Direct transfer, publicly verifiable on-chain' },
-                        { label: 'Marketing & Influencers', pct: '35%', note: 'Twitter KOLs, crypto YouTube, community ads' },
-                        { label: 'Development & Audit', pct: '15%', note: 'Smart contract audit + website + tools' },
-                        { label: 'Operations', pct: '10%', note: 'Legal, team, and admin costs' },
-                      ],
-                      milestones: ['Presale closes', 'Uniswap listing within 48h of presale end', 'CoinGecko & CMC applications submitted', 'St. Jude donation sent publicly'],
-                    },
-                    {
-                      phase: 'Phase 2', title: 'Orbit', active: false,
-                      budget: '~$500,000 from reserves & revenue',
-                      allocation: [
-                        { label: 'CEX Listing Fees', pct: '40%', note: 'Gate.io, MEXC, KuCoin — paid listing applications' },
-                        { label: 'PR & Media', pct: '25%', note: 'Crypto news outlets, press releases, AMAs' },
-                        { label: 'Community Rewards', pct: '20%', note: 'Holder contests, referral programs, giveaways' },
-                        { label: 'Partnerships', pct: '15%', note: 'Meme coin collabs, SpaceX-adjacent communities' },
-                      ],
-                      milestones: ['10,000 holders', 'Tier-2 CEX listed', 'Community DAO vote on next donation', 'ASTEROID staking or rewards explored'],
-                    },
-                    {
-                      phase: 'Phase 3', title: 'Deep Space', active: false,
-                      budget: 'Based on market cap growth',
-                      allocation: [
-                        { label: 'Tier-1 Exchange', pct: '50%', note: 'Binance, Coinbase, Bybit — largest listing push' },
-                        { label: 'Merch & Real-World', pct: '20%', note: 'Physical Asteroid plush production & store' },
-                        { label: 'St. Jude Major Event', pct: '20%', note: 'Fundraiser gala, live stream, sponsored event' },
-                        { label: 'Ecosystem', pct: '10%', note: 'NFTs, Asteroid Universe expansion' },
-                      ],
-                      milestones: ['50,000 holders', 'Tier-1 CEX listing', 'Physical plush in stores', 'Major St. Jude charity event livestreamed'],
-                    },
-                  ].map((step, i, arr) => (
-                    <div key={i} className="flex gap-3">
-                      <div className="flex flex-col items-center pt-1">
-                        <div className={`w-3 h-3 rounded-full shrink-0 border-2 ${step.active ? 'bg-[#1a9bfc] border-[#1a9bfc] shadow-[0_0_10px_rgba(26,155,252,0.6)]' : 'border-white/20 bg-transparent'}`} />
-                        {i < arr.length - 1 && <div className="w-px flex-1 bg-white/[0.06] mt-1" />}
-                      </div>
-                      <div className={`pb-5 flex-1 rounded-2xl border p-4 mb-2 ${step.active ? 'bg-[#1a9bfc]/[0.04] border-[#1a9bfc]/20' : 'bg-white/[0.02] border-white/[0.06]'}`}>
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-[9px] text-white/25 uppercase tracking-widest">{step.phase}</span>
-                          {step.active && <span className="text-[8px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-1.5 py-0.5 rounded-full font-bold uppercase">Active</span>}
-                        </div>
-                        <h3 className="text-base font-bold mb-0.5">{step.title}</h3>
-                        <p className="text-[10px] text-white/30 mb-3">{step.budget}</p>
-
-                        {/* Fund allocation */}
-                        <div className="space-y-2 mb-3">
-                          {step.allocation.map((a, j) => (
-                            <div key={j} className="space-y-0.5">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs text-white/60 font-medium">{a.label}</span>
-                                <span className={`text-xs font-bold ${step.active ? 'text-[#1a9bfc]' : 'text-white/40'}`}>{a.pct}</span>
-                              </div>
-                              <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${step.active ? 'bg-[#1a9bfc]/60' : 'bg-white/10'}`} style={{ width: a.pct }} />
-                              </div>
-                              <p className="text-[10px] text-white/25 leading-relaxed">{a.note}</p>
-                            </div>
-                          ))}
-                        </div>
-
-                        {/* Milestones */}
-                        <div className="border-t border-white/[0.05] pt-2.5">
-                          <p className="text-[9px] text-white/20 uppercase tracking-widest mb-1.5">Milestones</p>
-                          <ul className="space-y-1">
-                            {step.milestones.map((m, j) => (
-                              <li key={j} className="flex items-start gap-1.5 text-[11px] text-white/35">
-                                <span className={`mt-0.5 ${step.active ? 'text-[#1a9bfc]' : 'text-white/15'}`}>✓</span>
-                                {m}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
             </div>
 
             {/* RIGHT — Presale widget (sticky on desktop) */}
@@ -488,7 +402,7 @@ export default function PresalePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col sm:flex-row items-center justify-between gap-5">
           <span className="font-bold text-xs tracking-[0.15em] text-white/50 uppercase">Asteroid</span>
           <p className="text-white/20 text-xs text-center max-w-xs leading-relaxed order-3 sm:order-2">
-            $ASTEROID is a community meme token. Not financial advice. Only invest what you can afford to lose.
+            $ASTEROID is a strategy token. Not financial advice. Only invest what you can afford to lose.
           </p>
           <div className="flex items-center gap-2.5 order-2 sm:order-3">
             <a href="https://x.com" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-full border border-white/10 hover:border-white/25 flex items-center justify-center text-white/35 hover:text-white transition-all">
