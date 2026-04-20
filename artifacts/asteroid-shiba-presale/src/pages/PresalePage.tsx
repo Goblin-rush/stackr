@@ -387,61 +387,51 @@ export default function PresalePage() {
             </div>
 
             {/* Roadmap */}
-            <div className="mt-8">
-              <p className="text-[10px] text-white/30 uppercase tracking-widest mb-4">Roadmap & Fund Usage</p>
-              <div className="space-y-3">
+            <div className="mt-8 bg-white/[0.02] border border-white/[0.07] rounded-2xl p-5 sm:p-6 space-y-6">
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-1">Roadmap</p>
+                <h3 className="text-lg font-bold text-white">Where Your Money Goes & What Happens Next</h3>
+              </div>
+
+              {/* Fund use */}
+              <div className="space-y-2">
+                <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">Presale Funds Breakdown</p>
                 {[
-                  {
-                    phase: 'Phase 1', title: 'Launchpad', active: true,
-                    budget: '~$200,000 of presale funds',
-                    allocation: [
-                      { label: 'DEX Liquidity (Uniswap)', pct: '30%', note: 'Locked 1 year — ensures stable trading from day one' },
-                      { label: 'St. Jude Donation', pct: '10%', note: 'Direct transfer, publicly verifiable on-chain' },
-                    ],
-                  },
-                  {
-                    phase: 'Phase 2', title: 'Orbit', active: false,
-                    budget: '~$500,000 from reserves & revenue',
-                    allocation: [
-                      { label: 'CEX Listing Fees', pct: '40%', note: 'Gate.io, MEXC, KuCoin — paid listing applications' },
-                      { label: 'Community Rewards', pct: '20%', note: 'Holder contests, referral programs, giveaways' },
-                    ],
-                  },
-                  {
-                    phase: 'Phase 3', title: 'Deep Space', active: false,
-                    budget: 'Based on market cap growth',
-                    allocation: [
-                      { label: 'Tier-1 Exchange', pct: '50%', note: 'Binance, Coinbase, Bybit — largest listing push' },
-                      { label: 'St. Jude Major Event', pct: '20%', note: 'Fundraiser gala, live stream, sponsored event' },
-                    ],
-                  },
-                ].map((step, i, arr) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="flex flex-col items-center pt-1">
-                      <div className={`w-3 h-3 rounded-full shrink-0 border-2 ${step.active ? 'bg-[#1a9bfc] border-[#1a9bfc] shadow-[0_0_10px_rgba(26,155,252,0.6)]' : 'border-white/20 bg-transparent'}`} />
-                      {i < arr.length - 1 && <div className="w-px flex-1 bg-white/[0.06] mt-1" />}
+                  { label: 'Uniswap Liquidity', pct: '30%', color: '#1a9bfc', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROID on day one without price manipulation.' },
+                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market — creating constant buy pressure that supports the token price over time.' },
+                  { label: 'St. Jude Children\'s Research Hospital', pct: '10%', color: '#f97316', detail: 'Sent directly to St. Jude on-chain. Every transaction is public and verifiable on Etherscan.' },
+                  { label: 'Exchange Listings & Growth', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID listed on CoinGecko, CoinMarketCap, and CEX exchanges like Gate.io and MEXC — putting us in front of millions of traders.' },
+                ].map(({ label, pct, color, detail }) => (
+                  <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-semibold text-white">{label}</span>
+                      <span className="text-sm font-extrabold" style={{ color }}>{pct}</span>
                     </div>
-                    <div className={`pb-4 flex-1 rounded-2xl border p-4 mb-2 ${step.active ? 'bg-[#1a9bfc]/[0.04] border-[#1a9bfc]/20' : 'bg-white/[0.02] border-white/[0.06]'}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-[9px] text-white/25 uppercase tracking-widest">{step.phase}</span>
-                        {step.active && <span className="text-[8px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-1.5 py-0.5 rounded-full font-bold uppercase">Active</span>}
-                      </div>
-                      <h3 className="text-base font-bold mb-0.5">{step.title}</h3>
-                      <p className="text-[10px] text-white/30 mb-3">{step.budget}</p>
-                      <div className="space-y-3">
-                        {step.allocation.map((a, j) => (
-                          <div key={j} className="space-y-0.5">
-                            <div className="flex items-center justify-between">
-                              <span className="text-xs text-white/60 font-medium">{a.label}</span>
-                              <span className={`text-xs font-bold ${step.active ? 'text-[#1a9bfc]' : 'text-white/40'}`}>{a.pct}</span>
-                            </div>
-                            <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
-                              <div className={`h-full rounded-full ${step.active ? 'bg-[#1a9bfc]/60' : 'bg-white/10'}`} style={{ width: a.pct }} />
-                            </div>
-                            <p className="text-[10px] text-white/25 leading-relaxed">{a.note}</p>
-                          </div>
-                        ))}
-                      </div>
+                    <div className="h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+                      <div className="h-full rounded-full" style={{ width: pct, backgroundColor: color, opacity: 0.7 }} />
+                    </div>
+                    <p className="text-xs text-white/40 leading-relaxed">{detail}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* What happens next */}
+              <div className="space-y-3 border-t border-white/[0.06] pt-5">
+                <p className="text-xs text-white/40 font-semibold uppercase tracking-wider">What Happens After Presale</p>
+                {[
+                  { step: '1', title: 'Presale closes → Uniswap listing within 48 hours', detail: 'As soon as the presale ends, liquidity is deployed and $ASTEROID goes live on Uniswap. Anyone can trade immediately.' },
+                  { step: '2', title: 'CoinGecko & CoinMarketCap listings applied', detail: 'We submit all documentation for tracking on major price aggregators so the token shows up globally to all crypto traders.' },
+                  { step: '3', title: 'St. Jude donation sent publicly on-chain', detail: 'The charity allocation is sent to St. Jude\'s verified wallet and the transaction hash is posted publicly for full transparency.' },
+                  { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market — reducing supply and putting upward pressure on price.' },
+                  { step: '5', title: 'CEX exchange listings', detail: 'With growth funds secured, we pursue listings on Gate.io, MEXC, and KuCoin to expose $ASTEROID to millions of new buyers.' },
+                ].map(({ step, title, detail }) => (
+                  <div key={step} className="flex gap-3">
+                    <div className="w-6 h-6 rounded-full bg-[#1a9bfc]/10 border border-[#1a9bfc]/30 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-[#1a9bfc]">{step}</span>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-white leading-snug mb-0.5">{title}</p>
+                      <p className="text-xs text-white/40 leading-relaxed">{detail}</p>
                     </div>
                   </div>
                 ))}
