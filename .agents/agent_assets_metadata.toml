@@ -1,0 +1,20 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "yI-hY2bXsKMD8izTghnj2"
+uri = "file://artifacts/mockup-sandbox/public/images/astro-hero.png"
+type = "image"
+title = "Shiba in spacesuit riding rocket"
+
+[[generated]]
+id = "OGoGgrbDviDbQVdGpuI1j"
+uri = "file://artifacts/mockup-sandbox/public/images/astro-crystals.png"
+type = "image"
+title = "Glowing asteroid crystals in space"
+
+[[generated]]
+id = "JWqtItKHI7xoFBUbjsdr5"
+uri = "file://artifacts/mockup-sandbox/public/images/astro-hologram.png"
+type = "image"
+title = "Futuristic Shiba coin hologram"
