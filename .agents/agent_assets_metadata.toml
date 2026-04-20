@@ -42,6 +42,12 @@ uri = "file://artifacts/asteroid-shiba-presale/public/polaris-dawn.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "ENI-69S0nroU56V5jdDmN"
+uri = "file://attached_assets/generated_images/shiba-pfp.png"
+type = "image"
+title = "shiba astronaut pfp"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
@@ -59,3 +65,9 @@ id = "3lXPQ53SrGq9eDpFCBMb8"
 uri = "file://screenshots/asteroid-shiba-pfp.jpg"
 type = "image"
 title = "Asteroid Shiba — PFP"
+
+[[outputs]]
+id = "M8zFpRE5OtDYIlOjdsICS"
+uri = "file://attached_assets/generated_images/shiba-pfp.png"
+type = "image"
+title = "Asteroid Shiba — PFP (High Quality)"
