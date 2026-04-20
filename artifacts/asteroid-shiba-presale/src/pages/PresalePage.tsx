@@ -52,7 +52,7 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCa
 
   return (
     <div className="bg-[#0b0f1c] border border-white/[0.08] rounded-2xl overflow-hidden w-full">
-      <div className="h-0.5 bg-gradient-to-r from-[#1a9bfc] via-purple-500 to-[#1a9bfc]" />
+      <div className="h-0.5 bg-gradient-to-r from-[#f59e0b] via-purple-500 to-[#f59e0b]" />
       <div className="p-5 sm:p-6 space-y-5">
         <div>
           <p className="text-[10px] text-white/35 uppercase tracking-widest mb-3">Presale Ends In</p>
@@ -65,7 +65,7 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCa
             <span className="text-white/30">Hard Cap: {hardCap} ETH</span>
           </div>
           <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden relative">
-            <div className="h-full bg-gradient-to-r from-[#1a9bfc] to-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="h-full bg-gradient-to-r from-[#f59e0b] to-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
             <div className="absolute top-0 bottom-0 w-px bg-yellow-400/60" style={{ left: `${softCapPct}%` }} />
           </div>
           <div className="flex justify-between text-[10px] text-white/25">
@@ -87,7 +87,7 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCa
               min={MIN_ETH}
               max={MAX_ETH}
               step="0.01"
-              className={`w-full bg-white/[0.04] border focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors ${inputInvalid ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-[#1a9bfc]/60'}`}
+              className={`w-full bg-white/[0.04] border focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors ${inputInvalid ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-[#f59e0b]/60'}`}
               placeholder="0.01"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">ETH</span>
@@ -105,12 +105,12 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCa
         <div className="space-y-1.5">
           <label className="text-[10px] text-white/35 uppercase tracking-wider">You Receive</label>
           <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl py-3.5 px-4 flex items-center justify-between">
-            <span className="text-base font-mono font-bold text-[#1a9bfc]">{tokenAmount}</span>
+            <span className="text-base font-mono font-bold text-[#f59e0b]">{tokenAmount}</span>
             <span className="text-white/35 text-xs font-semibold">$ASTEROID</span>
           </div>
         </div>
 
-        <button className="w-full py-4 rounded-xl bg-[#1a9bfc] hover:bg-[#2aaeff] text-white font-bold text-sm transition-colors shadow-[0_0_30px_rgba(26,155,252,0.2)]">
+        <button className="w-full py-4 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] text-white font-bold text-sm transition-colors shadow-[0_0_30px_rgba(245,158,11,0.25)]">
           Buy $ASTEROID
         </button>
 
@@ -247,7 +247,7 @@ export default function PresalePage() {
       {/* ── STORY ── */}
       <section id="story" className="max-w-6xl mx-auto px-4 sm:px-6 py-16 sm:py-24">
         <div className="text-center mb-10 sm:mb-14 space-y-2">
-          <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">The Real Story</p>
+          <p className="text-xs text-[#f59e0b] uppercase tracking-widest font-semibold">The Real Story</p>
           <h2 className="text-3xl sm:text-5xl font-extrabold">A Girl, A Dream,<br />And Elon's Dog</h2>
         </div>
 
@@ -265,8 +265,8 @@ export default function PresalePage() {
               <span className="text-white italic">"If Asteroid can go to space, so can you."</span>
             </p>
             <div className="flex items-center gap-3 pt-1">
-              <div className="w-7 h-7 rounded-full bg-[#1a9bfc]/10 border border-[#1a9bfc]/30 flex items-center justify-center shrink-0">
-                <span className="text-[#1a9bfc] text-xs">♥</span>
+              <div className="w-7 h-7 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center shrink-0">
+                <span className="text-[#f59e0b] text-xs">♥</span>
               </div>
               <span className="text-xs text-white/40">10% of presale proceeds go to St. Jude Children's Research Hospital</span>
             </div>
@@ -316,7 +316,7 @@ export default function PresalePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
 
           <div className="text-center mb-10 space-y-1">
-            <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">Token Info & Presale</p>
+            <p className="text-xs text-[#f59e0b] uppercase tracking-widest font-semibold">Token Info & Presale</p>
             <h2 className="text-3xl sm:text-4xl font-extrabold">Token Details</h2>
           </div>
 
@@ -329,7 +329,7 @@ export default function PresalePage() {
 
                 {/* Stacked bar */}
                 <div className="flex rounded-xl overflow-hidden h-4 mb-5">
-                  <div className="h-full bg-[#1a9bfc]" style={{ width: '40%' }} />
+                  <div className="h-full bg-[#f59e0b]" style={{ width: '40%' }} />
                   <div className="h-full bg-[#a855f7]" style={{ width: '30%' }} />
                   <div className="h-full bg-[#22c55e]" style={{ width: '20%' }} />
                   <div className="h-full bg-[#f97316]" style={{ width: '10%' }} />
@@ -337,7 +337,7 @@ export default function PresalePage() {
 
                 <div className="space-y-3">
                   {[
-                    { pct: '40%', label: 'Presale', sub: 'Sold to early supporters during presale', color: '#1a9bfc', w: '40%' },
+                    { pct: '40%', label: 'Presale', sub: 'Sold to early supporters during presale', color: '#f59e0b', w: '40%' },
                     { pct: '30%', label: 'Liquidity Pool', sub: 'Locked on Uniswap for 1 year', color: '#a855f7', w: '30%' },
                     { pct: '20%', label: 'Buyback Reserve', sub: 'Used to automatically buy back $ASTEROID from the market', color: '#22c55e', w: '20%' },
                     { pct: '10%', label: 'St. Jude Charity', sub: 'Sent directly to St. Jude on-chain, publicly verifiable', color: '#f97316', w: '10%' },
@@ -416,7 +416,7 @@ export default function PresalePage() {
               <div className="space-y-2">
                 <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">Presale Funds Breakdown</p>
                 {[
-                  { label: 'Uniswap Liquidity', pct: '30%', color: '#1a9bfc', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROID on day one without price manipulation.' },
+                  { label: 'Uniswap Liquidity', pct: '30%', color: '#f59e0b', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROID on day one without price manipulation.' },
                   { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market. creating constant buy pressure that supports the token price over time.' },
                   { label: 'St. Jude Children\'s Research Hospital', pct: '10%', color: '#f97316', detail: 'Sent directly to St. Jude on-chain. Every transaction is public and verifiable on Etherscan.' },
                   { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID tracked on CoinGecko and CoinMarketCap. putting us in front of millions of traders worldwide.' },
@@ -444,8 +444,8 @@ export default function PresalePage() {
                   { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market. reducing supply and putting upward pressure on price.' },
                 ].map(({ step, title, detail }) => (
                   <div key={step} className="flex gap-3">
-                    <div className="w-6 h-6 rounded-full bg-[#1a9bfc]/10 border border-[#1a9bfc]/30 flex items-center justify-center shrink-0 mt-0.5">
-                      <span className="text-[10px] font-bold text-[#1a9bfc]">{step}</span>
+                    <div className="w-6 h-6 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[10px] font-bold text-[#f59e0b]">{step}</span>
                     </div>
                     <div>
                       <p className="text-sm font-semibold text-white leading-snug mb-0.5">{title}</p>
