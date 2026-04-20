@@ -58,23 +58,17 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
 
     // ─── Buy ──────────────────────────────────────────────────────
     /**
-     * @notice Buy tokens with ETH.
-     *         If the ETH sent would exceed the 3.5 ETH target, only the
-     *         required amount is used and the rest is refunded.
+     * @notice Buy tokens with ETH. Always open — no cap, no refund.
+     *         When 3.5 ETH threshold is first crossed, the curve graduates:
+     *         ALL ETH in contract auto-withdraws to admin, and sells are
+     *         permanently disabled. Buying remains open forever.
+     *         Any ETH from buys after graduation accumulates until admin
+     *         calls withdrawEth() again.
      */
     function buy() external payable nonReentrant {
-        require(!graduated, "Curve closed: token graduated");
         require(msg.value > 0, "Send ETH to buy");
 
         uint256 ethIn = msg.value;
-        uint256 refund = 0;
-
-        // Cap at target
-        if (realEthRaised + ethIn > TARGET_ETH) {
-            uint256 ethNeeded = TARGET_ETH - realEthRaised;
-            refund = ethIn - ethNeeded;
-            ethIn  = ethNeeded;
-        }
 
         // AMM: k = (virtualEth + realEthRaised) * virtualTokenReserve
         uint256 ethReserveBefore  = VIRTUAL_ETH + realEthRaised;
@@ -90,14 +84,8 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
 
         _transfer(address(this), msg.sender, tokensOut);
 
-        // Refund excess
-        if (refund > 0) {
-            (bool ok,) = payable(msg.sender).call{value: refund}("");
-            require(ok, "Refund failed");
-        }
-
-        // Check graduation — auto-withdraw to admin on hitting 100%
-        if (realEthRaised >= TARGET_ETH) {
+        // First time hitting 100% — graduate + auto-withdraw all ETH to admin
+        if (!graduated && realEthRaised >= TARGET_ETH) {
             graduated = true;
             emit Graduated(realEthRaised);
             uint256 raised = address(this).balance;

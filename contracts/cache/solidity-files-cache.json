@@ -41,8 +41,8 @@
       ]
     },
     "/home/runner/workspace/contracts/contracts/BondingCurveLaunchpad.sol": {
-      "lastModificationDate": 1776715269753,
-      "contentHash": "97dbeb33c379eeab909ced808b884cf8",
+      "lastModificationDate": 1776715469259,
+      "contentHash": "d0e8dcd2b440f327f098e7ea8634b496",
       "sourceName": "contracts/BondingCurveLaunchpad.sol",
       "solcConfig": {
         "version": "0.8.20",
