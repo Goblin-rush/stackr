@@ -3,7 +3,7 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const PRESALE_WALLET = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
-const CONTRACT_ADDRESS = '0x035b30C697C525455E084c125cDAe88C611b1C2e';
+const CONTRACT_ADDRESS = '0xc1F708f8B29f4D01958d4d2782cbC53b3502F771';
 
 function PresaleWidget({ copy, copied }: {
   copy: () => void; copied: boolean;
