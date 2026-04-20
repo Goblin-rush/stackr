@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { Copy, Check, Wallet, LogOut, Send } from 'lucide-react';
+import React, { useState } from 'react';
+import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
 
-const CONTRACT_ADDRESS = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
-const SHORT_ADDRESS = '0xbf06...cddc';
-const PRESALE_END = new Date('2026-04-24T00:00:00Z').getTime();
+const PRESALE_WALLET = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
+const CONTRACT_ADDRESS = '0xb28e3dEb6eD691d9C19f139A4CBCB508759CEfD6';
 
 function CountdownTimer() {
   const calc = () => {
