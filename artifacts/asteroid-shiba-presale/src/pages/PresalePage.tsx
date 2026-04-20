@@ -38,34 +38,15 @@ function CountdownTimer() {
   );
 }
 
-function PresaleWidget({ raisedEth, hardCap, softCap, pct, copy, copied }: {
-  raisedEth: number; hardCap: number; softCap: number; pct: number; copy: () => void; copied: boolean;
+function PresaleWidget({ copy, copied }: {
+  copy: () => void; copied: boolean;
 }) {
-  const softCapPct = Math.round((softCap / hardCap) * 100);
 
   return (
     <div className="bg-[#0b0f1c] border border-white/[0.08] rounded-2xl overflow-hidden w-full">
       <div className="h-0.5 bg-gradient-to-r from-[#f59e0b] via-purple-500 to-[#f59e0b]" />
       <div className="p-5 sm:p-6 space-y-5">
-        <div>
-          <p className="text-[10px] text-white/35 uppercase tracking-widest mb-3">Presale Ends In</p>
-          <CountdownTimer />
-        </div>
 
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-white/45">Raised: <span className="text-white font-semibold">{raisedEth} ETH</span></span>
-            <span className="text-white/30">Hard Cap: {hardCap} ETH</span>
-          </div>
-          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden relative">
-            <div className="h-full bg-gradient-to-r from-[#f59e0b] to-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-            <div className="absolute top-0 bottom-0 w-px bg-yellow-400/60" style={{ left: `${softCapPct}%` }} />
-          </div>
-          <div className="flex justify-between text-[10px] text-white/25">
-            <span>{pct}% filled</span>
-            <span className="text-yellow-400/60">Soft Cap: {softCap} ETH</span>
-          </div>
-        </div>
 
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
@@ -120,7 +101,7 @@ export default function PresalePage() {
     { href: '#charity', label: 'Charity' },
   ];
 
-  const widgetProps = { raisedEth, hardCap, softCap, pct, copy, copied };
+  const widgetProps = { copy, copied };
 
   return (
     <div className="min-h-screen bg-[#080c14] text-white font-sans overflow-x-hidden">
