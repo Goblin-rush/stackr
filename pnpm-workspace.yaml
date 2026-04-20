@@ -3,6 +3,7 @@ packages:
   - lib/*
   - lib/integrations/*
   - scripts
+  - contracts
 
 autoInstallPeers: false
 
@@ -40,6 +41,10 @@ onlyBuiltDependencies:
   - esbuild
   - msw
   - unrs-resolver
+  - keccak
+  - bufferutil
+  - utf-8-validate
+  - secp256k1
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0

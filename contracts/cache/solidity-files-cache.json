@@ -1,0 +1,44 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/runner/workspace/contracts/contracts/AsteroidStrategy.sol": {
+      "lastModificationDate": 1776709451004,
+      "contentHash": "b6ebc880372392c5464e50a489c22e85",
+      "sourceName": "contracts/AsteroidStrategy.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "evmVersion": "paris",
+          "optimizer": {
+            "enabled": false,
+            "runs": 200
+          },
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "AsteroidStrategy",
+        "IERC20",
+        "IUniswapV2Factory",
+        "IUniswapV2Router02"
+      ]
+    }
+  }
+}
