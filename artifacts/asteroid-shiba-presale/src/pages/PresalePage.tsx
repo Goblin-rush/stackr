@@ -38,10 +38,18 @@ function CountdownTimer() {
   );
 }
 
-function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raised, goal, pct, copy, copied }: {
+function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCap, softCap, pct, copy, copied }: {
   ethAmount: string; setEthAmount: (v: string) => void; tokenAmount: string;
-  raised: number; goal: number; pct: number; copy: () => void; copied: boolean;
+  raisedEth: number; hardCap: number; softCap: number; pct: number; copy: () => void; copied: boolean;
 }) {
+  const MIN_ETH = 0.01;
+  const MAX_ETH = 2;
+  const val = parseFloat(ethAmount || '0');
+  const tooLow = ethAmount !== '' && val < MIN_ETH;
+  const tooHigh = ethAmount !== '' && val > MAX_ETH;
+  const inputInvalid = tooLow || tooHigh;
+  const softCapPct = Math.round((softCap / hardCap) * 100);
+
   return (
     <div className="bg-[#0b0f1c] border border-white/[0.08] rounded-2xl overflow-hidden w-full">
       <div className="h-0.5 bg-gradient-to-r from-[#1a9bfc] via-purple-500 to-[#1a9bfc]" />
@@ -53,28 +61,39 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raised, goal, pct
 
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-white/45">Raised: <span className="text-white font-semibold">${raised.toLocaleString()}</span></span>
-            <span className="text-white/30">Goal: ${goal.toLocaleString()}</span>
+            <span className="text-white/45">Raised: <span className="text-white font-semibold">{raisedEth} ETH</span></span>
+            <span className="text-white/30">Hard Cap: {hardCap} ETH</span>
           </div>
-          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-[#1a9bfc] to-purple-500 rounded-full" style={{ width: `${pct}%` }} />
+          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden relative">
+            <div className="h-full bg-gradient-to-r from-[#1a9bfc] to-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
+            <div className="absolute top-0 bottom-0 w-px bg-yellow-400/60" style={{ left: `${softCapPct}%` }} />
           </div>
-          <p className="text-right text-[11px] text-white/25">{pct}% filled</p>
+          <div className="flex justify-between text-[10px] text-white/25">
+            <span>{pct}% filled</span>
+            <span className="text-yellow-400/60">Soft Cap: {softCap} ETH</span>
+          </div>
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-[10px] text-white/35 uppercase tracking-wider">You Pay (ETH)</label>
+          <div className="flex justify-between items-center">
+            <label className="text-[10px] text-white/35 uppercase tracking-wider">You Pay (ETH)</label>
+            <span className="text-[10px] text-white/25">Min {MIN_ETH} ETH / Max {MAX_ETH} ETH</span>
+          </div>
           <div className="relative">
             <input
               type="number"
               value={ethAmount}
               onChange={e => setEthAmount(e.target.value)}
-              min="0"
-              className="w-full bg-white/[0.04] border border-white/10 focus:border-[#1a9bfc]/60 focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors"
-              placeholder="0"
+              min={MIN_ETH}
+              max={MAX_ETH}
+              step="0.01"
+              className={`w-full bg-white/[0.04] border focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors ${inputInvalid ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-[#1a9bfc]/60'}`}
+              placeholder="0.01"
             />
             <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">ETH</span>
           </div>
+          {tooLow && <p className="text-[11px] text-red-400">Minimum contribution is {MIN_ETH} ETH</p>}
+          {tooHigh && <p className="text-[11px] text-red-400">Maximum contribution is {MAX_ETH} ETH</p>}
         </div>
 
         <div className="flex items-center gap-3 text-white/15">
@@ -114,13 +133,14 @@ export default function PresalePage() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [ethAmount, setEthAmount] = useState('0.5');
+  const [ethAmount, setEthAmount] = useState('0.1');
   const ethPrice = 3200;
   const tokenPrice = 0.0000008;
   const tokenAmount = Math.floor((parseFloat(ethAmount || '0') * ethPrice) / tokenPrice).toLocaleString();
-  const raised = 0;
-  const goal = 2000000;
-  const pct = Math.round((raised / goal) * 100);
+  const raisedEth = 0;
+  const hardCap = 30;
+  const softCap = 15;
+  const pct = Math.round((raisedEth / hardCap) * 100);
 
   const copy = () => {
     navigator.clipboard.writeText(CONTRACT_ADDRESS);
@@ -136,7 +156,7 @@ export default function PresalePage() {
     { href: '#charity', label: 'Charity' },
   ];
 
-  const widgetProps = { ethAmount, setEthAmount, tokenAmount, raised, goal, pct, copy, copied };
+  const widgetProps = { ethAmount, setEthAmount, tokenAmount, raisedEth, hardCap, softCap, pct, copy, copied };
 
   return (
     <div className="min-h-screen bg-[#080c14] text-white font-sans overflow-x-hidden">
