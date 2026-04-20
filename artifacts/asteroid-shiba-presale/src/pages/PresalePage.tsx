@@ -380,7 +380,7 @@ export default function PresalePage() {
                   <span className="block text-white/25 not-italic mt-0.5">Liv Perrotto, age 15</span>
                 </blockquote>
                 <a href="https://www.stjude.org/" target="_blank" rel="noreferrer" className="inline-block text-[#f97316]/70 hover:text-[#f97316] text-xs transition-colors">
-                  Learn about St. Jude →
+                  Learn about St. Jude
                 </a>
               </div>
 
@@ -419,7 +419,7 @@ export default function PresalePage() {
               <div className="space-y-3 border-t border-white/[0.06] pt-5">
                 <p className="text-xs text-white/40 font-semibold uppercase tracking-wider">What Happens After Presale</p>
                 {[
-                  { step: '1', title: 'Presale closes → Uniswap listing within 48 hours', detail: 'As soon as the presale ends, liquidity is deployed and $ASTEROID goes live on Uniswap. Anyone can trade immediately.' },
+                  { step: '1', title: 'Presale closes Uniswap listing within 48 hours', detail: 'As soon as the presale ends, liquidity is deployed and $ASTEROID goes live on Uniswap. Anyone can trade immediately.' },
                   { step: '2', title: 'CoinGecko & CoinMarketCap listings applied', detail: 'We submit all documentation for tracking on major price aggregators so the token shows up globally to all crypto traders.' },
                   { step: '3', title: 'St. Jude donation sent publicly on-chain', detail: 'The charity allocation is sent to St. Jude\'s verified wallet and the transaction hash is posted publicly for full transparency.' },
                   { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market. reducing supply and putting upward pressure on price.' },
