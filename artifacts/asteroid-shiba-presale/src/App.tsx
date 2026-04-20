@@ -16,7 +16,6 @@ function App() {
         appearance: {
           theme: 'dark',
           accentColor: '#f59e0b',
-          logo: '/logo.jpg',
         },
         defaultChain: { id: 1, name: 'Ethereum', nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, rpcUrls: { default: { http: ['https://cloudflare-eth.com'] } } },
       }}
