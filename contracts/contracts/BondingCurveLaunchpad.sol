@@ -62,10 +62,10 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
      *         When 3.5 ETH threshold is first crossed, the curve graduates:
      *         ALL ETH in contract auto-withdraws to admin, and sells are
      *         permanently disabled. Buying remains open forever.
-     *         Any ETH from buys after graduation accumulates until admin
-     *         calls withdrawEth() again.
+     * @param minTokensOut Slippage protection — minimum tokens expected.
+     *                     Set to 0 to skip. Reverts if tokensOut < minTokensOut.
      */
-    function buy() external payable nonReentrant {
+    function buy(uint256 minTokensOut) external payable nonReentrant {
         require(msg.value > 0, "Send ETH to buy");
 
         uint256 ethIn = msg.value;
@@ -78,6 +78,7 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
         uint256 tokensOut         = virtualTokenReserve - tokenReserveAfter;
 
         require(tokensOut > 0, "Too small");
+        require(tokensOut >= minTokensOut, "Slippage: too few tokens");
 
         virtualTokenReserve = tokenReserveAfter;
         realEthRaised      += ethIn;
@@ -107,8 +108,10 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
     /**
      * @notice Sell tokens back for ETH.
      *         Disabled after graduation.
+     * @param minEthOut Slippage protection — minimum ETH expected.
+     *                  Set to 0 to skip. Reverts if ethOut < minEthOut.
      */
-    function sell(uint256 tokenAmount) external nonReentrant {
+    function sell(uint256 tokenAmount, uint256 minEthOut) external nonReentrant {
         require(!graduated,    "Cannot sell: token graduated");
         require(tokenAmount > 0, "No tokens specified");
         require(balanceOf(msg.sender) >= tokenAmount, "Insufficient balance");
@@ -122,6 +125,7 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
 
         require(ethOut <= realEthRaised, "Not enough ETH in pool");
         require(ethOut > 0,              "Too small");
+        require(ethOut >= minEthOut,     "Slippage: too little ETH");
 
         virtualTokenReserve = tokenReserveAfter;
         realEthRaised      -= ethOut;
