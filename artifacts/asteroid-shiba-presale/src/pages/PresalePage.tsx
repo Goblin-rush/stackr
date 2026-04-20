@@ -387,7 +387,7 @@ export default function PresalePage() {
                 <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">Presale Funds Breakdown</p>
                 {[
                   { label: 'Uniswap Liquidity', pct: '30%', color: '#f59e0b', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROIDSTR on day one without price manipulation.' },
-                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROIDSTR from the open market. creating constant buy pressure that supports the token price over time.' },
+                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market. creating constant buy pressure that supports the token price over time.' },
                   { label: 'St. Jude Children\'s Research Hospital', pct: '10%', color: '#f97316', detail: 'Sent directly to St. Jude on-chain. Every transaction is public and verifiable on Etherscan.' },
                   { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROIDSTR tracked on CoinGecko and CoinMarketCap. putting us in front of millions of traders worldwide.' },
                 ].map(({ label, pct, color, detail }) => (
