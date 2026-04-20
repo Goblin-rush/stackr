@@ -176,7 +176,7 @@ export default function PresalePage() {
 
       {/* ── HERO (mobile: title only over image) ── */}
       <section id="presale">
-        {/* Title over banner — mobile shows this, desktop shows full 2-col version */}
+        {/* Title over banner. mobile shows this, desktop shows full 2-col version */}
         <div className="relative lg:hidden pt-14">
           <div className="absolute inset-0">
             <img src="/banner.jpg" alt="Asteroid in space" className="w-full h-full object-cover object-center" />
@@ -187,7 +187,7 @@ export default function PresalePage() {
             <h1 className="text-6xl font-extrabold tracking-tight leading-none">ASTEROID</h1>
             <p className="text-base text-white/60 font-light">The Only Shiba Who Went to Space</p>
             <p className="text-sm text-white/45 max-w-xs mx-auto leading-relaxed">
-              The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn — born from real history, charity, and the human spirit.
+              The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn. born from real history, charity, and the human spirit.
             </p>
             <div className="flex justify-center gap-6 pt-1">
               {[
@@ -221,7 +221,7 @@ export default function PresalePage() {
               <h1 className="text-7xl font-extrabold tracking-tight leading-none">ASTEROID</h1>
               <p className="text-xl text-white/60 font-light">The Only Shiba Who Went to Space</p>
               <p className="text-sm text-white/45 max-w-sm leading-relaxed">
-                The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn — now a token born from real history, charity, and the human spirit.
+                The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn. now a token born from real history, charity, and the human spirit.
               </p>
               <div className="flex gap-6">
                 {[
@@ -256,7 +256,7 @@ export default function PresalePage() {
               Liv Perrotto, a 15-year-old pediatric cancer survivor and patient at St. Jude Children's Research Hospital, was invited by SpaceX to design the zero-gravity indicator for the Polaris Dawn mission.
             </p>
             <p className="text-white/60 leading-relaxed text-sm sm:text-base">
-              She created "Asteroid" — a Shiba Inu plush inspired by Elon Musk's own dog, Floki. On September 10, 2024, Asteroid floated weightlessly aboard the SpaceX Crew Dragon "Resilience," becoming the world's first Shiba in space.
+              She created "Asteroid". a Shiba Inu plush inspired by Elon Musk's own dog, Floki. On September 10, 2024, Asteroid floated weightlessly aboard the SpaceX Crew Dragon "Resilience," becoming the world's first Shiba in space.
             </p>
             <p className="text-white/60 leading-relaxed text-sm sm:text-base">
               When Elon Musk replied "Will answer shortly" to a post about the token, it surged{' '}
@@ -272,7 +272,7 @@ export default function PresalePage() {
             <div className="rounded-2xl overflow-hidden border border-white/[0.06] w-full aspect-video">
               <iframe
                 src="https://www.youtube.com/embed/8UimR3AaT2s?rel=0&modestbranding=1&color=white"
-                title="Asteroid Shiba — Polaris Dawn"
+                title="Asteroid Shiba. Polaris Dawn"
                 className="w-full h-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
@@ -373,11 +373,11 @@ export default function PresalePage() {
               <div className="bg-[#f97316]/[0.05] border border-[#f97316]/20 rounded-2xl p-5 space-y-2">
                 <p className="text-[10px] text-[#f97316] uppercase tracking-widest font-semibold">Charity</p>
                 <p className="text-sm text-white/60 leading-relaxed">
-                  10% of all presale proceeds go directly to <strong className="text-white">St. Jude Children's Research Hospital</strong> — the hospital that helped Liv.
+                  10% of all presale proceeds go directly to <strong className="text-white">St. Jude Children's Research Hospital</strong>. the hospital that helped Liv.
                 </p>
                 <blockquote className="text-white/45 italic text-xs border-l-2 border-[#f97316]/30 pl-3">
                   "If Asteroid can go to space, so can you."
-                  <span className="block text-white/25 not-italic mt-0.5">— Liv Perrotto, age 15</span>
+                  <span className="block text-white/25 not-italic mt-0.5">Liv Perrotto, age 15</span>
                 </blockquote>
                 <a href="https://www.stjude.org/" target="_blank" rel="noreferrer" className="inline-block text-[#f97316]/70 hover:text-[#f97316] text-xs transition-colors">
                   Learn about St. Jude →
@@ -398,9 +398,9 @@ export default function PresalePage() {
                 <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">Presale Funds Breakdown</p>
                 {[
                   { label: 'Uniswap Liquidity', pct: '30%', color: '#1a9bfc', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROID on day one without price manipulation.' },
-                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market — creating constant buy pressure that supports the token price over time.' },
+                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market. creating constant buy pressure that supports the token price over time.' },
                   { label: 'St. Jude Children\'s Research Hospital', pct: '10%', color: '#f97316', detail: 'Sent directly to St. Jude on-chain. Every transaction is public and verifiable on Etherscan.' },
-                  { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID tracked on CoinGecko and CoinMarketCap — putting us in front of millions of traders worldwide.' },
+                  { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID tracked on CoinGecko and CoinMarketCap. putting us in front of millions of traders worldwide.' },
                 ].map(({ label, pct, color, detail }) => (
                   <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -422,7 +422,7 @@ export default function PresalePage() {
                   { step: '1', title: 'Presale closes → Uniswap listing within 48 hours', detail: 'As soon as the presale ends, liquidity is deployed and $ASTEROID goes live on Uniswap. Anyone can trade immediately.' },
                   { step: '2', title: 'CoinGecko & CoinMarketCap listings applied', detail: 'We submit all documentation for tracking on major price aggregators so the token shows up globally to all crypto traders.' },
                   { step: '3', title: 'St. Jude donation sent publicly on-chain', detail: 'The charity allocation is sent to St. Jude\'s verified wallet and the transaction hash is posted publicly for full transparency.' },
-                  { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market — reducing supply and putting upward pressure on price.' },
+                  { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market. reducing supply and putting upward pressure on price.' },
                 ].map(({ step, title, detail }) => (
                   <div key={step} className="flex gap-3">
                     <div className="w-6 h-6 rounded-full bg-[#1a9bfc]/10 border border-[#1a9bfc]/30 flex items-center justify-center shrink-0 mt-0.5">
