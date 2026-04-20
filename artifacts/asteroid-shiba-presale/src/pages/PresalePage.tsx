@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const CONTRACT_ADDRESS = '0xf280B16EF293D8e534e370794ef26bF312694126';
-const SHORT_ADDRESS = '0xf280...4126';
+const CONTRACT_ADDRESS = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
+const SHORT_ADDRESS = '0xbf06...cddc';
 const PRESALE_END = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7 + 1000 * 60 * 60 * 5).getTime();
 
 function CountdownTimer() {
