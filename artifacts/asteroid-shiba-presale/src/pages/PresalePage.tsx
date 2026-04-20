@@ -400,7 +400,7 @@ export default function PresalePage() {
                   { label: 'Uniswap Liquidity', pct: '30%', color: '#1a9bfc', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROID on day one without price manipulation.' },
                   { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market — creating constant buy pressure that supports the token price over time.' },
                   { label: 'St. Jude Children\'s Research Hospital', pct: '10%', color: '#f97316', detail: 'Sent directly to St. Jude on-chain. Every transaction is public and verifiable on Etherscan.' },
-                  { label: 'Exchange Listings & Growth', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID listed on CoinGecko, CoinMarketCap, and CEX exchanges like Gate.io and MEXC — putting us in front of millions of traders.' },
+                  { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID tracked on CoinGecko and CoinMarketCap — putting us in front of millions of traders worldwide.' },
                 ].map(({ label, pct, color, detail }) => (
                   <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -423,7 +423,6 @@ export default function PresalePage() {
                   { step: '2', title: 'CoinGecko & CoinMarketCap listings applied', detail: 'We submit all documentation for tracking on major price aggregators so the token shows up globally to all crypto traders.' },
                   { step: '3', title: 'St. Jude donation sent publicly on-chain', detail: 'The charity allocation is sent to St. Jude\'s verified wallet and the transaction hash is posted publicly for full transparency.' },
                   { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market — reducing supply and putting upward pressure on price.' },
-                  { step: '5', title: 'CEX exchange listings', detail: 'With growth funds secured, we pursue listings on Gate.io, MEXC, and KuCoin to expose $ASTEROID to millions of new buyers.' },
                 ].map(({ step, title, detail }) => (
                   <div key={step} className="flex gap-3">
                     <div className="w-6 h-6 rounded-full bg-[#1a9bfc]/10 border border-[#1a9bfc]/30 flex items-center justify-center shrink-0 mt-0.5">
