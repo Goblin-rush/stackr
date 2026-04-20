@@ -251,6 +251,9 @@ export default function PresalePage() {
               </div>
               <span className="text-xs text-white/40">10% of presale proceeds go to St. Jude Children's Research Hospital</span>
             </div>
+            <a href="/article" className="inline-block mt-2 text-sm font-semibold text-[#f59e0b] hover:underline transition-colors">
+              Read the full story
+            </a>
             <div className="rounded-2xl overflow-hidden border border-white/[0.06] w-full aspect-video">
               <iframe
                 src="https://www.youtube.com/embed/8UimR3AaT2s?rel=0&modestbranding=1&color=white"
