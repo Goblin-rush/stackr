@@ -118,7 +118,7 @@ export default function PresalePage() {
   const ethPrice = 3200;
   const tokenPrice = 0.0000008;
   const tokenAmount = Math.floor((parseFloat(ethAmount || '0') * ethPrice) / tokenPrice).toLocaleString();
-  const raised = 842000;
+  const raised = 0;
   const goal = 2000000;
   const pct = Math.round((raised / goal) * 100);
 
@@ -187,7 +187,7 @@ export default function PresalePage() {
             <h1 className="text-6xl font-extrabold tracking-tight leading-none">ASTEROID</h1>
             <p className="text-base text-white/60 font-light">The Only Shiba Who Went to Space</p>
             <p className="text-sm text-white/45 max-w-xs mx-auto leading-relaxed">
-              The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn. born from real history, charity, and the human spirit.
+              The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn, born from real history, charity, and the human spirit.
             </p>
             <div className="flex justify-center gap-6 pt-1">
               {[
@@ -221,7 +221,7 @@ export default function PresalePage() {
               <h1 className="text-7xl font-extrabold tracking-tight leading-none">ASTEROID</h1>
               <p className="text-xl text-white/60 font-light">The Only Shiba Who Went to Space</p>
               <p className="text-sm text-white/45 max-w-sm leading-relaxed">
-                The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn. now a token born from real history, charity, and the human spirit.
+                The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn, now a token born from real history, charity, and the human spirit.
               </p>
               <div className="flex gap-6">
                 {[
