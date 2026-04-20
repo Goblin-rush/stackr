@@ -48,6 +48,22 @@ function PresaleWidget({ copy, copied }: {
       <div className="p-5 sm:p-6 space-y-5">
 
 
+        {/* Progress bar */}
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-white/45">Raised: <span className="text-white font-semibold">2 ETH</span></span>
+            <span className="text-white/30">Hard Cap: 10 ETH</span>
+          </div>
+          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden relative">
+            <div className="h-full bg-gradient-to-r from-[#f59e0b] to-purple-500 rounded-full transition-all" style={{ width: '20%' }} />
+            <div className="absolute top-0 bottom-0 w-px bg-yellow-400/60" style={{ left: '50%' }} />
+          </div>
+          <div className="flex justify-between text-[10px] text-white/25">
+            <span>20% filled</span>
+            <span className="text-yellow-400/60">Soft Cap: 5 ETH</span>
+          </div>
+        </div>
+
         <div className="grid grid-cols-2 gap-2">
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
             <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Minimum</p>
@@ -59,11 +75,11 @@ function PresaleWidget({ copy, copied }: {
           </div>
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
             <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Soft Cap</p>
-            <p className="text-lg font-bold text-[#f59e0b] font-mono">15 <span className="text-xs text-white/40">ETH</span></p>
+            <p className="text-lg font-bold text-[#f59e0b] font-mono">5 <span className="text-xs text-white/40">ETH</span></p>
           </div>
           <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
             <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Hard Cap</p>
-            <p className="text-lg font-bold text-[#f59e0b] font-mono">30 <span className="text-xs text-white/40">ETH</span></p>
+            <p className="text-lg font-bold text-[#f59e0b] font-mono">10 <span className="text-xs text-white/40">ETH</span></p>
           </div>
         </div>
 
