@@ -33,10 +33,10 @@ export default function ArticlePage() {
           <div className="bg-[#f59e0b]/[0.06] border border-[#f59e0b]/20 rounded-2xl p-5 space-y-3">
             <p className="text-xs text-[#f59e0b] uppercase tracking-widest font-semibold">What Is Asteroid Shiba STR?</p>
             <p>
-              <span className="text-white font-semibold">Asteroid Shiba STR</span> is an Ethereum token with the ticker <span className="text-white font-semibold">$ASTEROID</span>. The "STR" stands for <span className="text-white font-semibold">Strategy Token</span>.
+              <span className="text-white font-semibold">Asteroid Shiba STR</span> is an Ethereum token with the ticker <span className="text-white font-semibold">$ASTEROIDSTR</span>. The "STR" stands for <span className="text-white font-semibold">Strategy Token</span>.
             </p>
             <p>
-              Unlike meme coins that rely purely on hype, a strategy token is built with a structural mechanism that creates consistent buy pressure. In $ASTEROID's case, that mechanism is an automatic buyback system built into the smart contract. Every transaction fee goes straight back into buying $ASTEROID from the open market, no team required.
+              Unlike meme coins that rely purely on hype, a strategy token is built with a structural mechanism that creates consistent buy pressure. In $ASTEROIDSTR's case, that mechanism is an automatic buyback system built into the smart contract. Every transaction fee goes straight back into buying $ASTEROIDSTR from the open market, no team required.
             </p>
             <p>
               The token is tied to a real story, a real person, and a real SpaceX mission. That story is explained in full below.
@@ -106,13 +106,13 @@ export default function ArticlePage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-white">Elon Musk Replies — The 68,000% Moment</h2>
             <p>
-              After the mission, word spread on social media about Asteroid and Liv's story. A post about the $ASTEROID token, inspired by the plush and Liv's journey, caught significant attention online.
+              After the mission, word spread on social media about Asteroid and Liv's story. A post about the $ASTEROIDSTR token, inspired by the plush and Liv's journey, caught significant attention online.
             </p>
             <p>
               Elon Musk replied: <span className="text-white font-semibold italic">"Will answer shortly."</span>
             </p>
             <p>
-              That single reply from one of the most followed accounts on the internet sent the original $ASTEROID token surging <span className="text-[#f59e0b] font-bold">68,000%</span>.
+              That single reply from one of the most followed accounts on the internet sent the original $ASTEROIDSTR token surging <span className="text-[#f59e0b] font-bold">68,000%</span>.
             </p>
             <p>
               The motto that emerged from that moment has become the heartbeat of everything this project stands for:
@@ -124,7 +124,7 @@ export default function ArticlePage() {
 
           {/* Section 6 */}
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold text-white">What Is $ASTEROID STR and Why Does It Matter</h2>
+            <h2 className="text-2xl font-bold text-white">What Is $ASTEROIDSTR and Why Does It Matter</h2>
             <p>
               STR stands for <span className="text-white font-semibold">Strategy Token</span>. This is not a branding decision. It describes how the token actually works.
             </p>
@@ -132,7 +132,7 @@ export default function ArticlePage() {
               Most tokens you see launched today are meme coins. They have no mechanism. They rise on hype and fall when the hype dies. The team sells, the chart collapses, and holders are left with nothing.
             </p>
             <p>
-              $ASTEROID STR is built differently. It runs an <span className="text-white font-semibold">automatic buyback system</span> at the contract level. A portion of every transaction fee is used to purchase $ASTEROID from the open market automatically. No human decision. No team vote. The contract does it on its own.
+              $ASTEROIDSTR is built differently. It runs an <span className="text-white font-semibold">automatic buyback system</span> at the contract level. A portion of every transaction fee is used to purchase $ASTEROIDSTR from the open market automatically. No human decision. No team vote. The contract does it on its own.
             </p>
             <p>
               This creates something rare in crypto: <span className="text-white font-semibold">structural buy pressure that exists independent of hype.</span> Even on a quiet day with no news and no marketing, the buyback is running.
@@ -149,7 +149,7 @@ export default function ArticlePage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-white">How the Buyback Mechanism Works</h2>
             <p>
-              Every time $ASTEROID is bought or sold on a decentralized exchange, a transaction fee is collected by the protocol. This fee is not distributed to team wallets or marketing funds. It is used exclusively to buy $ASTEROID back from the market.
+              Every time $ASTEROIDSTR is bought or sold on a decentralized exchange, a transaction fee is collected by the protocol. This fee is not distributed to team wallets or marketing funds. It is used exclusively to buy $ASTEROIDSTR back from the market.
             </p>
             <p>
               Here is what this means in practice:
@@ -168,7 +168,7 @@ export default function ArticlePage() {
               ))}
             </ul>
             <p>
-              This is why $ASTEROID is a strategy token. The strategy is built into the contract itself.
+              This is why $ASTEROIDSTR is a strategy token. The strategy is built into the contract itself.
             </p>
           </div>
 
@@ -182,7 +182,7 @@ export default function ArticlePage() {
               <span className="text-white font-semibold">10% of all presale proceeds</span> are sent directly to St. Jude Children's Research Hospital. This is not a pledge or a promise. It is a hardcoded allocation that will be executed on-chain and publicly verifiable on Etherscan the moment the presale closes.
             </p>
             <p>
-              Every wallet that participates in the $ASTEROID presale is directly contributing to pediatric cancer research. The transaction hash of the St. Jude donation will be posted publicly so anyone can verify it.
+              Every wallet that participates in the $ASTEROIDSTR presale is directly contributing to pediatric cancer research. The transaction hash of the St. Jude donation will be posted publicly so anyone can verify it.
             </p>
           </div>
 
@@ -211,14 +211,14 @@ export default function ArticlePage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold text-white">The Presale — How to Participate</h2>
             <p>
-              The $ASTEROID presale is live now. Participation is simple and requires no wallet connection on this site:
+              The $ASTEROIDSTR presale is live now. Participation is simple and requires no wallet connection on this site:
             </p>
             <ol className="space-y-4 pl-4">
               {[
                 { step: 'Copy the presale wallet address below.', detail: 'This is the Ethereum address that receives all presale contributions.' },
                 { step: 'Send ETH from your Ethereum wallet.', detail: 'Minimum: 0.01 ETH. Maximum: 2 ETH per wallet. Do not send from an exchange. Use a self-custody wallet like MetaMask, Rabby, or Coinbase Wallet.' },
                 { step: 'Record your sending wallet address.', detail: 'Tokens will be airdropped to the wallet you sent ETH from after the presale closes.' },
-                { step: 'Wait for the presale to close.', detail: 'The presale closes April 24, 2026. Within 48 hours of closing, liquidity will be deployed on Uniswap and $ASTEROID will go live.' },
+                { step: 'Wait for the presale to close.', detail: 'The presale closes April 24, 2026. Within 48 hours of closing, liquidity will be deployed on Uniswap and $ASTEROIDSTR will go live.' },
               ].map(({ step, detail }, i) => (
                 <li key={i} className="flex gap-4">
                   <div className="w-6 h-6 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center shrink-0 mt-0.5">
@@ -245,7 +245,7 @@ export default function ArticlePage() {
               There are thousands of tokens. Most of them are nothing. No story, no mechanism, no reason to exist beyond the moment of launch hype.
             </p>
             <p>
-              $ASTEROID is different because the story is real. Liv Perrotto is real. Polaris Dawn happened. Elon Musk's reply happened. St. Jude is real. The buyback mechanism is real.
+              $ASTEROIDSTR is different because the story is real. Liv Perrotto is real. Polaris Dawn happened. Elon Musk's reply happened. St. Jude is real. The buyback mechanism is real.
             </p>
             <p>
               When a 15-year-old cancer patient's handmade plush toy orbits the Earth aboard a SpaceX spacecraft and that moment becomes the foundation of a token, something rare has happened. The story gives the token meaning. The mechanism gives it structure. The charity gives it purpose.

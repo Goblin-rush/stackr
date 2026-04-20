@@ -323,7 +323,7 @@ export default function PresalePage() {
                   {[
                     { pct: '40%', label: 'Presale', sub: 'Sold to early supporters during presale', color: '#f59e0b', w: '40%' },
                     { pct: '30%', label: 'Liquidity Pool', sub: 'Locked on Uniswap for 1 year', color: '#a855f7', w: '30%' },
-                    { pct: '20%', label: 'Buyback Reserve', sub: 'Used to automatically buy back $ASTEROID from the market', color: '#22c55e', w: '20%' },
+                    { pct: '20%', label: 'Buyback Reserve', sub: 'Used to automatically buy back $ASTEROIDSTR from the market', color: '#22c55e', w: '20%' },
                     { pct: '10%', label: 'St. Jude Charity', sub: 'Sent directly to St. Jude on-chain, publicly verifiable', color: '#f97316', w: '10%' },
                   ].map(({ pct, label, sub, color, w }) => (
                     <div key={label} className="space-y-1.5">
@@ -386,10 +386,10 @@ export default function PresalePage() {
               <div className="space-y-2">
                 <p className="text-xs text-white/40 font-semibold uppercase tracking-wider mb-2">Presale Funds Breakdown</p>
                 {[
-                  { label: 'Uniswap Liquidity', pct: '30%', color: '#f59e0b', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROID on day one without price manipulation.' },
-                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROID from the open market. creating constant buy pressure that supports the token price over time.' },
+                  { label: 'Uniswap Liquidity', pct: '30%', color: '#f59e0b', detail: 'Locked for 1 year. This is what lets you actually buy and sell $ASTEROIDSTR on day one without price manipulation.' },
+                  { label: 'Token Buybacks', pct: '30%', color: '#a855f7', detail: 'Used to buy back $ASTEROIDSTR from the open market. creating constant buy pressure that supports the token price over time.' },
                   { label: 'St. Jude Children\'s Research Hospital', pct: '10%', color: '#f97316', detail: 'Sent directly to St. Jude on-chain. Every transaction is public and verifiable on Etherscan.' },
-                  { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROID tracked on CoinGecko and CoinMarketCap. putting us in front of millions of traders worldwide.' },
+                  { label: 'CoinGecko & CoinMarketCap Listings', pct: '30%', color: '#22c55e', detail: 'Used to get $ASTEROIDSTR tracked on CoinGecko and CoinMarketCap. putting us in front of millions of traders worldwide.' },
                 ].map(({ label, pct, color, detail }) => (
                   <div key={label} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-3.5 space-y-1.5">
                     <div className="flex items-center justify-between">
@@ -408,10 +408,10 @@ export default function PresalePage() {
               <div className="space-y-3 border-t border-white/[0.06] pt-5">
                 <p className="text-xs text-white/40 font-semibold uppercase tracking-wider">What Happens After Presale</p>
                 {[
-                  { step: '1', title: 'Presale closes Uniswap listing within 48 hours', detail: 'As soon as the presale ends, liquidity is deployed and $ASTEROID goes live on Uniswap. Anyone can trade immediately.' },
+                  { step: '1', title: 'Presale closes Uniswap listing within 48 hours', detail: 'As soon as the presale ends, liquidity is deployed and $ASTEROIDSTR goes live on Uniswap. Anyone can trade immediately.' },
                   { step: '2', title: 'CoinGecko & CoinMarketCap listings applied', detail: 'We submit all documentation for tracking on major price aggregators so the token shows up globally to all crypto traders.' },
                   { step: '3', title: 'St. Jude donation sent publicly on-chain', detail: 'The charity allocation is sent to St. Jude\'s verified wallet and the transaction hash is posted publicly for full transparency.' },
-                  { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROID from the market. reducing supply and putting upward pressure on price.' },
+                  { step: '4', title: 'Ongoing buybacks fund token value', detail: 'A portion of every transaction fee is automatically used to buy $ASTEROIDSTR from the market. reducing supply and putting upward pressure on price.' },
                 ].map(({ step, title, detail }) => (
                   <div key={step} className="flex gap-3">
                     <div className="w-6 h-6 rounded-full bg-[#f59e0b]/10 border border-[#f59e0b]/30 flex items-center justify-center shrink-0 mt-0.5">
@@ -435,7 +435,7 @@ export default function PresalePage() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10 flex flex-col sm:flex-row items-center justify-between gap-5">
           <span className="font-bold text-xs tracking-[0.15em] text-white/50 uppercase">Asteroid</span>
           <p className="text-white/20 text-xs text-center max-w-xs leading-relaxed order-3 sm:order-2">
-            $ASTEROID is a strategy token. Not financial advice. Only invest what you can afford to lose.
+            $ASTEROIDSTR is a strategy token. Not financial advice. Only invest what you can afford to lose.
           </p>
           <div className="flex items-center gap-2.5 order-2 sm:order-3">
             <a href="https://x.com/asteroidstr_?s=21" target="_blank" rel="noreferrer" className="w-8 h-8 rounded-full border border-white/10 hover:border-white/25 flex items-center justify-center text-white/35 hover:text-white transition-all">
