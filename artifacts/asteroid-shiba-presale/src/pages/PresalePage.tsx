@@ -4,7 +4,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const CONTRACT_ADDRESS = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
 const SHORT_ADDRESS = '0xbf06...cddc';
-const PRESALE_END = new Date('2026-04-23T00:00:00Z').getTime();
+const PRESALE_END = new Date('2026-04-24T00:00:00Z').getTime();
 
 function CountdownTimer() {
   const calc = () => {
