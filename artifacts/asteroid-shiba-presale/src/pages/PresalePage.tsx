@@ -353,20 +353,6 @@ export default function PresalePage() {
                     <span className="font-bold text-white text-xs sm:text-sm">{value}</span>
                   </div>
                 ))}
-                {/* Contract */}
-                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
-                  <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">Contract Address (Ethereum)</p>
-                  <div className="flex items-center justify-between gap-3">
-                    <code className="font-mono text-[11px] text-white/55 break-all flex-1">
-                      <span className="hidden sm:inline">{CONTRACT_ADDRESS}</span>
-                      <span className="sm:hidden">{SHORT_ADDRESS}</span>
-                    </code>
-                    <button onClick={copy} className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-lg border border-white/10 hover:border-white/20 text-xs text-white/50 hover:text-white transition-all">
-                      {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
-                      <span>{copied ? 'Copied' : 'Copy'}</span>
-                    </button>
-                  </div>
-                </div>
               </div>
 
               {/* Charity */}
