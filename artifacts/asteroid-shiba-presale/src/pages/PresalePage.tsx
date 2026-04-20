@@ -51,15 +51,15 @@ function PresaleWidget({ copy, copied }: {
         {/* Progress bar */}
         <div className="space-y-2">
           <div className="flex justify-between text-xs">
-            <span className="text-white/45">Raised: <span className="text-white font-semibold">2 ETH</span></span>
+            <span className="text-white/45">Raised: <span className="text-white font-semibold">2.3 ETH</span></span>
             <span className="text-white/30">Hard Cap: 10 ETH</span>
           </div>
           <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden relative">
-            <div className="h-full bg-gradient-to-r from-[#f59e0b] to-purple-500 rounded-full transition-all" style={{ width: '20%' }} />
+            <div className="h-full bg-gradient-to-r from-[#f59e0b] to-purple-500 rounded-full transition-all" style={{ width: '23%' }} />
             <div className="absolute top-0 bottom-0 w-px bg-yellow-400/60" style={{ left: '50%' }} />
           </div>
           <div className="flex justify-between text-[10px] text-white/25">
-            <span>20% filled</span>
+            <span>23% filled</span>
             <span className="text-yellow-400/60">Soft Cap: 5 ETH</span>
           </div>
         </div>
