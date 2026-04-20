@@ -95,3 +95,9 @@ id = "tBul5kH9CFRWbxMp_DIBA"
 uri = "file://attached_assets/generated_images/shiba-pfp-v2.png"
 type = "image"
 title = "Asteroid Shiba — PFP"
+
+[[outputs]]
+id = "3KGu3mYdsrCv5_KmxyVS6"
+uri = "file://attached_assets/generated_images/shiba-pfp-crop.jpg"
+type = "image"
+title = "Asteroid Shiba — PFP"
