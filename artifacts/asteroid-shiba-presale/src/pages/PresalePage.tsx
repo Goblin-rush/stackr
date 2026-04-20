@@ -310,122 +310,176 @@ export default function PresalePage() {
         </div>
       </section>
 
-      {/* ── TOKENOMICS ── */}
-      <section id="tokenomics" className="bg-white/[0.02] border-y border-white/[0.06] py-16 sm:py-24">
+      {/* ── TOKENOMICS + ROADMAP + PRESALE (combined) ── */}
+      <section id="tokenomics" className="bg-white/[0.02] border-y border-white/[0.06] py-14 sm:py-20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10 sm:mb-14 space-y-2">
-            <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">On-chain</p>
-            <h2 className="text-3xl sm:text-5xl font-extrabold">Tokenomics</h2>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              { pct: '40%', label: 'Presale', color: '#1a9bfc' },
-              { pct: '30%', label: 'Liquidity', color: '#a855f7' },
-              { pct: '20%', label: 'Marketing', color: '#22c55e' },
-              { pct: '10%', label: 'Charity (St. Jude)', color: '#f97316' },
-            ].map(({ pct, label, color }) => (
-              <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6 text-center">
-                <div className="text-3xl sm:text-5xl font-extrabold mb-1.5" style={{ color }}>{pct}</div>
-                <div className="text-xs sm:text-sm text-white/55 font-medium">{label}</div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
-            {[
-              { label: 'Total Supply', value: '420,690,000,000' },
-              { label: 'Buy / Sell Tax', value: '0% / 0%' },
-              { label: 'Liquidity Lock', value: '1 Year' },
-            ].map(({ label, value }) => (
-              <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 flex justify-between items-center">
-                <span className="text-white/45 text-xs sm:text-sm">{label}</span>
-                <span className="font-bold text-white text-xs sm:text-sm">{value}</span>
-              </div>
-            ))}
-          </div>
-          <div className="mt-3 bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2">Contract Address (Ethereum)</p>
-            <div className="flex items-center justify-between gap-3">
-              <code className="font-mono text-xs text-white/60 break-all flex-1 leading-relaxed">
-                <span className="hidden sm:inline">{CONTRACT_ADDRESS}</span>
-                <span className="sm:hidden">{SHORT_ADDRESS}</span>
-              </code>
-              <button
-                onClick={copy}
-                className="flex items-center gap-1.5 shrink-0 px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/20 text-xs text-white/50 hover:text-white transition-all"
-              >
-                {copied ? <Check className="w-3.5 h-3.5 text-green-400" /> : <Copy className="w-3.5 h-3.5" />}
-                <span>{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </section>
 
-      {/* ── CHARITY ── */}
-      <section id="charity" className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center space-y-5 sm:space-y-6">
-        <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">Purpose</p>
-        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight">Built for More<br />Than Profit</h2>
-        <p className="text-white/50 leading-relaxed text-sm sm:text-base">
-          10% of all presale proceeds go directly to{' '}
-          <strong className="text-white">St. Jude Children's Research Hospital</strong> — the hospital that helped Liv, the girl who sent Asteroid to space.
-        </p>
-        <blockquote className="border-l-2 border-[#1a9bfc]/40 pl-4 sm:pl-6 text-left text-white/55 italic text-sm sm:text-base leading-relaxed max-w-sm mx-auto">
-          "If Asteroid can go to space, so can you."
-          <span className="block text-white/25 not-italic text-xs mt-1.5">— Liv Perrotto, age 15, cancer survivor & Asteroid's creator</span>
-        </blockquote>
-        <a href="https://www.stjude.org/" target="_blank" rel="noreferrer"
-          className="inline-block px-5 py-2.5 rounded-xl border border-white/12 text-white/60 hover:text-white hover:border-white/25 text-sm font-medium transition-colors">
-          Learn about St. Jude →
-        </a>
-      </section>
-
-      {/* ── ROADMAP ── */}
-      <section className="bg-white/[0.02] border-t border-white/[0.06] py-16 sm:py-24">
-        <div className="max-w-2xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10 sm:mb-14 space-y-2">
-            <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">What's Next</p>
-            <h2 className="text-3xl sm:text-5xl font-extrabold">Roadmap</h2>
+          <div className="text-center mb-10 space-y-1">
+            <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">Token Info & Presale</p>
+            <h2 className="text-3xl sm:text-4xl font-extrabold">Everything in One Place</h2>
           </div>
-          <div className="space-y-0">
-            {[
-              { phase: 'Phase 1', title: 'Launchpad', active: true, items: ['Website & community launch', 'Presale goes live', 'First charity donation to St. Jude', 'DEX listing'] },
-              { phase: 'Phase 2', title: 'Orbit', active: false, items: ['CEX applications (Bybit, Gate, KuCoin)', 'CoinMarketCap & CoinGecko listings', '10,000 holders milestone', 'Community treasury vote'] },
-              { phase: 'Phase 3', title: 'Deep Space', active: false, items: ['Tier-1 exchange listing', 'ASTEROID merch store (physical plush)', '50,000 holders', 'Major charity event with St. Jude'] },
-            ].map((step, i, arr) => (
-              <div key={i} className="flex gap-4 sm:gap-5">
-                <div className="flex flex-col items-center">
-                  <div className={`w-3.5 h-3.5 rounded-full shrink-0 mt-[5px] border-2 ${step.active ? 'bg-[#1a9bfc] border-[#1a9bfc] shadow-[0_0_14px_rgba(26,155,252,0.7)]' : 'border-white/20 bg-transparent'}`} />
-                  {i < arr.length - 1 && <div className="w-px flex-1 bg-white/[0.06] my-1.5" />}
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
+
+            {/* LEFT — Tokenomics + Roadmap + Charity */}
+            <div className="space-y-6" id="charity">
+
+              {/* Tokenomics boxes */}
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-3">Tokenomics</p>
+                <div className="grid grid-cols-2 gap-2.5">
+                  {[
+                    { pct: '40%', label: 'Presale', color: '#1a9bfc' },
+                    { pct: '30%', label: 'Liquidity', color: '#a855f7' },
+                    { pct: '20%', label: 'Marketing', color: '#22c55e' },
+                    { pct: '10%', label: 'Charity (St. Jude)', color: '#f97316' },
+                  ].map(({ pct, label, color }) => (
+                    <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 text-center">
+                      <div className="text-3xl font-extrabold mb-1" style={{ color }}>{pct}</div>
+                      <div className="text-xs text-white/50">{label}</div>
+                    </div>
+                  ))}
                 </div>
-                <div className="pb-10 sm:pb-12">
-                  <div className="flex flex-wrap items-center gap-2 mb-1">
-                    <span className="text-[10px] text-white/25 uppercase tracking-widest">{step.phase}</span>
-                    {step.active && <span className="text-[9px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Active</span>}
+              </div>
+
+              {/* Key stats */}
+              <div className="space-y-2">
+                {[
+                  { label: 'Total Supply', value: '420,690,000,000' },
+                  { label: 'Network', value: 'Ethereum Mainnet' },
+                  { label: 'Buy / Sell Tax', value: '0% / 0%' },
+                  { label: 'Liquidity Lock', value: '1 Year' },
+                ].map(({ label, value }) => (
+                  <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3 flex justify-between items-center">
+                    <span className="text-white/45 text-xs sm:text-sm">{label}</span>
+                    <span className="font-bold text-white text-xs sm:text-sm">{value}</span>
                   </div>
-                  <h3 className="text-xl sm:text-2xl font-bold mb-3">{step.title}</h3>
-                  <ul className="space-y-2">
-                    {step.items.map((item, j) => (
-                      <li key={j} className="flex items-start gap-2 text-white/45 text-xs sm:text-sm leading-relaxed">
-                        <div className={`w-1 h-1 rounded-full shrink-0 mt-1.5 ${step.active ? 'bg-[#1a9bfc]' : 'bg-white/15'}`} />
-                        {item}
-                      </li>
-                    ))}
-                  </ul>
+                ))}
+                {/* Contract */}
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl px-4 py-3">
+                  <p className="text-[10px] text-white/30 uppercase tracking-wider mb-1.5">Contract Address (Ethereum)</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <code className="font-mono text-[11px] text-white/55 break-all flex-1">
+                      <span className="hidden sm:inline">{CONTRACT_ADDRESS}</span>
+                      <span className="sm:hidden">{SHORT_ADDRESS}</span>
+                    </code>
+                    <button onClick={copy} className="flex items-center gap-1.5 shrink-0 px-2.5 py-1.5 rounded-lg border border-white/10 hover:border-white/20 text-xs text-white/50 hover:text-white transition-all">
+                      {copied ? <Check className="w-3 h-3 text-green-400" /> : <Copy className="w-3 h-3" />}
+                      <span>{copied ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* ── CTA ── */}
-      <section className="py-16 sm:py-24 px-4 text-center">
-        <div className="max-w-xl mx-auto space-y-5">
-          <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight">Ready to Join<br />the Mission?</h2>
-          <p className="text-white/45 text-sm sm:text-base">The presale is live. Secure your allocation before it closes.</p>
-          <a href="#presale" className="inline-block w-full sm:w-auto px-8 sm:px-10 py-4 rounded-xl bg-[#1a9bfc] hover:bg-[#2aaeff] text-white font-bold text-sm sm:text-base transition-colors">
-            Buy $ASTEROID Now
-          </a>
+              {/* Charity */}
+              <div className="bg-[#f97316]/[0.05] border border-[#f97316]/20 rounded-2xl p-5 space-y-2">
+                <p className="text-[10px] text-[#f97316] uppercase tracking-widest font-semibold">Charity</p>
+                <p className="text-sm text-white/60 leading-relaxed">
+                  10% of all presale proceeds go directly to <strong className="text-white">St. Jude Children's Research Hospital</strong> — the hospital that helped Liv.
+                </p>
+                <blockquote className="text-white/45 italic text-xs border-l-2 border-[#f97316]/30 pl-3">
+                  "If Asteroid can go to space, so can you."
+                  <span className="block text-white/25 not-italic mt-0.5">— Liv Perrotto, age 15</span>
+                </blockquote>
+                <a href="https://www.stjude.org/" target="_blank" rel="noreferrer" className="inline-block text-[#f97316]/70 hover:text-[#f97316] text-xs transition-colors">
+                  Learn about St. Jude →
+                </a>
+              </div>
+
+              {/* Roadmap */}
+              <div>
+                <p className="text-[10px] text-white/30 uppercase tracking-widest mb-4">Roadmap & Fund Usage</p>
+                <div className="space-y-3">
+                  {[
+                    {
+                      phase: 'Phase 1', title: 'Launchpad', active: true,
+                      budget: '~$200,000 of presale funds',
+                      allocation: [
+                        { label: 'DEX Liquidity (Uniswap)', pct: '30%', note: 'Locked 1 year — ensures stable trading from day one' },
+                        { label: 'St. Jude Donation', pct: '10%', note: 'Direct transfer, publicly verifiable on-chain' },
+                        { label: 'Marketing & Influencers', pct: '35%', note: 'Twitter KOLs, crypto YouTube, community ads' },
+                        { label: 'Development & Audit', pct: '15%', note: 'Smart contract audit + website + tools' },
+                        { label: 'Operations', pct: '10%', note: 'Legal, team, and admin costs' },
+                      ],
+                      milestones: ['Presale closes', 'Uniswap listing within 48h of presale end', 'CoinGecko & CMC applications submitted', 'St. Jude donation sent publicly'],
+                    },
+                    {
+                      phase: 'Phase 2', title: 'Orbit', active: false,
+                      budget: '~$500,000 from reserves & revenue',
+                      allocation: [
+                        { label: 'CEX Listing Fees', pct: '40%', note: 'Gate.io, MEXC, KuCoin — paid listing applications' },
+                        { label: 'PR & Media', pct: '25%', note: 'Crypto news outlets, press releases, AMAs' },
+                        { label: 'Community Rewards', pct: '20%', note: 'Holder contests, referral programs, giveaways' },
+                        { label: 'Partnerships', pct: '15%', note: 'Meme coin collabs, SpaceX-adjacent communities' },
+                      ],
+                      milestones: ['10,000 holders', 'Tier-2 CEX listed', 'Community DAO vote on next donation', 'ASTEROID staking or rewards explored'],
+                    },
+                    {
+                      phase: 'Phase 3', title: 'Deep Space', active: false,
+                      budget: 'Based on market cap growth',
+                      allocation: [
+                        { label: 'Tier-1 Exchange', pct: '50%', note: 'Binance, Coinbase, Bybit — largest listing push' },
+                        { label: 'Merch & Real-World', pct: '20%', note: 'Physical Asteroid plush production & store' },
+                        { label: 'St. Jude Major Event', pct: '20%', note: 'Fundraiser gala, live stream, sponsored event' },
+                        { label: 'Ecosystem', pct: '10%', note: 'NFTs, Asteroid Universe expansion' },
+                      ],
+                      milestones: ['50,000 holders', 'Tier-1 CEX listing', 'Physical plush in stores', 'Major St. Jude charity event livestreamed'],
+                    },
+                  ].map((step, i, arr) => (
+                    <div key={i} className="flex gap-3">
+                      <div className="flex flex-col items-center pt-1">
+                        <div className={`w-3 h-3 rounded-full shrink-0 border-2 ${step.active ? 'bg-[#1a9bfc] border-[#1a9bfc] shadow-[0_0_10px_rgba(26,155,252,0.6)]' : 'border-white/20 bg-transparent'}`} />
+                        {i < arr.length - 1 && <div className="w-px flex-1 bg-white/[0.06] mt-1" />}
+                      </div>
+                      <div className={`pb-5 flex-1 rounded-2xl border p-4 mb-2 ${step.active ? 'bg-[#1a9bfc]/[0.04] border-[#1a9bfc]/20' : 'bg-white/[0.02] border-white/[0.06]'}`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-[9px] text-white/25 uppercase tracking-widest">{step.phase}</span>
+                          {step.active && <span className="text-[8px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-1.5 py-0.5 rounded-full font-bold uppercase">Active</span>}
+                        </div>
+                        <h3 className="text-base font-bold mb-0.5">{step.title}</h3>
+                        <p className="text-[10px] text-white/30 mb-3">{step.budget}</p>
+
+                        {/* Fund allocation */}
+                        <div className="space-y-2 mb-3">
+                          {step.allocation.map((a, j) => (
+                            <div key={j} className="space-y-0.5">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-white/60 font-medium">{a.label}</span>
+                                <span className={`text-xs font-bold ${step.active ? 'text-[#1a9bfc]' : 'text-white/40'}`}>{a.pct}</span>
+                              </div>
+                              <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                                <div className={`h-full rounded-full ${step.active ? 'bg-[#1a9bfc]/60' : 'bg-white/10'}`} style={{ width: a.pct }} />
+                              </div>
+                              <p className="text-[10px] text-white/25 leading-relaxed">{a.note}</p>
+                            </div>
+                          ))}
+                        </div>
+
+                        {/* Milestones */}
+                        <div className="border-t border-white/[0.05] pt-2.5">
+                          <p className="text-[9px] text-white/20 uppercase tracking-widest mb-1.5">Milestones</p>
+                          <ul className="space-y-1">
+                            {step.milestones.map((m, j) => (
+                              <li key={j} className="flex items-start gap-1.5 text-[11px] text-white/35">
+                                <span className={`mt-0.5 ${step.active ? 'text-[#1a9bfc]' : 'text-white/15'}`}>✓</span>
+                                {m}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT — Presale widget (sticky on desktop) */}
+            <div className="lg:sticky lg:top-20">
+              <PresaleWidget {...widgetProps} />
+            </div>
+
+          </div>
         </div>
       </section>
 
