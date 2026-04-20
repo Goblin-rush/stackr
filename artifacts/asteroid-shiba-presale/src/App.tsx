@@ -1,6 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import PresalePage from "@/pages/PresalePage";
 import ArticlePage from "@/pages/ArticlePage";
+import { Analytics } from "@vercel/analytics/react";
 
 function App() {
   const path = window.location.pathname;
@@ -10,6 +11,7 @@ function App() {
     <>
       {isArticle ? <ArticlePage /> : <PresalePage />}
       <Toaster />
+      <Analytics />
     </>
   );
 }
