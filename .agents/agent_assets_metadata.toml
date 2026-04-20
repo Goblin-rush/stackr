@@ -18,3 +18,27 @@ id = "JWqtItKHI7xoFBUbjsdr5"
 uri = "file://artifacts/mockup-sandbox/public/images/astro-hologram.png"
 type = "image"
 title = "Futuristic Shiba coin hologram"
+
+[[generated]]
+id = "Zgzui41JyfhQZXvdX6xE8"
+uri = "file://artifacts/asteroid-shiba-presale/public/asteroid-zerog.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "YrK7B8BYqx2GteTzU0EAT"
+uri = "file://artifacts/asteroid-shiba-presale/public/asteroid-hero.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "5NDN8TXqkabWshDH0BAxw"
+uri = "file://artifacts/asteroid-shiba-presale/public/asteroid-coin.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "nSMLMbOvFP8FVyzoXj8Qm"
+uri = "file://artifacts/asteroid-shiba-presale/public/polaris-dawn.png"
+type = "image"
+title = "generated_image"
