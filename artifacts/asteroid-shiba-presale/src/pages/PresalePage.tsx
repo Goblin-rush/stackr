@@ -38,8 +38,8 @@ function CountdownTimer() {
   );
 }
 
-function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCap, softCap, pct, copy, copied }: {
-  ethAmount: string; setEthAmount: (v: string) => void; tokenAmount: string;
+function PresaleWidget({ ethAmount, setEthAmount, raisedEth, hardCap, softCap, pct, copy, copied }: {
+  ethAmount: string; setEthAmount: (v: string) => void;
   raisedEth: number; hardCap: number; softCap: number; pct: number; copy: () => void; copied: boolean;
 }) {
   const MIN_ETH = 0.01;
@@ -96,33 +96,19 @@ function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raisedEth, hardCa
           {tooHigh && <p className="text-[11px] text-red-400">Maximum contribution is {MAX_ETH} ETH</p>}
         </div>
 
-        <div className="flex items-center gap-3 text-white/15">
-          <div className="flex-1 h-px bg-white/[0.06]" />
-          <span className="text-xs">≈</span>
-          <div className="flex-1 h-px bg-white/[0.06]" />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="text-[10px] text-white/35 uppercase tracking-wider">You Receive</label>
-          <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl py-3.5 px-4 flex items-center justify-between">
-            <span className="text-base font-mono font-bold text-[#f59e0b]">{tokenAmount}</span>
-            <span className="text-white/35 text-xs font-semibold">$ASTEROID</span>
+        <div className="space-y-2">
+          <p className="text-[10px] text-white/40 uppercase tracking-widest">Send ETH to this address to participate</p>
+          <div className="bg-white/[0.03] border border-[#f59e0b]/20 rounded-xl p-3 space-y-2">
+            <p className="font-mono text-[11px] sm:text-xs text-white/70 break-all leading-relaxed">{CONTRACT_ADDRESS}</p>
+            <button
+              onClick={copy}
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#f59e0b] hover:bg-[#fbbf24] text-black font-bold text-sm transition-colors"
+            >
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+              {copied ? 'Address Copied!' : 'Copy Address'}
+            </button>
           </div>
-        </div>
-
-        <button className="w-full py-4 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] text-white font-bold text-sm transition-colors shadow-[0_0_30px_rgba(245,158,11,0.25)]">
-          Buy $ASTEROID
-        </button>
-
-        <div className="space-y-1">
-          <p className="text-center text-[10px] text-white/20">Connect your Ethereum wallet to participate.</p>
-          <button
-            onClick={copy}
-            className="group w-full flex items-center justify-between gap-2 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl px-3 py-2 transition-all"
-          >
-            <span className="font-mono text-[10px] text-white/35 group-hover:text-white/55 truncate">{CONTRACT_ADDRESS}</span>
-            {copied ? <Check className="w-3 h-3 text-green-400 shrink-0" /> : <Copy className="w-3 h-3 text-white/20 shrink-0" />}
-          </button>
+          <p className="text-[11px] text-white/25 text-center">Tokens distributed to your wallet after presale ends.</p>
         </div>
       </div>
     </div>
@@ -136,7 +122,6 @@ export default function PresalePage() {
   const [ethAmount, setEthAmount] = useState('0.1');
   const ethPrice = 3200;
   const tokenPrice = 0.0000008;
-  const tokenAmount = Math.floor((parseFloat(ethAmount || '0') * ethPrice) / tokenPrice).toLocaleString();
   const raisedEth = 0;
   const hardCap = 30;
   const softCap = 15;
@@ -156,7 +141,7 @@ export default function PresalePage() {
     { href: '#charity', label: 'Charity' },
   ];
 
-  const widgetProps = { ethAmount, setEthAmount, tokenAmount, raisedEth, hardCap, softCap, pct, copy, copied };
+  const widgetProps = { ethAmount, setEthAmount, raisedEth, hardCap, softCap, pct, copy, copied };
 
   return (
     <div className="min-h-screen bg-[#080c14] text-white font-sans overflow-x-hidden">
