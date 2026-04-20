@@ -319,10 +319,8 @@ export default function PresalePage() {
             <h2 className="text-3xl sm:text-4xl font-extrabold">Token Details</h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-start">
-
-            {/* LEFT — Tokenomics + Charity */}
-            <div className="space-y-6" id="charity">
+          <div id="charity">
+            <div className="space-y-6">
 
               {/* Tokenomics boxes */}
               <div>
@@ -387,12 +385,6 @@ export default function PresalePage() {
               </div>
 
             </div>
-
-            {/* RIGHT — Presale widget (sticky on desktop) */}
-            <div className="lg:sticky lg:top-20">
-              <PresaleWidget {...widgetProps} />
-            </div>
-
           </div>
         </div>
       </section>
