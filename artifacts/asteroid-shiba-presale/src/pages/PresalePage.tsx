@@ -57,6 +57,14 @@ function PresaleWidget({ copy, copied }: {
             <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Maximum</p>
             <p className="text-lg font-bold text-white font-mono">2 <span className="text-xs text-white/40">ETH</span></p>
           </div>
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
+            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Soft Cap</p>
+            <p className="text-lg font-bold text-[#f59e0b] font-mono">15 <span className="text-xs text-white/40">ETH</span></p>
+          </div>
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
+            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Hard Cap</p>
+            <p className="text-lg font-bold text-[#f59e0b] font-mono">30 <span className="text-xs text-white/40">ETH</span></p>
+          </div>
         </div>
 
         <div className="space-y-2">
