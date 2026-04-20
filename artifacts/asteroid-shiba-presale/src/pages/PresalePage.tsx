@@ -120,8 +120,6 @@ export default function PresalePage() {
   const [copied, setCopied] = useState(false);
 
   const [ethAmount, setEthAmount] = useState('0.1');
-  const ethPrice = 3200;
-  const tokenPrice = 0.0000008;
   const raisedEth = 0;
   const hardCap = 30;
   const softCap = 15;
@@ -177,7 +175,6 @@ export default function PresalePage() {
             </p>
             <div className="flex justify-center gap-6 pt-1">
               {[
-                { label: 'Token Price', value: '$0.0000008' },
                 { label: 'Network', value: 'Ethereum' },
                 { label: 'Supply', value: '420.69B' },
               ].map(({ label, value }) => (
@@ -211,7 +208,6 @@ export default function PresalePage() {
               </p>
               <div className="flex gap-6">
                 {[
-                  { label: 'Token Price', value: '$0.0000008' },
                   { label: 'Network', value: 'Ethereum' },
                   { label: 'Total Supply', value: '420.69B' },
                 ].map(({ label, value }) => (
