@@ -385,6 +385,69 @@ export default function PresalePage() {
               </div>
 
             </div>
+
+            {/* Roadmap */}
+            <div className="mt-8">
+              <p className="text-[10px] text-white/30 uppercase tracking-widest mb-4">Roadmap & Fund Usage</p>
+              <div className="space-y-3">
+                {[
+                  {
+                    phase: 'Phase 1', title: 'Launchpad', active: true,
+                    budget: '~$200,000 of presale funds',
+                    allocation: [
+                      { label: 'DEX Liquidity (Uniswap)', pct: '30%', note: 'Locked 1 year — ensures stable trading from day one' },
+                      { label: 'St. Jude Donation', pct: '10%', note: 'Direct transfer, publicly verifiable on-chain' },
+                    ],
+                  },
+                  {
+                    phase: 'Phase 2', title: 'Orbit', active: false,
+                    budget: '~$500,000 from reserves & revenue',
+                    allocation: [
+                      { label: 'CEX Listing Fees', pct: '40%', note: 'Gate.io, MEXC, KuCoin — paid listing applications' },
+                      { label: 'Community Rewards', pct: '20%', note: 'Holder contests, referral programs, giveaways' },
+                    ],
+                  },
+                  {
+                    phase: 'Phase 3', title: 'Deep Space', active: false,
+                    budget: 'Based on market cap growth',
+                    allocation: [
+                      { label: 'Tier-1 Exchange', pct: '50%', note: 'Binance, Coinbase, Bybit — largest listing push' },
+                      { label: 'St. Jude Major Event', pct: '20%', note: 'Fundraiser gala, live stream, sponsored event' },
+                    ],
+                  },
+                ].map((step, i, arr) => (
+                  <div key={i} className="flex gap-3">
+                    <div className="flex flex-col items-center pt-1">
+                      <div className={`w-3 h-3 rounded-full shrink-0 border-2 ${step.active ? 'bg-[#1a9bfc] border-[#1a9bfc] shadow-[0_0_10px_rgba(26,155,252,0.6)]' : 'border-white/20 bg-transparent'}`} />
+                      {i < arr.length - 1 && <div className="w-px flex-1 bg-white/[0.06] mt-1" />}
+                    </div>
+                    <div className={`pb-4 flex-1 rounded-2xl border p-4 mb-2 ${step.active ? 'bg-[#1a9bfc]/[0.04] border-[#1a9bfc]/20' : 'bg-white/[0.02] border-white/[0.06]'}`}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-[9px] text-white/25 uppercase tracking-widest">{step.phase}</span>
+                        {step.active && <span className="text-[8px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-1.5 py-0.5 rounded-full font-bold uppercase">Active</span>}
+                      </div>
+                      <h3 className="text-base font-bold mb-0.5">{step.title}</h3>
+                      <p className="text-[10px] text-white/30 mb-3">{step.budget}</p>
+                      <div className="space-y-3">
+                        {step.allocation.map((a, j) => (
+                          <div key={j} className="space-y-0.5">
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-white/60 font-medium">{a.label}</span>
+                              <span className={`text-xs font-bold ${step.active ? 'text-[#1a9bfc]' : 'text-white/40'}`}>{a.pct}</span>
+                            </div>
+                            <div className="h-1 bg-white/[0.05] rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${step.active ? 'bg-[#1a9bfc]/60' : 'bg-white/10'}`} style={{ width: a.pct }} />
+                            </div>
+                            <p className="text-[10px] text-white/25 leading-relaxed">{a.note}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
           </div>
         </div>
       </section>
