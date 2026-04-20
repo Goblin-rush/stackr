@@ -20,7 +20,7 @@ async function main() {
   // ── CONFIG: change these before deploying ──
   const TOKEN_NAME   = "My Token";
   const TOKEN_SYMBOL = "MTKN";
-  const ADMIN        = wallet.address; // or put a different admin address here
+  const ADMIN        = wallet.address; // derived from Private_key secret
   // ───────────────────────────────────────────
 
   console.log(`\nDeploying ${TOKEN_NAME} (${TOKEN_SYMBOL})...`);
