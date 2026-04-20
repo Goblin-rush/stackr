@@ -38,16 +38,9 @@ function CountdownTimer() {
   );
 }
 
-function PresaleWidget({ ethAmount, setEthAmount, raisedEth, hardCap, softCap, pct, copy, copied }: {
-  ethAmount: string; setEthAmount: (v: string) => void;
+function PresaleWidget({ raisedEth, hardCap, softCap, pct, copy, copied }: {
   raisedEth: number; hardCap: number; softCap: number; pct: number; copy: () => void; copied: boolean;
 }) {
-  const MIN_ETH = 0.01;
-  const MAX_ETH = 2;
-  const val = parseFloat(ethAmount || '0');
-  const tooLow = ethAmount !== '' && val < MIN_ETH;
-  const tooHigh = ethAmount !== '' && val > MAX_ETH;
-  const inputInvalid = tooLow || tooHigh;
   const softCapPct = Math.round((softCap / hardCap) * 100);
 
   return (
@@ -74,26 +67,15 @@ function PresaleWidget({ ethAmount, setEthAmount, raisedEth, hardCap, softCap, p
           </div>
         </div>
 
-        <div className="space-y-1.5">
-          <div className="flex justify-between items-center">
-            <label className="text-[10px] text-white/35 uppercase tracking-wider">You Pay (ETH)</label>
-            <span className="text-[10px] text-white/25">Min {MIN_ETH} ETH / Max {MAX_ETH} ETH</span>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
+            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Minimum</p>
+            <p className="text-lg font-bold text-white font-mono">0.01 <span className="text-xs text-white/40">ETH</span></p>
           </div>
-          <div className="relative">
-            <input
-              type="number"
-              value={ethAmount}
-              onChange={e => setEthAmount(e.target.value)}
-              min={MIN_ETH}
-              max={MAX_ETH}
-              step="0.01"
-              className={`w-full bg-white/[0.04] border focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors ${inputInvalid ? 'border-red-500/60 focus:border-red-500' : 'border-white/10 focus:border-[#f59e0b]/60'}`}
-              placeholder="0.01"
-            />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">ETH</span>
+          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
+            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Maximum</p>
+            <p className="text-lg font-bold text-white font-mono">2 <span className="text-xs text-white/40">ETH</span></p>
           </div>
-          {tooLow && <p className="text-[11px] text-red-400">Minimum contribution is {MIN_ETH} ETH</p>}
-          {tooHigh && <p className="text-[11px] text-red-400">Maximum contribution is {MAX_ETH} ETH</p>}
         </div>
 
         <div className="space-y-2">
@@ -119,7 +101,6 @@ export default function PresalePage() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
 
-  const [ethAmount, setEthAmount] = useState('0.1');
   const raisedEth = 0;
   const hardCap = 30;
   const softCap = 15;
@@ -139,7 +120,7 @@ export default function PresalePage() {
     { href: '#charity', label: 'Charity' },
   ];
 
-  const widgetProps = { ethAmount, setEthAmount, raisedEth, hardCap, softCap, pct, copy, copied };
+  const widgetProps = { raisedEth, hardCap, softCap, pct, copy, copied };
 
   return (
     <div className="min-h-screen bg-[#080c14] text-white font-sans overflow-x-hidden">
