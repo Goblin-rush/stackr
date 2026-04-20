@@ -53,3 +53,9 @@ id = "Zi7Khte3LUC3gFDzxMyEV"
 uri = "file://artifacts/asteroid-shiba-presale/public/logo.jpg"
 type = "image"
 title = "Asteroid Shiba — Logo"
+
+[[outputs]]
+id = "3lXPQ53SrGq9eDpFCBMb8"
+uri = "file://screenshots/asteroid-shiba-pfp.jpg"
+type = "image"
+title = "Asteroid Shiba — PFP"
