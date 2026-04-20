@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Wallet, LogOut, Send } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
 
 const CONTRACT_ADDRESS = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
 const SHORT_ADDRESS = '0xbf06...cddc';
@@ -41,12 +42,43 @@ function CountdownTimer() {
 function PresaleWidget({ copy, copied }: {
   copy: () => void; copied: boolean;
 }) {
+  const { login, logout, authenticated, ready } = usePrivy();
+  const { wallets } = useWallets();
+  const [ethAmount, setEthAmount] = useState('0.1');
+  const [sending, setSending] = useState(false);
+  const [txHash, setTxHash] = useState('');
+  const { toast } = useToast();
+
+  const wallet = wallets[0];
+  const shortAddr = wallet?.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : '';
+
+  const MIN = 0.01;
+  const MAX = 2;
+  const val = parseFloat(ethAmount || '0');
+  const invalid = val < MIN || val > MAX;
+
+  const handleSend = async () => {
+    if (!wallet || invalid) return;
+    setSending(true);
+    try {
+      const provider = await wallet.getEthereumProvider();
+      const weiHex = '0x' + Math.floor(val * 1e18).toString(16);
+      const hash = await provider.request({
+        method: 'eth_sendTransaction',
+        params: [{ from: wallet.address, to: CONTRACT_ADDRESS, value: weiHex }],
+      });
+      setTxHash(hash as string);
+      toast({ title: 'Transaction sent!', description: 'Tokens will be airdropped after presale closes.' });
+    } catch (e: any) {
+      toast({ title: 'Transaction failed', description: e?.message || 'Please try again.', variant: 'destructive' });
+    }
+    setSending(false);
+  };
 
   return (
     <div className="bg-[#0b0f1c] border border-white/[0.08] rounded-2xl overflow-hidden w-full">
       <div className="h-0.5 bg-gradient-to-r from-[#f59e0b] via-purple-500 to-[#f59e0b]" />
       <div className="p-5 sm:p-6 space-y-5">
-
 
         {/* Progress bar */}
         <div className="space-y-2">
@@ -83,20 +115,78 @@ function PresaleWidget({ copy, copied }: {
           </div>
         </div>
 
+        {!ready ? (
+          <div className="w-full py-3.5 rounded-xl bg-white/[0.05] animate-pulse h-12" />
+        ) : !authenticated ? (
+          <button
+            onClick={login}
+            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] text-black font-bold text-sm transition-colors"
+          >
+            <Wallet className="w-4 h-4" />
+            Connect Wallet to Buy
+          </button>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between bg-white/[0.03] border border-white/[0.07] rounded-xl px-3.5 py-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-400" />
+                <span className="text-xs text-white/60 font-mono">{shortAddr}</span>
+              </div>
+              <button onClick={logout} className="text-white/30 hover:text-white/60 transition-colors">
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="relative">
+              <input
+                type="number"
+                value={ethAmount}
+                onChange={e => setEthAmount(e.target.value)}
+                min={MIN} max={MAX} step="0.01"
+                className={`w-full bg-white/[0.04] border focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors ${invalid ? 'border-red-500/60' : 'border-white/10 focus:border-[#f59e0b]/60'}`}
+                placeholder="0.1"
+              />
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">ETH</span>
+            </div>
+            {invalid && <p className="text-[11px] text-red-400">Enter between {MIN} and {MAX} ETH</p>}
+
+            {txHash ? (
+              <a
+                href={`https://etherscan.io/tx/${txHash}`}
+                target="_blank"
+                rel="noreferrer"
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 font-bold text-sm"
+              >
+                <Check className="w-4 h-4" /> View on Etherscan
+              </a>
+            ) : (
+              <button
+                onClick={handleSend}
+                disabled={sending || invalid}
+                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-sm transition-colors"
+              >
+                <Send className="w-4 h-4" />
+                {sending ? 'Sending...' : `Send ${val || 0} ETH`}
+              </button>
+            )}
+          </div>
+        )}
+
         <div className="space-y-2">
-          <p className="text-[10px] text-white/40 uppercase tracking-widest">Send ETH to this address to participate</p>
-          <div className="bg-white/[0.03] border border-[#f59e0b]/20 rounded-xl p-3 space-y-2">
-            <p className="font-mono text-[11px] sm:text-xs text-white/70 break-all leading-relaxed">{CONTRACT_ADDRESS}</p>
+          <p className="text-[10px] text-white/25 text-center">Or send manually:</p>
+          <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 space-y-2">
+            <p className="font-mono text-[11px] sm:text-xs text-white/50 break-all leading-relaxed">{CONTRACT_ADDRESS}</p>
             <button
               onClick={copy}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#f59e0b] hover:bg-[#fbbf24] text-black font-bold text-sm transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] text-white/60 font-semibold text-xs transition-colors"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'Address Copied!' : 'Copy Address'}
+              {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied!' : 'Copy Address'}
             </button>
           </div>
-          <p className="text-[11px] text-white/25 text-center">Tokens distributed to your wallet after presale ends.</p>
         </div>
+
+        <p className="text-[11px] text-white/25 text-center">Tokens airdropped to your wallet after presale ends.</p>
       </div>
     </div>
   );

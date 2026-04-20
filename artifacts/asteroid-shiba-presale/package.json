@@ -75,6 +75,9 @@
     "zod": "catalog:"
   },
   "dependencies": {
-    "@vercel/analytics": "^2.0.1"
+    "@privy-io/react-auth": "^3.22.1",
+    "@vercel/analytics": "^2.0.1",
+    "viem": "^2.48.1",
+    "wagmi": "^3.6.3"
   }
 }
