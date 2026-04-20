@@ -1,0 +1,169 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.20;
+
+interface IERC20 {
+    function totalSupply() external view returns (uint256);
+    function balanceOf(address account) external view returns (uint256);
+    function transfer(address to, uint256 amount) external returns (bool);
+    function allowance(address owner, address spender) external view returns (uint256);
+    function approve(address spender, uint256 amount) external returns (bool);
+    function transferFrom(address from, address to, uint256 amount) external returns (bool);
+    event Transfer(address indexed from, address indexed to, uint256 value);
+    event Approval(address indexed owner, address indexed spender, uint256 value);
+}
+
+interface IUniswapV2Factory {
+    function createPair(address tokenA, address tokenB) external returns (address pair);
+}
+
+interface IUniswapV2Router02 {
+    function factory() external pure returns (address);
+    function WETH() external pure returns (address);
+    function swapExactTokensForETHSupportingFeeOnTransferTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external;
+    function addLiquidityETH(address token, uint256 amountTokenDesired, uint256 amountTokenMin, uint256 amountETHMin, address to, uint256 deadline) external payable returns (uint256, uint256, uint256);
+}
+
+contract AsteroidStrategy is IERC20 {
+    string  public constant name     = "Asteroid Strategy";
+    string  public constant symbol   = "ASTEROIDSTR";
+    uint8   public constant decimals = 18;
+
+    uint256 private constant TOTAL_SUPPLY = 420_690_000_000 * 10 ** 18;
+    uint256 private constant BURN_AMOUNT  = 210_345_000_000 * 10 ** 18;
+    address private constant DEAD = 0x000000000000000000000000000000000000dEaD;
+
+    uint256 public maxTxAmount = (TOTAL_SUPPLY * 1) / 100;
+    bool public limitsEnabled = true;
+    uint256 public buyTax  = 5;
+    uint256 public sellTax = 5;
+    address public marketingWallet;
+    uint256 public swapThreshold = (TOTAL_SUPPLY * 5) / 10_000;
+    bool private inSwap;
+    bool public tradingEnabled = false;
+    address public owner;
+
+    IUniswapV2Router02 public uniswapRouter;
+    address public uniswapPair;
+
+    mapping(address => uint256) private _balances;
+    mapping(address => mapping(address => uint256)) private _allowances;
+    mapping(address => bool) public isExcludedFromFee;
+    mapping(address => bool) public isExcludedFromLimit;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    event TradingEnabled();
+    event LimitsRemoved();
+    event MarketingWalletUpdated(address indexed newWallet);
+    event TaxUpdated(uint256 buyTax, uint256 sellTax);
+    event TokensSwappedForETH(uint256 tokensSwapped, uint256 ethReceived);
+
+    modifier onlyOwner() { require(msg.sender == owner, "Not owner"); _; }
+    modifier lockSwap()  { inSwap = true; _; inSwap = false; }
+
+    constructor(address _routerAddress) {
+        require(_routerAddress != address(0), "Zero router address");
+        owner           = msg.sender;
+        marketingWallet = 0xbf06930f29d047823541c7726142a30aa9a8cddc;
+
+        _balances[address(this)] = TOTAL_SUPPLY;
+        emit Transfer(address(0), address(this), TOTAL_SUPPLY);
+
+        _balances[address(this)] -= BURN_AMOUNT;
+        _balances[DEAD]          += BURN_AMOUNT;
+        emit Transfer(address(this), DEAD, BURN_AMOUNT);
+
+        uint256 circ = TOTAL_SUPPLY - BURN_AMOUNT;
+        _balances[address(this)] -= circ;
+        _balances[msg.sender]    += circ;
+        emit Transfer(address(this), msg.sender, circ);
+
+        uniswapRouter = IUniswapV2Router02(_routerAddress);
+        uniswapPair   = IUniswapV2Factory(uniswapRouter.factory()).createPair(address(this), uniswapRouter.WETH());
+
+        isExcludedFromFee[msg.sender]      = true;
+        isExcludedFromFee[address(this)]   = true;
+        isExcludedFromFee[DEAD]            = true;
+        isExcludedFromFee[marketingWallet] = true;
+        isExcludedFromLimit[msg.sender]    = true;
+        isExcludedFromLimit[address(this)] = true;
+        isExcludedFromLimit[DEAD]          = true;
+
+        _allowances[address(this)][_routerAddress] = type(uint256).max;
+    }
+
+    function totalSupply() external pure override returns (uint256) { return TOTAL_SUPPLY; }
+    function balanceOf(address account) external view override returns (uint256) { return _balances[account]; }
+    function transfer(address to, uint256 amount) external override returns (bool) { _transfer(msg.sender, to, amount); return true; }
+    function allowance(address _owner, address spender) external view override returns (uint256) { return _allowances[_owner][spender]; }
+    function approve(address spender, uint256 amount) external override returns (bool) { _approve(msg.sender, spender, amount); return true; }
+    function transferFrom(address from, address to, uint256 amount) external override returns (bool) {
+        uint256 cur = _allowances[from][msg.sender];
+        require(cur >= amount, "ERC20: insufficient allowance");
+        _approve(from, msg.sender, cur - amount);
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    function _approve(address _owner, address spender, uint256 amount) internal {
+        require(_owner != address(0) && spender != address(0));
+        _allowances[_owner][spender] = amount;
+        emit Approval(_owner, spender, amount);
+    }
+
+    function _transfer(address from, address to, uint256 amount) internal {
+        require(from != address(0) && to != address(0) && amount > 0);
+        bool isBuy  = from == uniswapPair;
+        bool isSell = to   == uniswapPair;
+
+        if (!tradingEnabled) {
+            require(isExcludedFromFee[from] || isExcludedFromFee[to], "Trading not yet enabled");
+        }
+
+        if (limitsEnabled && !isExcludedFromLimit[from] && !isExcludedFromLimit[to]) {
+            if (isBuy || isSell) require(amount <= maxTxAmount, "Exceeds max tx");
+        }
+
+        if (_balances[address(this)] >= swapThreshold && !inSwap && isSell && !isExcludedFromFee[from]) {
+            _swapTokensForETH(swapThreshold);
+        }
+
+        uint256 tax = 0;
+        if (!isExcludedFromFee[from] && !isExcludedFromFee[to]) {
+            if (isBuy)  tax = (amount * buyTax)  / 100;
+            if (isSell) tax = (amount * sellTax) / 100;
+        }
+
+        if (tax > 0) { _balances[from] -= tax; _balances[address(this)] += tax; emit Transfer(from, address(this), tax); }
+        uint256 net = amount - tax;
+        _balances[from] -= net;
+        _balances[to]   += net;
+        emit Transfer(from, to, net);
+    }
+
+    function _swapTokensForETH(uint256 tokenAmount) internal lockSwap {
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = uniswapRouter.WETH();
+        uint256 before = address(this).balance;
+        try uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(tokenAmount, 0, path, address(this), block.timestamp + 300) {
+            uint256 gained = address(this).balance - before;
+            if (gained > 0) {
+                (bool sent, ) = payable(marketingWallet).call{value: gained}("");
+                require(sent, "ETH send failed");
+                emit TokensSwappedForETH(tokenAmount, gained);
+            }
+        } catch {}
+    }
+
+    function enableTrading()    external onlyOwner { tradingEnabled = true; emit TradingEnabled(); }
+    function removeLimits()     external onlyOwner { limitsEnabled  = false; emit LimitsRemoved(); }
+    function setMarketingWallet(address w) external onlyOwner { require(w != address(0)); isExcludedFromFee[marketingWallet] = false; marketingWallet = w; isExcludedFromFee[w] = true; emit MarketingWalletUpdated(w); }
+    function setTax(uint256 b, uint256 s) external onlyOwner { require(b <= 10 && s <= 10); buyTax = b; sellTax = s; emit TaxUpdated(b, s); }
+    function setExcludedFromFee(address a, bool e)   external onlyOwner { isExcludedFromFee[a]   = e; }
+    function setExcludedFromLimit(address a, bool e) external onlyOwner { isExcludedFromLimit[a] = e; }
+    function transferOwnership(address n) external onlyOwner { require(n != address(0)); emit OwnershipTransferred(owner, n); owner = n; }
+    function renounceOwnership() external onlyOwner { emit OwnershipTransferred(owner, address(0)); owner = address(0); }
+    function withdrawETH() external onlyOwner { (bool s,) = payable(owner).call{value: address(this).balance}(""); require(s); }
+
+    receive() external payable {}
+}
