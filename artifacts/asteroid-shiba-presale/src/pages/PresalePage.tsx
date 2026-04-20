@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Copy, Check, Menu, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-const CONTRACT_ADDRESS = 'F1ppSHedBsGGwEKH7BJVgoqr4xkQHswtsGGLpgM7bCP2';
-const SHORT_ADDRESS = 'F1ppSH...bCP2';
+const CONTRACT_ADDRESS = '0xf280B16EF293D8e534e370794ef26bF312694126';
+const SHORT_ADDRESS = '0xf280...4126';
 const PRESALE_END = new Date(Date.now() + 1000 * 60 * 60 * 24 * 7 + 1000 * 60 * 60 * 5).getTime();
 
 function CountdownTimer() {
@@ -38,14 +38,86 @@ function CountdownTimer() {
   );
 }
 
+function PresaleWidget({ ethAmount, setEthAmount, tokenAmount, raised, goal, pct, copy, copied }: {
+  ethAmount: string; setEthAmount: (v: string) => void; tokenAmount: string;
+  raised: number; goal: number; pct: number; copy: () => void; copied: boolean;
+}) {
+  return (
+    <div className="bg-[#0b0f1c] border border-white/[0.08] rounded-2xl overflow-hidden w-full">
+      <div className="h-0.5 bg-gradient-to-r from-[#1a9bfc] via-purple-500 to-[#1a9bfc]" />
+      <div className="p-5 sm:p-6 space-y-5">
+        <div>
+          <p className="text-[10px] text-white/35 uppercase tracking-widest mb-3">Presale Ends In</p>
+          <CountdownTimer />
+        </div>
+
+        <div className="space-y-2">
+          <div className="flex justify-between text-xs">
+            <span className="text-white/45">Raised: <span className="text-white font-semibold">${raised.toLocaleString()}</span></span>
+            <span className="text-white/30">Goal: ${goal.toLocaleString()}</span>
+          </div>
+          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
+            <div className="h-full bg-gradient-to-r from-[#1a9bfc] to-purple-500 rounded-full" style={{ width: `${pct}%` }} />
+          </div>
+          <p className="text-right text-[11px] text-white/25">{pct}% filled</p>
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] text-white/35 uppercase tracking-wider">You Pay (ETH)</label>
+          <div className="relative">
+            <input
+              type="number"
+              value={ethAmount}
+              onChange={e => setEthAmount(e.target.value)}
+              min="0"
+              className="w-full bg-white/[0.04] border border-white/10 focus:border-[#1a9bfc]/60 focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors"
+              placeholder="0"
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">ETH</span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-3 text-white/15">
+          <div className="flex-1 h-px bg-white/[0.06]" />
+          <span className="text-xs">≈</span>
+          <div className="flex-1 h-px bg-white/[0.06]" />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className="text-[10px] text-white/35 uppercase tracking-wider">You Receive</label>
+          <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl py-3.5 px-4 flex items-center justify-between">
+            <span className="text-base font-mono font-bold text-[#1a9bfc]">{tokenAmount}</span>
+            <span className="text-white/35 text-xs font-semibold">$ASTEROID</span>
+          </div>
+        </div>
+
+        <button className="w-full py-4 rounded-xl bg-[#1a9bfc] hover:bg-[#2aaeff] text-white font-bold text-sm transition-colors shadow-[0_0_30px_rgba(26,155,252,0.2)]">
+          Buy $ASTEROID
+        </button>
+
+        <div className="space-y-1">
+          <p className="text-center text-[10px] text-white/20">Connect your Ethereum wallet to participate.</p>
+          <button
+            onClick={copy}
+            className="group w-full flex items-center justify-between gap-2 bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.06] rounded-xl px-3 py-2 transition-all"
+          >
+            <span className="font-mono text-[10px] text-white/35 group-hover:text-white/55 truncate">{CONTRACT_ADDRESS}</span>
+            {copied ? <Check className="w-3 h-3 text-green-400 shrink-0" /> : <Copy className="w-3 h-3 text-white/20 shrink-0" />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function PresalePage() {
   const { toast } = useToast();
   const [copied, setCopied] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [solAmount, setSolAmount] = useState('1');
-  const solPrice = 145;
+  const [ethAmount, setEthAmount] = useState('0.5');
+  const ethPrice = 3200;
   const tokenPrice = 0.0000008;
-  const tokenAmount = Math.floor((parseFloat(solAmount || '0') * solPrice) / tokenPrice).toLocaleString();
+  const tokenAmount = Math.floor((parseFloat(ethAmount || '0') * ethPrice) / tokenPrice).toLocaleString();
   const raised = 842000;
   const goal = 2000000;
   const pct = Math.round((raised / goal) * 100);
@@ -64,6 +136,8 @@ export default function PresalePage() {
     { href: '#charity', label: 'Charity' },
   ];
 
+  const widgetProps = { ethAmount, setEthAmount, tokenAmount, raised, goal, pct, copy, copied };
+
   return (
     <div className="min-h-screen bg-[#080c14] text-white font-sans overflow-x-hidden">
 
@@ -80,16 +154,10 @@ export default function PresalePage() {
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <a
-              href="#presale"
-              className="text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-lg bg-[#1a9bfc] hover:bg-[#2aaeff] text-white transition-colors"
-            >
+            <a href="#presale" className="text-xs sm:text-sm font-bold px-3 sm:px-4 py-2 rounded-lg bg-[#1a9bfc] hover:bg-[#2aaeff] text-white transition-colors">
               Buy $ASTEROID
             </a>
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 text-white/60 hover:text-white"
-            >
+            <button onClick={() => setMenuOpen(!menuOpen)} className="md:hidden w-9 h-9 flex items-center justify-center rounded-lg border border-white/10 text-white/60 hover:text-white">
               {menuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
             </button>
           </div>
@@ -97,12 +165,8 @@ export default function PresalePage() {
         {menuOpen && (
           <div className="md:hidden border-t border-white/[0.06] bg-[#080c14]/95 backdrop-blur-xl">
             {navLinks.map(l => (
-              <a
-                key={l.href}
-                href={l.href}
-                onClick={() => setMenuOpen(false)}
-                className="block px-4 py-3.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.03] border-b border-white/[0.04] transition-colors"
-              >
+              <a key={l.href} href={l.href} onClick={() => setMenuOpen(false)}
+                className="block px-4 py-3.5 text-sm text-white/60 hover:text-white hover:bg-white/[0.03] border-b border-white/[0.04] transition-colors">
                 {l.label}
               </a>
             ))}
@@ -110,131 +174,70 @@ export default function PresalePage() {
         )}
       </nav>
 
-      {/* ── HERO + PRESALE ── */}
-      <section id="presale" className="relative overflow-hidden pt-14 sm:pt-16">
-        {/* Background */}
-        <div className="absolute inset-0">
-          <img src="/banner.jpg" alt="Asteroid in space" className="w-full h-full object-cover object-center" />
-          <div className="absolute inset-0 bg-[#080c14]/55" />
-          <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/40 via-transparent to-[#080c14]" />
+      {/* ── HERO (mobile: title only over image) ── */}
+      <section id="presale">
+        {/* Title over banner — mobile shows this, desktop shows full 2-col version */}
+        <div className="relative lg:hidden pt-14">
+          <div className="absolute inset-0">
+            <img src="/banner.jpg" alt="Asteroid in space" className="w-full h-full object-cover object-center" />
+            <div className="absolute inset-0 bg-[#080c14]/60" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/30 to-[#080c14]" />
+          </div>
+          <div className="relative z-10 px-4 py-12 text-center space-y-4">
+            <h1 className="text-6xl font-extrabold tracking-tight leading-none">ASTEROID</h1>
+            <p className="text-base text-white/60 font-light">The Only Shiba Who Went to Space</p>
+            <p className="text-sm text-white/45 max-w-xs mx-auto leading-relaxed">
+              The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn — born from real history, charity, and the human spirit.
+            </p>
+            <div className="flex justify-center gap-6 pt-1">
+              {[
+                { label: 'Token Price', value: '$0.0000008' },
+                { label: 'Network', value: 'Ethereum' },
+                { label: 'Supply', value: '420.69B' },
+              ].map(({ label, value }) => (
+                <div key={label} className="text-center">
+                  <p className="text-[9px] text-white/30 uppercase tracking-wider">{label}</p>
+                  <p className="font-bold text-white text-xs">{value}</p>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-12 sm:py-20">
-          <div className="flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-16 items-center">
+        {/* Mobile: presale widget below the banner (on solid dark bg) */}
+        <div className="lg:hidden bg-[#080c14] px-4 pb-12">
+          <PresaleWidget {...widgetProps} />
+        </div>
 
-            {/* Left — Headline */}
-            <div className="space-y-5 text-center lg:text-left">
-              <div className="inline-flex items-center gap-2 bg-[#1a9bfc]/10 border border-[#1a9bfc]/30 rounded-full px-3.5 py-1.5 text-[#1a9bfc] text-[11px] font-semibold tracking-wider uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#1a9bfc] animate-pulse shrink-0" />
-                Presale Phase 1 — Live Now
-              </div>
-
-              <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold tracking-tight leading-none">
-                ASTEROID
-              </h1>
-              <p className="text-base sm:text-xl text-white/60 font-light tracking-wide">
-                The Only Shiba Who Went to Space
-              </p>
-              <p className="text-sm text-white/45 max-w-sm mx-auto lg:mx-0 leading-relaxed">
+        {/* Desktop: full 2-col with background */}
+        <div className="hidden lg:block relative pt-16">
+          <div className="absolute inset-0">
+            <img src="/banner.jpg" alt="Asteroid in space" className="w-full h-full object-cover object-center" />
+            <div className="absolute inset-0 bg-[#080c14]/55" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#080c14]/30 via-transparent to-[#080c14]" />
+          </div>
+          <div className="relative z-10 max-w-6xl mx-auto px-6 py-20 grid grid-cols-2 gap-16 items-center">
+            <div className="space-y-5">
+              <h1 className="text-7xl font-extrabold tracking-tight leading-none">ASTEROID</h1>
+              <p className="text-xl text-white/60 font-light">The Only Shiba Who Went to Space</p>
+              <p className="text-sm text-white/45 max-w-sm leading-relaxed">
                 The world's first Shiba Inu plush to orbit Earth aboard SpaceX's Polaris Dawn — now a token born from real history, charity, and the human spirit.
               </p>
-
-              {/* Stats row */}
-              <div className="flex flex-wrap justify-center lg:justify-start gap-4 pt-2">
+              <div className="flex gap-6">
                 {[
                   { label: 'Token Price', value: '$0.0000008' },
+                  { label: 'Network', value: 'Ethereum' },
                   { label: 'Total Supply', value: '420.69B' },
-                  { label: 'Network', value: 'Solana' },
                 ].map(({ label, value }) => (
-                  <div key={label} className="text-center lg:text-left">
+                  <div key={label}>
                     <p className="text-[10px] text-white/30 uppercase tracking-wider">{label}</p>
                     <p className="font-bold text-white text-sm">{value}</p>
                   </div>
                 ))}
               </div>
-
-              {/* Contract */}
-              <div className="w-full max-w-sm mx-auto lg:mx-0">
-                <p className="text-[10px] text-white/25 uppercase tracking-widest mb-1.5">Contract Address (Solana)</p>
-                <button
-                  onClick={copy}
-                  className="group w-full flex items-center justify-between gap-3 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/15 rounded-xl px-3.5 py-2.5 transition-all"
-                >
-                  <span className="font-mono text-xs text-white/50 group-hover:text-white/70 transition-colors truncate">
-                    <span className="hidden sm:inline">{CONTRACT_ADDRESS}</span>
-                    <span className="sm:hidden">{SHORT_ADDRESS}</span>
-                  </span>
-                  {copied
-                    ? <Check className="w-3.5 h-3.5 text-green-400 shrink-0" />
-                    : <Copy className="w-3.5 h-3.5 text-white/30 group-hover:text-white/55 shrink-0 transition-colors" />
-                  }
-                </button>
-              </div>
             </div>
-
-            {/* Right — Presale Widget */}
-            <div className="w-full max-w-md mx-auto lg:mx-0">
-              <div className="bg-[#0b0f1c]/90 backdrop-blur-xl border border-white/[0.08] rounded-2xl overflow-hidden">
-                <div className="h-0.5 bg-gradient-to-r from-[#1a9bfc] via-purple-500 to-[#1a9bfc]" />
-                <div className="p-5 sm:p-6 space-y-5">
-
-                  {/* Countdown */}
-                  <div>
-                    <p className="text-[10px] text-white/35 uppercase tracking-widest mb-3">Presale Ends In</p>
-                    <CountdownTimer />
-                  </div>
-
-                  {/* Progress */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-xs">
-                      <span className="text-white/45">Raised: <span className="text-white font-semibold">${raised.toLocaleString()}</span></span>
-                      <span className="text-white/30">Goal: ${goal.toLocaleString()}</span>
-                    </div>
-                    <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden">
-                      <div className="h-full bg-gradient-to-r from-[#1a9bfc] to-purple-500 rounded-full transition-all" style={{ width: `${pct}%` }} />
-                    </div>
-                    <p className="text-right text-[11px] text-white/25">{pct}% filled</p>
-                  </div>
-
-                  {/* Input */}
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/35 uppercase tracking-wider">You Pay (SOL)</label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        value={solAmount}
-                        onChange={e => setSolAmount(e.target.value)}
-                        min="0"
-                        className="w-full bg-white/[0.04] border border-white/10 focus:border-[#1a9bfc]/60 focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors"
-                        placeholder="0"
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">SOL</span>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 text-white/15">
-                    <div className="flex-1 h-px bg-white/[0.06]" />
-                    <span className="text-xs">≈</span>
-                    <div className="flex-1 h-px bg-white/[0.06]" />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-[10px] text-white/35 uppercase tracking-wider">You Receive</label>
-                    <div className="bg-white/[0.04] border border-white/[0.06] rounded-xl py-3.5 px-4 flex items-center justify-between">
-                      <span className="text-base font-mono font-bold text-[#1a9bfc]">{tokenAmount}</span>
-                      <span className="text-white/35 text-xs font-semibold">$ASTEROID</span>
-                    </div>
-                  </div>
-
-                  <button className="w-full py-4 rounded-xl bg-[#1a9bfc] hover:bg-[#2aaeff] text-white font-bold text-sm transition-colors shadow-[0_0_30px_rgba(26,155,252,0.25)]">
-                    Buy $ASTEROID
-                  </button>
-
-                  <p className="text-center text-[10px] text-white/20">
-                    Connect your Solana wallet to participate in the presale.
-                  </p>
-                </div>
-              </div>
+            <div className="max-w-md">
+              <PresaleWidget {...widgetProps} />
             </div>
           </div>
         </div>
@@ -248,7 +251,6 @@ export default function PresalePage() {
         </div>
 
         <div className="flex flex-col lg:grid lg:grid-cols-2 gap-10 lg:gap-14 items-start">
-          {/* Text */}
           <div className="space-y-5">
             <p className="text-white/60 leading-relaxed text-sm sm:text-base">
               Liv Perrotto, a 15-year-old pediatric cancer survivor and patient at St. Jude Children's Research Hospital, was invited by SpaceX to design the zero-gravity indicator for the Polaris Dawn mission.
@@ -257,7 +259,8 @@ export default function PresalePage() {
               She created "Asteroid" — a Shiba Inu plush inspired by Elon Musk's own dog, Floki. On September 10, 2024, Asteroid floated weightlessly aboard the SpaceX Crew Dragon "Resilience," becoming the world's first Shiba in space.
             </p>
             <p className="text-white/60 leading-relaxed text-sm sm:text-base">
-              When Elon Musk replied "Will answer shortly" to a post about the token, it surged <span className="text-white font-semibold">68,000%</span>. The motto?{' '}
+              When Elon Musk replied "Will answer shortly" to a post about the token, it surged{' '}
+              <span className="text-white font-semibold">68,000%</span>. The motto?{' '}
               <span className="text-white italic">"If Asteroid can go to space, so can you."</span>
             </p>
             <div className="flex items-center gap-3 pt-1">
@@ -266,9 +269,7 @@ export default function PresalePage() {
               </div>
               <span className="text-xs text-white/40">10% of presale proceeds go to St. Jude Children's Research Hospital</span>
             </div>
-
-            {/* YouTube */}
-            <div className="rounded-2xl overflow-hidden border border-white/[0.06] w-full aspect-video mt-4">
+            <div className="rounded-2xl overflow-hidden border border-white/[0.06] w-full aspect-video">
               <iframe
                 src="https://www.youtube.com/embed/8UimR3AaT2s?rel=0&modestbranding=1&color=white"
                 title="Asteroid Shiba — Polaris Dawn"
@@ -279,27 +280,28 @@ export default function PresalePage() {
             </div>
           </div>
 
-          {/* Photo grid — all 4 real images */}
+          {/* Photo grid — all real images, no cropping */}
           <div className="grid grid-cols-2 gap-2.5">
             <img
               src="/liv1.jpg"
               alt="Liv Perrotto with Asteroid aboard SpaceX Dragon"
-              className="col-span-2 w-full h-56 sm:h-72 object-cover rounded-2xl"
+              className="col-span-2 w-full h-64 sm:h-80 object-cover object-center rounded-2xl"
             />
             <img
               src="/plush-airport.png"
               alt="Asteroid plush with Inspiration4 mission bag"
-              className="w-full h-40 sm:h-52 object-cover rounded-xl"
+              className="w-full h-44 sm:h-56 object-cover object-center rounded-xl"
             />
             <img
               src="/liv2.jpg"
-              alt="Liv Perrotto holding Asteroid plush"
-              className="w-full h-40 sm:h-52 object-cover rounded-xl"
+              alt="Liv Perrotto with Asteroid plush"
+              className="w-full h-44 sm:h-56 object-cover object-center rounded-xl"
             />
+            {/* Full image — no crop, show entire photo */}
             <img
               src="/liv-design.png"
-              alt="Liv Perrotto's original hand-drawn Asteroid design with Polaris Dawn authentication"
-              className="col-span-2 w-full h-56 sm:h-72 object-cover object-top rounded-2xl"
+              alt="Liv Perrotto holding her original hand-drawn Asteroid design with Polaris Dawn authentication"
+              className="col-span-2 w-full object-contain rounded-2xl bg-[#0b0f1c]"
             />
           </div>
         </div>
@@ -312,7 +314,6 @@ export default function PresalePage() {
             <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">On-chain</p>
             <h2 className="text-3xl sm:text-5xl font-extrabold">Tokenomics</h2>
           </div>
-
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {[
               { pct: '40%', label: 'Presale', color: '#1a9bfc' },
@@ -320,13 +321,12 @@ export default function PresalePage() {
               { pct: '20%', label: 'Marketing', color: '#22c55e' },
               { pct: '10%', label: 'Charity (St. Jude)', color: '#f97316' },
             ].map(({ pct, label, color }) => (
-              <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6 text-center hover:border-white/10 transition-colors">
+              <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-4 sm:p-6 text-center">
                 <div className="text-3xl sm:text-5xl font-extrabold mb-1.5" style={{ color }}>{pct}</div>
                 <div className="text-xs sm:text-sm text-white/55 font-medium">{label}</div>
               </div>
             ))}
           </div>
-
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2.5">
             {[
               { label: 'Total Supply', value: '420,690,000,000' },
@@ -339,9 +339,8 @@ export default function PresalePage() {
               </div>
             ))}
           </div>
-
           <div className="mt-3 bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 sm:p-5">
-            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2">Contract Address (Solana)</p>
+            <p className="text-[10px] text-white/30 uppercase tracking-wider mb-2">Contract Address (Ethereum)</p>
             <div className="flex items-center justify-between gap-3">
               <code className="font-mono text-xs text-white/60 break-all flex-1 leading-relaxed">
                 <span className="hidden sm:inline">{CONTRACT_ADDRESS}</span>
@@ -362,9 +361,7 @@ export default function PresalePage() {
       {/* ── CHARITY ── */}
       <section id="charity" className="max-w-2xl mx-auto px-4 sm:px-6 py-16 sm:py-24 text-center space-y-5 sm:space-y-6">
         <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">Purpose</p>
-        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight">
-          Built for More<br />Than Profit
-        </h2>
+        <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight">Built for More<br />Than Profit</h2>
         <p className="text-white/50 leading-relaxed text-sm sm:text-base">
           10% of all presale proceeds go directly to{' '}
           <strong className="text-white">St. Jude Children's Research Hospital</strong> — the hospital that helped Liv, the girl who sent Asteroid to space.
@@ -373,12 +370,8 @@ export default function PresalePage() {
           "If Asteroid can go to space, so can you."
           <span className="block text-white/25 not-italic text-xs mt-1.5">— Liv Perrotto, age 15, cancer survivor & Asteroid's creator</span>
         </blockquote>
-        <a
-          href="https://www.stjude.org/"
-          target="_blank"
-          rel="noreferrer"
-          className="inline-block px-5 py-2.5 rounded-xl border border-white/12 text-white/60 hover:text-white hover:border-white/25 text-sm font-medium transition-colors"
-        >
+        <a href="https://www.stjude.org/" target="_blank" rel="noreferrer"
+          className="inline-block px-5 py-2.5 rounded-xl border border-white/12 text-white/60 hover:text-white hover:border-white/25 text-sm font-medium transition-colors">
           Learn about St. Jude →
         </a>
       </section>
@@ -390,21 +383,11 @@ export default function PresalePage() {
             <p className="text-xs text-[#1a9bfc] uppercase tracking-widest font-semibold">What's Next</p>
             <h2 className="text-3xl sm:text-5xl font-extrabold">Roadmap</h2>
           </div>
-
           <div className="space-y-0">
             {[
-              {
-                phase: 'Phase 1', title: 'Launchpad', active: true,
-                items: ['Website & community launch', 'Presale goes live', 'First charity donation to St. Jude', 'DEX listing'],
-              },
-              {
-                phase: 'Phase 2', title: 'Orbit', active: false,
-                items: ['CEX applications (Bybit, Gate, KuCoin)', 'CoinMarketCap & CoinGecko listings', '10,000 holders milestone', 'Community treasury vote'],
-              },
-              {
-                phase: 'Phase 3', title: 'Deep Space', active: false,
-                items: ['Tier-1 exchange listing', 'ASTEROID merch store (physical plush)', '50,000 holders', 'Major charity event with St. Jude'],
-              },
+              { phase: 'Phase 1', title: 'Launchpad', active: true, items: ['Website & community launch', 'Presale goes live', 'First charity donation to St. Jude', 'DEX listing'] },
+              { phase: 'Phase 2', title: 'Orbit', active: false, items: ['CEX applications (Bybit, Gate, KuCoin)', 'CoinMarketCap & CoinGecko listings', '10,000 holders milestone', 'Community treasury vote'] },
+              { phase: 'Phase 3', title: 'Deep Space', active: false, items: ['Tier-1 exchange listing', 'ASTEROID merch store (physical plush)', '50,000 holders', 'Major charity event with St. Jude'] },
             ].map((step, i, arr) => (
               <div key={i} className="flex gap-4 sm:gap-5">
                 <div className="flex flex-col items-center">
@@ -414,9 +397,7 @@ export default function PresalePage() {
                 <div className="pb-10 sm:pb-12">
                   <div className="flex flex-wrap items-center gap-2 mb-1">
                     <span className="text-[10px] text-white/25 uppercase tracking-widest">{step.phase}</span>
-                    {step.active && (
-                      <span className="text-[9px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Active</span>
-                    )}
+                    {step.active && <span className="text-[9px] bg-[#1a9bfc]/15 text-[#1a9bfc] border border-[#1a9bfc]/25 px-2 py-0.5 rounded-full font-bold uppercase tracking-wider">Active</span>}
                   </div>
                   <h3 className="text-xl sm:text-2xl font-bold mb-3">{step.title}</h3>
                   <ul className="space-y-2">
@@ -437,14 +418,9 @@ export default function PresalePage() {
       {/* ── CTA ── */}
       <section className="py-16 sm:py-24 px-4 text-center">
         <div className="max-w-xl mx-auto space-y-5">
-          <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight">
-            Ready to Join<br />the Mission?
-          </h2>
+          <h2 className="text-3xl sm:text-5xl font-extrabold leading-tight">Ready to Join<br />the Mission?</h2>
           <p className="text-white/45 text-sm sm:text-base">The presale is live. Secure your allocation before it closes.</p>
-          <a
-            href="#presale"
-            className="inline-block w-full sm:w-auto px-8 sm:px-10 py-4 rounded-xl bg-[#1a9bfc] hover:bg-[#2aaeff] text-white font-bold text-sm sm:text-base transition-colors"
-          >
+          <a href="#presale" className="inline-block w-full sm:w-auto px-8 sm:px-10 py-4 rounded-xl bg-[#1a9bfc] hover:bg-[#2aaeff] text-white font-bold text-sm sm:text-base transition-colors">
             Buy $ASTEROID Now
           </a>
         </div>
