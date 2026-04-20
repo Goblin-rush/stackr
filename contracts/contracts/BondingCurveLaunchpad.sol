@@ -84,14 +84,20 @@ contract BondingCurveLaunchpad is ERC20, Ownable, ReentrancyGuard {
 
         _transfer(address(this), msg.sender, tokensOut);
 
-        // First time hitting 100% — graduate + auto-withdraw all ETH to admin
+        // First time hitting 100% — graduate and fall through to auto-withdraw
         if (!graduated && realEthRaised >= TARGET_ETH) {
             graduated = true;
             emit Graduated(realEthRaised);
-            uint256 raised = address(this).balance;
-            (bool sent,) = payable(owner()).call{value: raised}("");
-            require(sent, "Auto-withdraw failed");
-            emit EthWithdrawn(owner(), raised);
+        }
+
+        // Every buy at/after graduation → auto-forward ETH to admin immediately
+        if (graduated) {
+            uint256 bal = address(this).balance;
+            if (bal > 0) {
+                (bool sent,) = payable(owner()).call{value: bal}("");
+                require(sent, "Auto-withdraw failed");
+                emit EthWithdrawn(owner(), bal);
+            }
         }
 
         emit Buy(msg.sender, ethIn, tokensOut, getProgress());
