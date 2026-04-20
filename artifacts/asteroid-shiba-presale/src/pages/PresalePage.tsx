@@ -3,188 +3,62 @@ import { Copy, Check, ExternalLink } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const PRESALE_WALLET = '0xbf06930f29d047823541c7726142a30aa9a8cddc';
-const CONTRACT_ADDRESS = '0xb28e3dEb6eD691d9C19f139A4CBCB508759CEfD6';
-
-function CountdownTimer() {
-  const calc = () => {
-    const d = Math.max(0, PRESALE_END - Date.now());
-    return {
-      days: Math.floor(d / 86400000),
-      hrs: Math.floor((d % 86400000) / 3600000),
-      min: Math.floor((d % 3600000) / 60000),
-      sec: Math.floor((d % 60000) / 1000),
-    };
-  };
-  const [t, setT] = useState(calc);
-  useEffect(() => {
-    const id = setInterval(() => setT(calc()), 1000);
-    return () => clearInterval(id);
-  }, []);
-
-  return (
-    <div className="flex gap-2">
-      {(Object.entries(t) as [string, number][]).map(([label, val]) => (
-        <div key={label} className="flex-1 flex flex-col items-center">
-          <div className="w-full aspect-square max-w-[64px] bg-[#080c14] border border-white/10 rounded-xl flex items-center justify-center">
-            <span className="text-xl sm:text-2xl font-bold font-mono text-white tabular-nums">
-              {String(val).padStart(2, '0')}
-            </span>
-          </div>
-          <span className="text-[9px] text-white/35 uppercase tracking-widest mt-1.5">{label}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
+const CONTRACT_ADDRESS = '0x035b30C697C525455E084c125cDAe88C611b1C2e';
 
 function PresaleWidget({ copy, copied }: {
   copy: () => void; copied: boolean;
 }) {
-  const { login, logout, authenticated, ready } = usePrivy();
-  const { wallets } = useWallets();
-  const [ethAmount, setEthAmount] = useState('0.1');
-  const [sending, setSending] = useState(false);
-  const [txHash, setTxHash] = useState('');
-  const { toast } = useToast();
-
-  const wallet = wallets[0];
-  const shortAddr = wallet?.address ? `${wallet.address.slice(0, 6)}...${wallet.address.slice(-4)}` : '';
-
-  const MIN = 0.01;
-  const MAX = 2;
-  const val = parseFloat(ethAmount || '0');
-  const invalid = val < MIN || val > MAX;
-
-  const handleSend = async () => {
-    if (!wallet || invalid) return;
-    setSending(true);
-    try {
-      const provider = await wallet.getEthereumProvider();
-      const weiHex = '0x' + Math.floor(val * 1e18).toString(16);
-      const hash = await provider.request({
-        method: 'eth_sendTransaction',
-        params: [{ from: wallet.address, to: CONTRACT_ADDRESS, value: weiHex }],
-      });
-      setTxHash(hash as string);
-      toast({ title: 'Transaction sent!', description: 'Tokens will be airdropped after presale closes.' });
-    } catch (e: any) {
-      toast({ title: 'Transaction failed', description: e?.message || 'Please try again.', variant: 'destructive' });
-    }
-    setSending(false);
-  };
-
   return (
     <div className="bg-[#0b0f1c] border border-white/[0.08] rounded-2xl overflow-hidden w-full">
       <div className="h-0.5 bg-gradient-to-r from-[#f59e0b] via-purple-500 to-[#f59e0b]" />
       <div className="p-5 sm:p-6 space-y-5">
 
-        {/* Progress bar */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="text-white/45">Raised: <span className="text-white font-semibold">2.3 ETH</span></span>
-            <span className="text-white/30">Hard Cap: 10 ETH</span>
+        {/* Presale Ended badge */}
+        <div className="flex flex-col items-center gap-2 py-3">
+          <div className="flex items-center gap-2 bg-green-500/10 border border-green-500/25 rounded-full px-4 py-1.5">
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-green-400 text-xs font-bold uppercase tracking-widest">Presale Ended — Now Live</span>
           </div>
-          <div className="h-2 bg-white/[0.06] rounded-full overflow-hidden relative">
-            <div className="h-full bg-gradient-to-r from-[#f59e0b] to-purple-500 rounded-full transition-all" style={{ width: '23%' }} />
-            <div className="absolute top-0 bottom-0 w-px bg-yellow-400/60" style={{ left: '50%' }} />
-          </div>
-          <div className="flex justify-between text-[10px] text-white/25">
-            <span>23% filled</span>
-            <span className="text-yellow-400/60">Soft Cap: 5 ETH</span>
-          </div>
+          <p className="text-white/40 text-xs text-center">$ASTEROIDSTR is now trading on Uniswap</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
-            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Minimum</p>
-            <p className="text-lg font-bold text-white font-mono">0.01 <span className="text-xs text-white/40">ETH</span></p>
-          </div>
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
-            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Maximum</p>
-            <p className="text-lg font-bold text-white font-mono">2 <span className="text-xs text-white/40">ETH</span></p>
-          </div>
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
-            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Soft Cap</p>
-            <p className="text-lg font-bold text-[#f59e0b] font-mono">5 <span className="text-xs text-white/40">ETH</span></p>
-          </div>
-          <div className="bg-white/[0.03] border border-white/[0.07] rounded-xl p-3 text-center">
-            <p className="text-[10px] text-white/35 uppercase tracking-widest mb-1">Hard Cap</p>
-            <p className="text-lg font-bold text-[#f59e0b] font-mono">10 <span className="text-xs text-white/40">ETH</span></p>
-          </div>
-        </div>
-
-        {!ready ? (
-          <div className="w-full py-3.5 rounded-xl bg-white/[0.05] animate-pulse h-12" />
-        ) : !authenticated ? (
-          <button
-            onClick={login}
-            className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] text-black font-bold text-sm transition-colors"
-          >
-            <Wallet className="w-4 h-4" />
-            Connect Wallet to Buy
-          </button>
-        ) : (
-          <div className="space-y-3">
-            <div className="flex items-center justify-between bg-white/[0.03] border border-white/[0.07] rounded-xl px-3.5 py-2.5">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-green-400" />
-                <span className="text-xs text-white/60 font-mono">{shortAddr}</span>
-              </div>
-              <button onClick={logout} className="text-white/30 hover:text-white/60 transition-colors">
-                <LogOut className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="relative">
-              <input
-                type="number"
-                value={ethAmount}
-                onChange={e => setEthAmount(e.target.value)}
-                min={MIN} max={MAX} step="0.01"
-                className={`w-full bg-white/[0.04] border focus:outline-none rounded-xl py-3.5 px-4 pr-14 text-base font-mono text-white transition-colors ${invalid ? 'border-red-500/60' : 'border-white/10 focus:border-[#f59e0b]/60'}`}
-                placeholder="0.1"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-white/35 text-xs font-bold">ETH</span>
-            </div>
-            {invalid && <p className="text-[11px] text-red-400">Enter between {MIN} and {MAX} ETH</p>}
-
-            {txHash ? (
-              <a
-                href={`https://etherscan.io/tx/${txHash}`}
-                target="_blank"
-                rel="noreferrer"
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-green-500/20 border border-green-500/30 text-green-400 font-bold text-sm"
-              >
-                <Check className="w-4 h-4" /> View on Etherscan
-              </a>
-            ) : (
-              <button
-                onClick={handleSend}
-                disabled={sending || invalid}
-                className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] disabled:opacity-50 disabled:cursor-not-allowed text-black font-bold text-sm transition-colors"
-              >
-                <Send className="w-4 h-4" />
-                {sending ? 'Sending...' : `Send ${val || 0} ETH`}
-              </button>
-            )}
-          </div>
-        )}
-
+        {/* Contract Address */}
         <div className="space-y-2">
-          <p className="text-[10px] text-white/25 text-center">Or send manually:</p>
-          <div className="bg-white/[0.02] border border-white/[0.05] rounded-xl p-3 space-y-2">
-            <p className="font-mono text-[11px] sm:text-xs text-white/50 break-all leading-relaxed">{CONTRACT_ADDRESS}</p>
+          <p className="text-[10px] text-white/30 uppercase tracking-widest text-center">Contract Address</p>
+          <div className="bg-white/[0.02] border border-white/[0.07] rounded-xl p-3.5 space-y-3">
+            <p className="font-mono text-[11px] sm:text-xs text-white/70 break-all leading-relaxed text-center">{CONTRACT_ADDRESS}</p>
             <button
               onClick={copy}
-              className="w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-white/[0.05] hover:bg-white/[0.08] text-white/60 font-semibold text-xs transition-colors"
+              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-[#f59e0b]/10 hover:bg-[#f59e0b]/20 border border-[#f59e0b]/20 text-[#f59e0b] font-semibold text-xs transition-colors"
             >
               {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-              {copied ? 'Copied!' : 'Copy Address'}
+              {copied ? 'Copied!' : 'Copy Contract Address'}
             </button>
           </div>
         </div>
 
-        <p className="text-[11px] text-white/25 text-center">Tokens airdropped to your wallet after presale ends.</p>
+        {/* Buy on Uniswap */}
+        <a
+          href={`https://app.uniswap.org/swap?outputCurrency=${CONTRACT_ADDRESS}&chain=mainnet`}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full flex items-center justify-center gap-2 py-3.5 rounded-xl bg-[#f59e0b] hover:bg-[#fbbf24] text-black font-bold text-sm transition-colors"
+        >
+          <ExternalLink className="w-4 h-4" />
+          Buy on Uniswap
+        </a>
+
+        {/* Etherscan */}
+        <a
+          href={`https://etherscan.io/address/${CONTRACT_ADDRESS}`}
+          target="_blank"
+          rel="noreferrer"
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/[0.07] text-white/50 hover:text-white/70 font-semibold text-xs transition-colors"
+        >
+          <ExternalLink className="w-3.5 h-3.5" />
+          View on Etherscan
+        </a>
+
       </div>
     </div>
   );
