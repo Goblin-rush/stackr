@@ -164,9 +164,8 @@ export default function PresalePage() {
       {/* ── NAV ── */}
       <nav className="fixed top-0 inset-x-0 z-50 bg-[#080c14]/80 backdrop-blur-xl border-b border-white/[0.06]">
         <div className="max-w-6xl mx-auto px-4 h-14 sm:h-16 flex items-center justify-between">
-          <a href="#" className="flex items-center gap-2">
-            <img src="/logo.jpg" alt="ASTEROID" className="w-8 h-8 rounded-full object-cover" />
-            <span className="font-bold text-sm tracking-[0.15em] text-white uppercase">Asteroid</span>
+          <a href="#" className="flex items-center">
+            <span className="font-bold text-sm tracking-wide text-white">Asteroid Shiba Strategy</span>
           </a>
           <div className="hidden md:flex items-center gap-8 text-sm text-white/55 font-medium">
             {navLinks.map(l => (
