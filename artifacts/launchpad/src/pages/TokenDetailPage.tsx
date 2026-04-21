@@ -13,6 +13,7 @@ import { HoldersList } from '@/components/token/HoldersList';
 import { type Timeframe } from '@/components/token/PriceChart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TOTAL_SUPPLY, BONDING_CURVE_ABI } from '@/lib/contracts';
+import { Copy, ExternalLink } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -23,6 +24,7 @@ export default function TokenDetailPage() {
   const live = useChainTokenLive(address);
   const [tab, setTab] = useState('chart');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
+  const [copiedAddr, setCopiedAddr] = useState(false);
 
   // Auto-refetch on-chain reads when any Buy/Sell hits — keeps progress bar/price/mcap live
   useWatchContractEvent({
@@ -115,14 +117,32 @@ export default function TokenDetailPage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 mt-3 text-xs font-mono text-muted-foreground">
-                    <span>Contract:</span>
+                    <span className="opacity-60">Contract</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(address);
+                        setCopiedAddr(true);
+                        setTimeout(() => setCopiedAddr(false), 1500);
+                      }}
+                      className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer truncate text-left"
+                    >
+                      <span className="truncate">
+                        {address.slice(0, 6)}…{address.slice(-4)}
+                      </span>
+                      {copiedAddr ? (
+                        <span className="text-[10px] text-emerald-400">copied</span>
+                      ) : (
+                        <Copy className="h-3 w-3 shrink-0" />
+                      )}
+                    </button>
                     <a
                       href={`https://etherscan.io/address/${address}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-foreground hover:text-primary truncate"
+                      className="flex items-center gap-1 hover:text-foreground transition-colors"
                     >
-                      {address}
+                      <ExternalLink className="h-3 w-3" /> Etherscan
                     </a>
                   </div>
                 </div>

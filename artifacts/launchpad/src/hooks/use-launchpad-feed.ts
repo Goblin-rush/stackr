@@ -238,6 +238,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
                 createdAtMs: ts,
                 createdIndex: Number(l.args.index ?? 0n),
                 lastTradeMs: null,
+                creator: (l.args.creator as `0x${string}`) ?? null,
               };
               tokensRef.current.set(lower, newTok);
             }

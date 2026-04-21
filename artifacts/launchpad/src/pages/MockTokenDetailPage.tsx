@@ -21,6 +21,7 @@ export default function MockTokenDetailPage() {
   const live = useLiveToken(slug);
   const [tab, setTab] = useState('chart');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
+  const [copied, setCopied] = useState<'contract' | 'creator' | null>(null);
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
   const { applyMinOut, percent: slippagePercent } = useSlippage();
@@ -113,22 +114,45 @@ export default function MockTokenDetailPage() {
                     </p>
                   )}
 
-                  <div className="mt-3 space-y-1 text-xs font-mono text-muted-foreground">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="opacity-60 shrink-0">Contract</span>
-                      <span className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer min-w-0">
-                        <span className="truncate">
-                          {token.contract.slice(0, 6)}…{token.contract.slice(-4)}
-                        </span>
-                        <Copy className="h-3 w-3 shrink-0" />
+                  <div className="mt-3 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs font-mono text-muted-foreground max-w-md">
+                    <span className="opacity-60">Contract</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(token.contract);
+                        setCopied('contract');
+                        setTimeout(() => setCopied(null), 1500);
+                      }}
+                      className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer min-w-0 text-left"
+                    >
+                      <span className="truncate">
+                        {token.contract.slice(0, 6)}…{token.contract.slice(-4)}
                       </span>
-                    </div>
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="opacity-60 shrink-0">Created by</span>
-                      <span className="text-foreground truncate">
+                      {copied === 'contract' ? (
+                        <span className="text-[10px] text-emerald-400 shrink-0">copied</span>
+                      ) : (
+                        <Copy className="h-3 w-3 shrink-0" />
+                      )}
+                    </button>
+                    <span className="opacity-60">Created by</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(token.creator);
+                        setCopied('creator');
+                        setTimeout(() => setCopied(null), 1500);
+                      }}
+                      className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer min-w-0 text-left"
+                    >
+                      <span className="truncate">
                         {token.creator.slice(0, 6)}…{token.creator.slice(-4)}
                       </span>
-                    </div>
+                      {copied === 'creator' ? (
+                        <span className="text-[10px] text-emerald-400 shrink-0">copied</span>
+                      ) : (
+                        <Copy className="h-3 w-3 shrink-0" />
+                      )}
+                    </button>
                   </div>
 
                   <div className="flex items-center gap-4 mt-3 text-xs font-mono text-muted-foreground">
