@@ -8,7 +8,7 @@ import { SlippageSettings } from '@/components/token/SlippageSettings';
 import { useLiveToken } from '@/hooks/use-live-token';
 import { useSlippage } from '@/hooks/use-slippage';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Copy, ArrowLeft, ExternalLink, Globe, Twitter } from 'lucide-react';
+import { Copy, ExternalLink, Globe, Twitter } from 'lucide-react';
 
 const TIMEFRAMES: Timeframe[] = ['5m', '15m', '1h', '4h', '1d'];
 const TARGET_ETH = 3.5;
@@ -76,12 +76,6 @@ export default function MockTokenDetailPage() {
       <Navbar />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8 overflow-x-hidden w-full min-w-0">
-        <Link href="/">
-          <button className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground mb-4 font-mono uppercase tracking-widest">
-            <ArrowLeft className="h-3 w-3" /> All tokens
-          </button>
-        </Link>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           {/* MAIN COLUMN */}
           <div className="lg:col-span-8 space-y-4 min-w-0">

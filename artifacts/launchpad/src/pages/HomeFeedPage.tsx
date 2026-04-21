@@ -57,117 +57,144 @@ function sortTokens(tokens: FeedToken[], sort: FeedSort): FeedToken[] {
   }
 }
 
-function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
-  const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
-  const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
-  const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
+interface RowDisplay {
+  href: string;
+  symbol: string;
+  name: string;
+  graduated: boolean;
+  priceLabel: string;
+  mcapLabel: string;
+  raisedLabel: string;
+  progress: number;
+  ageLabel: string;
+  isDemo?: boolean;
+}
 
+function Row({ d }: { d: RowDisplay }) {
   return (
-    <Link href={`/token/${token.address}`}>
-      <div className="grid grid-cols-12 items-center gap-3 px-3 py-2.5 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
-        {/* Token (3 cols) */}
-        <div className="col-span-4 md:col-span-3 flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+    <Link href={d.href}>
+      <div className="px-3 py-2.5 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
+        {/* Mobile: stacked layout */}
+        <div className="md:hidden flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
             <span className="text-[10px] font-bold text-muted-foreground">
-              {(token.symbol || '?').slice(0, 2).toUpperCase()}
+              {d.symbol.slice(0, 2).toUpperCase()}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
-              {token.name || 'Unnamed'}
-            </p>
-            <p className="text-[11px] text-muted-foreground font-mono leading-tight">
-              ${token.symbol || '???'}
-              {token.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
-            </p>
-          </div>
-        </div>
-
-        {/* Price (hidden on mobile) */}
-        <div className="hidden md:block col-span-2 text-right">
-          <p className="text-xs font-mono tabular-nums text-foreground">
-            {priceUsd ? `$${priceUsd.toFixed(priceUsd < 0.01 ? 8 : 4)}` : `${token.currentPriceEth.toExponential(2)}`}
-          </p>
-        </div>
-
-        {/* Market cap */}
-        <div className="col-span-3 md:col-span-2 text-right">
-          <p className="text-xs font-mono tabular-nums text-foreground">
-            {mcUsd ? formatUsd(mcUsd) : `${token.marketCapEth.toFixed(2)} ETH`}
-          </p>
-        </div>
-
-        {/* Progress (raised + bar) */}
-        <div className="col-span-3 md:col-span-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+            <div className="flex items-baseline justify-between gap-2">
+              <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
+                {d.name}
+              </p>
+              <p className="text-xs font-mono tabular-nums text-foreground shrink-0">{d.mcapLabel}</p>
             </div>
-            <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-10 text-right">
-              {progress.toFixed(0)}%
-            </span>
+            <div className="flex items-center justify-between gap-2 mt-0.5">
+              <p className="text-[11px] text-muted-foreground font-mono truncate">
+                ${d.symbol}
+                {d.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
+                {d.isDemo && <span className="ml-1.5 italic">· demo</span>}
+              </p>
+              <p className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
+                {d.ageLabel}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 mt-1.5">
+              <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
+              </div>
+              <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-9 text-right">
+                {d.progress.toFixed(0)}%
+              </span>
+            </div>
           </div>
-          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
-            {token.realEthRaised.toFixed(3)} / {TARGET_ETH_NUM} ETH
-          </p>
         </div>
 
-        {/* Age */}
-        <div className="col-span-2 md:col-span-2 text-right">
-          <p className="text-xs font-mono text-muted-foreground tabular-nums">
-            {timeAgo(token.lastTradeMs ?? token.createdAtMs)}
-          </p>
+        {/* Desktop: table grid */}
+        <div className="hidden md:grid grid-cols-12 items-center gap-3">
+          <div className="col-span-3 flex items-center gap-2.5 min-w-0">
+            <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+              <span className="text-[10px] font-bold text-muted-foreground">
+                {d.symbol.slice(0, 2).toUpperCase()}
+              </span>
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+                {d.name}
+              </p>
+              <p className="text-[11px] text-muted-foreground font-mono leading-tight">
+                ${d.symbol}
+                {d.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
+              </p>
+            </div>
+          </div>
+          <div className="col-span-2 text-right">
+            <p className="text-xs font-mono tabular-nums text-foreground">{d.priceLabel}</p>
+          </div>
+          <div className="col-span-2 text-right">
+            <p className="text-xs font-mono tabular-nums text-foreground">{d.mcapLabel}</p>
+          </div>
+          <div className="col-span-3">
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+                <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
+              </div>
+              <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-10 text-right">
+                {d.progress.toFixed(0)}%
+              </span>
+            </div>
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{d.raisedLabel}</p>
+          </div>
+          <div className="col-span-2 text-right">
+            <p className="text-xs font-mono text-muted-foreground tabular-nums">
+              {d.isDemo ? <span className="italic">demo</span> : d.ageLabel}
+            </p>
+          </div>
         </div>
       </div>
     </Link>
   );
 }
 
+function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
+  const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
+  const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
+  const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
+  return (
+    <Row
+      d={{
+        href: `/token/${token.address}`,
+        symbol: token.symbol || '?',
+        name: token.name || 'Unnamed',
+        graduated: token.graduated,
+        priceLabel: priceUsd
+          ? `$${priceUsd.toFixed(priceUsd < 0.01 ? 8 : 4)}`
+          : token.currentPriceEth.toExponential(2),
+        mcapLabel: mcUsd ? formatUsd(mcUsd) : `${token.marketCapEth.toFixed(2)} ETH`,
+        raisedLabel: `${token.realEthRaised.toFixed(3)} / ${TARGET_ETH_NUM} ETH`,
+        progress,
+        ageLabel: timeAgo(token.lastTradeMs ?? token.createdAtMs),
+      }}
+    />
+  );
+}
+
 function MockTokenRow({ token }: { token: MockToken }) {
   const progress = Math.min((token.raised / token.target) * 100, 100);
   return (
-    <Link href={`/preview/${token.slug}`}>
-      <div className="grid grid-cols-12 items-center gap-3 px-3 py-2.5 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
-        <div className="col-span-4 md:col-span-3 flex items-center gap-2.5 min-w-0">
-          <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
-            <span className="text-[10px] font-bold text-muted-foreground">
-              {token.symbol.slice(0, 2).toUpperCase()}
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
-              {token.name}
-            </p>
-            <p className="text-[11px] text-muted-foreground font-mono leading-tight">
-              ${token.symbol}
-              {token.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
-            </p>
-          </div>
-        </div>
-        <div className="hidden md:block col-span-2 text-right">
-          <p className="text-xs font-mono tabular-nums text-foreground">{token.price}</p>
-        </div>
-        <div className="col-span-3 md:col-span-2 text-right">
-          <p className="text-xs font-mono tabular-nums text-foreground">{token.mcap}</p>
-        </div>
-        <div className="col-span-3 md:col-span-3">
-          <div className="flex items-center gap-2">
-            <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
-              <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
-            </div>
-            <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-10 text-right">
-              {progress.toFixed(0)}%
-            </span>
-          </div>
-          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
-            {token.raised.toFixed(2)} / {token.target} ETH
-          </p>
-        </div>
-        <div className="col-span-2 md:col-span-2 text-right">
-          <p className="text-[10px] font-mono text-muted-foreground italic">demo</p>
-        </div>
-      </div>
-    </Link>
+    <Row
+      d={{
+        href: `/preview/${token.slug}`,
+        symbol: token.symbol,
+        name: token.name,
+        graduated: !!token.graduated,
+        priceLabel: token.price,
+        mcapLabel: token.mcap,
+        raisedLabel: `${token.raised.toFixed(2)} / ${token.target} ETH`,
+        progress,
+        ageLabel: '–',
+        isDemo: true,
+      }}
+    />
   );
 }
 
@@ -248,13 +275,13 @@ export default function HomeFeedPage() {
           </div>
         </div>
 
-        {/* Table header */}
-        <div className="grid grid-cols-12 gap-3 px-3 py-2 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          <div className="col-span-4 md:col-span-3">Token</div>
-          <div className="hidden md:block col-span-2 text-right">Price</div>
-          <div className="col-span-3 md:col-span-2 text-right">Mcap</div>
-          <div className="col-span-3 md:col-span-3">Bonding</div>
-          <div className="col-span-2 md:col-span-2 text-right">Age</div>
+        {/* Table header (desktop only) */}
+        <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          <div className="col-span-3">Token</div>
+          <div className="col-span-2 text-right">Price</div>
+          <div className="col-span-2 text-right">Mcap</div>
+          <div className="col-span-3">Bonding</div>
+          <div className="col-span-2 text-right">Age</div>
         </div>
 
         {/* Rows */}
