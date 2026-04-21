@@ -1,29 +1,59 @@
 import { useParams } from 'wouter';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useWatchContractEvent } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
+import { useChainTokenLive } from '@/hooks/use-chain-token-live';
 import { BondingCurveProgress } from '@/components/token/BondingCurveProgress';
 import { TradeWidget } from '@/components/token/TradeWidget';
-import { PriceChart, type Timeframe } from '@/components/token/PriceChart';
+import { RealTimeChart } from '@/components/token/RealTimeChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
+import { type Timeframe } from '@/components/token/PriceChart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { TOTAL_SUPPLY } from '@/lib/contracts';
+import { TOTAL_SUPPLY, BONDING_CURVE_ABI } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
-  const { name, symbol, realEthRaised, graduated, currentPrice, isLoading } = useToken(address);
+  const { name, symbol, realEthRaised, graduated, currentPrice, isLoading, refetch } = useToken(address);
   const { data: ethPrice } = useEthPrice();
-
-  const priceInEth = currentPrice ? Number(formatEther(currentPrice)) : 0;
-  const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
-  const mcUsd = ethPrice ? mcEth * ethPrice : null;
+  const live = useChainTokenLive(address);
   const [tab, setTab] = useState('chart');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
-  const baseEthRaised = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
+
+  // Auto-refetch on-chain reads when any Buy/Sell hits — keeps progress bar/price/mcap live
+  useWatchContractEvent({
+    address,
+    abi: BONDING_CURVE_ABI,
+    eventName: 'Buy',
+    onLogs: () => refetch(),
+  });
+  useWatchContractEvent({
+    address,
+    abi: BONDING_CURVE_ABI,
+    eventName: 'Sell',
+    onLogs: () => refetch(),
+  });
+  useWatchContractEvent({
+    address,
+    abi: BONDING_CURVE_ABI,
+    eventName: 'Graduated',
+    onLogs: () => refetch(),
+  });
+
+  // Polling fallback (every 12s) in case WS subscription drops
+  useEffect(() => {
+    const id = setInterval(() => refetch(), 12000);
+    return () => clearInterval(id);
+  }, [refetch]);
+
+  const priceInEth = currentPrice ? Number(formatEther(currentPrice)) : live.currentPrice;
+  const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
+  const mcUsd = ethPrice ? mcEth * ethPrice : null;
+  const change24h = live.priceChange24hPct;
 
   if (isLoading) {
     return (
@@ -58,24 +88,42 @@ export default function TokenDetailPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      
+
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-8 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
+
           {/* Main Content (Left) */}
           <div className="lg:col-span-8 space-y-6">
-            
+
             {/* Header / Meta */}
             <div className="p-6 border border-border/50 bg-card">
-              <div className="flex justify-between items-start">
-                <div>
-                  <div className="flex items-center gap-3">
-                    <h1 className="text-4xl font-black tracking-tighter text-foreground">{name}</h1>
-                    <span className="text-xl text-primary font-mono uppercase bg-primary/10 px-2 py-1 border border-primary/20">${symbol}</span>
+              <div className="flex justify-between items-start flex-wrap gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground break-words">{name}</h1>
+                    <span className="text-lg md:text-xl text-primary font-mono uppercase bg-primary/10 px-2 py-1 border border-primary/20">${symbol}</span>
+                    {graduated ? (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded uppercase tracking-wider flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                        Graduated
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse" />
+                        Live · Bonding
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-2 mt-4 text-sm font-mono text-muted-foreground">
+                  <div className="flex items-center gap-2 mt-3 text-xs font-mono text-muted-foreground">
                     <span>Contract:</span>
-                    <span className="text-foreground">{address}</span>
+                    <a
+                      href={`https://etherscan.io/address/${address}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-foreground hover:text-primary truncate"
+                    >
+                      {address}
+                    </a>
                   </div>
                 </div>
               </div>
@@ -83,23 +131,25 @@ export default function TokenDetailPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8 pt-6 border-t border-border/50">
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Price USD</p>
-                  <p className="font-mono text-lg font-bold text-primary">
-                    {ethPrice && priceInEth ? `$${(priceInEth * ethPrice).toFixed(6)}` : '-'}
+                  <p className="font-mono text-lg font-bold text-primary tabular-nums">
+                    {ethPrice && priceInEth ? `$${(priceInEth * ethPrice).toFixed(7)}` : '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Price ETH</p>
-                  <p className="font-mono text-lg">{priceInEth.toFixed(8)}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">24h Change</p>
+                  <p className={`font-mono text-lg tabular-nums ${change24h >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {live.trades.length > 1 ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%` : '–'}
+                  </p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Market Cap</p>
-                  <p className="font-mono text-lg">
+                  <p className="font-mono text-lg tabular-nums">
                     {mcUsd ? `$${mcUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `${mcEth.toFixed(2)} ETH`}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">Status</p>
-                  <p className="font-mono text-lg text-primary">{graduated ? 'DEX' : 'BONDING'}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">24h Volume</p>
+                  <p className="font-mono text-lg tabular-nums">{live.volume24hEth.toFixed(3)} ETH</p>
                 </div>
               </div>
             </div>
@@ -124,17 +174,27 @@ export default function TokenDetailPage() {
                     className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
                   >
                     Trades
+                    {live.trades.length > 0 && (
+                      <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">
+                        {live.trades.length}
+                      </span>
+                    )}
                   </TabsTrigger>
                   <TabsTrigger
                     value="holders"
                     className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
                   >
                     Holders
+                    {live.holders.length > 0 && (
+                      <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">
+                        {live.holders.length}
+                      </span>
+                    )}
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="chart" className="m-0 p-3">
-                  <div className="flex items-center gap-1 mb-2 px-1">
+                  <div className="flex items-center gap-1 mb-2 px-1 flex-wrap">
                     {(['5m', '15m', '1h', '4h', '1d'] as Timeframe[]).map((tf) => (
                       <button
                         key={tf}
@@ -148,22 +208,56 @@ export default function TokenDetailPage() {
                         {tf}
                       </button>
                     ))}
+                    <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
+                      <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                      LIVE · ON-CHAIN
+                    </div>
                   </div>
-                  <PriceChart
-                    seed={address}
-                    baseEthRaised={baseEthRaised}
-                    graduated={graduated}
+                  <RealTimeChart
+                    trades={live.trades}
+                    lastTrade={live.lastTrade}
                     timeframe={timeframe}
+                    snapshotKey={`${address}:${live.snapshotKey}`}
                     height={380}
                   />
+                  {live.isInitialLoading && (
+                    <p className="text-[11px] text-muted-foreground font-mono mt-2 text-center">
+                      Loading historical trades from chain…
+                    </p>
+                  )}
+                  {live.loadError && (
+                    <p className="text-[11px] text-red-400 font-mono mt-2 text-center">
+                      {live.loadError}
+                    </p>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="trades" className="m-0">
-                  <TradeHistoryTable trades={[]} symbol={symbol || 'TOKEN'} />
+                  {live.isInitialLoading ? (
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
+                      Loading trades from chain…
+                    </div>
+                  ) : live.trades.length === 0 ? (
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
+                      No trades yet.
+                    </div>
+                  ) : (
+                    <TradeHistoryTable trades={live.trades} symbol={symbol || 'TOKEN'} />
+                  )}
                 </TabsContent>
 
                 <TabsContent value="holders" className="m-0">
-                  <HoldersList holders={[]} symbol={symbol || 'TOKEN'} />
+                  {live.isInitialLoading ? (
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
+                      Loading holders from chain…
+                    </div>
+                  ) : live.holders.length === 0 ? (
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
+                      No holders yet.
+                    </div>
+                  ) : (
+                    <HoldersList holders={live.holders} symbol={symbol || 'TOKEN'} />
+                  )}
                 </TabsContent>
               </Tabs>
             </div>
@@ -173,14 +267,14 @@ export default function TokenDetailPage() {
           {/* Trade Widget (Right) */}
           <div className="lg:col-span-4 space-y-6">
             <TradeWidget address={address} />
-            
+
             <div className="p-4 border border-border/50 bg-muted/10 text-xs font-mono text-muted-foreground space-y-2">
               <p className="uppercase tracking-widest text-foreground font-bold mb-3 border-b border-border/50 pb-2">Terminal Guidelines</p>
               <ul className="space-y-2 list-disc pl-4">
                 <li>Bonding curve ensures continuous liquidity.</li>
                 <li>Price increases as supply is bought.</li>
-                <li>At 3.5 ETH raised, trading halts and migrates to DEX.</li>
-                <li>Standard 1% slippage applied to orders.</li>
+                <li>At 3.5 ETH raised, trading graduates and ETH auto-forwards to admin.</li>
+                <li>Sells disabled after graduation. Buys remain open.</li>
               </ul>
             </div>
           </div>
