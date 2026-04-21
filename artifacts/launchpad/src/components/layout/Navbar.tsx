@@ -9,7 +9,7 @@ export function Navbar() {
   const { disconnect } = useDisconnect();
 
   return (
-    <nav className="border-b border-border bg-background sticky top-0 z-50">
+    <nav className="border-b border-border bg-card sticky top-0 z-50">
       <div className="container flex h-13 items-center max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex flex-1 items-center justify-between">
           <Link href="/">
@@ -29,7 +29,7 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <button onClick={() => connect({ connector: metaMask() })} style={{ color: '#ff6a00', fontWeight: 600 }} className="text-sm hover:opacity-75 transition-opacity">
+              <button onClick={() => connect({ connector: metaMask() })} className="text-sm font-semibold text-primary hover:opacity-75 transition-opacity">
                 Connect wallet
               </button>
             )}

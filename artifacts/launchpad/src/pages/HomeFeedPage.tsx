@@ -47,7 +47,7 @@ function FeedCard({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
 
   return (
     <Link href={`/token/${token.address}`}>
-      <div className="group bg-card/80 backdrop-blur border border-border rounded-lg p-4 cursor-pointer hover:border-primary/40 hover:bg-card transition-all flex flex-col gap-3 h-full hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
+      <div className="group bg-card border border-border rounded-md p-4 cursor-pointer hover:border-primary/40 transition-colors flex flex-col gap-3 h-full">
         <div className="flex items-start gap-3">
           <div className={`w-10 h-10 rounded-md ${avatarColor(token.address)} flex items-center justify-center shrink-0 ring-1 ring-white/10`}>
             <span className="text-white font-black text-sm leading-none">
@@ -81,7 +81,7 @@ function FeedCard({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
           </div>
           <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
             <div
-              className="h-full bg-gradient-to-r from-primary/80 to-primary transition-all duration-500"
+              className="h-full bg-primary transition-all duration-500"
               style={{ width: `${progress}%` }}
             />
           </div>
@@ -208,13 +208,10 @@ export default function HomeFeedPage() {
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
         {/* Header */}
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <span className="text-xs text-muted-foreground font-mono">
-            {tokens.length} {tokens.length === 1 ? 'token' : 'tokens'} indexed
-          </span>
+        <div className="mb-5 flex items-center justify-end">
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
+            className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
           >
             <Plus className="h-3 w-3" />
             Create
