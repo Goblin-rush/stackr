@@ -6,7 +6,7 @@ import { useState, useMemo } from 'react';
 import { Link } from 'wouter';
 import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
-import { Search, X } from 'lucide-react';
+import { Search, X, Plus } from 'lucide-react';
 
 type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade';
 
@@ -148,6 +148,17 @@ export default function HomeFeedPage() {
       <Navbar onCreate={() => setIsCreateOpen(true)} />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-4 md:px-8">
+        {/* Create token CTA */}
+        <div className="mb-3">
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
+          >
+            <Plus className="h-3 w-3" />
+            Create token
+          </button>
+        </div>
+
         {/* Single control strip: search + tabs */}
         <div className="flex flex-col md:flex-row md:items-center gap-2 mb-3">
           <div className="relative md:w-72">
