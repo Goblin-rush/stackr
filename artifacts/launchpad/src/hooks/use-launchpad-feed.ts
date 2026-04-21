@@ -35,7 +35,7 @@ const SELL_EVENT = parseAbiItem(
 );
 const GRADUATED_EVENT = parseAbiItem('event Graduated(uint256 ethRaised)');
 
-const LOOKBACK_BLOCKS = 50_000n;
+const LOOKBACK_BLOCKS = 9_000n; // publicnode free RPC limit is ~10k blocks per getLogs
 const MULTICALL_CHUNK = 30; // tokens per multicall batch (5 reads each = 150 calls)
 const TOTAL_SUPPLY_NUM = Number(formatEther(TOTAL_SUPPLY));
 

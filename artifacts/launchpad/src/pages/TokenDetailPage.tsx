@@ -363,9 +363,11 @@ export default function TokenDetailPage() {
           <div className="lg:col-span-4 space-y-6">
             <TradeWidget address={address} />
 
-            <div className="border border-border/50 bg-muted/10">
-              <TradeTape trades={live.trades} symbol={symbol || 'TOKEN'} />
-            </div>
+            {live.trades.length > 0 && (
+              <div className="border border-border/50 bg-muted/10">
+                <TradeTape trades={live.trades} symbol={symbol || 'TOKEN'} />
+              </div>
+            )}
 
           </div>
 

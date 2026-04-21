@@ -25,7 +25,7 @@ const TOKEN_CREATED = parseAbiItem(
 );
 
 const KEEP = 40;
-const BACKFILL_BLOCKS = 10_000n; // ~1.5 days
+const BACKFILL_BLOCKS = 9_000n; // publicnode free RPC limit is ~10k blocks per getLogs
 
 export function useGlobalTradeTape(maxTokens = 200) {
   const client = usePublicClient();

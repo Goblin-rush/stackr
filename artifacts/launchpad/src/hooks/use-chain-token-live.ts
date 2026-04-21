@@ -33,7 +33,7 @@ export interface ChainLiveState {
   snapshotKey: number; // bumped once when initial backfill completes (used to reseed chart)
 }
 
-const LOOKBACK_BLOCKS = 50_000n; // ~7 days on mainnet (~12s/block); covers recent tokens
+const LOOKBACK_BLOCKS = 9_000n; // publicnode free RPC limit is ~10k blocks per getLogs
 const HOLDER_TOP = 50;
 const TRADE_KEEP = 5000; // generous cap so 24h window stays accurate for bursty tokens
 const ZERO = '0x0000000000000000000000000000000000000000';

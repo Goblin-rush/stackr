@@ -64,11 +64,7 @@ export function TradeTape({ trades, symbol }: Props) {
   const recent = trades.slice(0, 8);
 
   if (recent.length === 0) {
-    return (
-      <div className="px-3 py-2 border-b border-border/50 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
-        Tape · waiting for trades…
-      </div>
-    );
+    return null;
   }
 
   return (

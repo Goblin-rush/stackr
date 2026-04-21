@@ -60,6 +60,15 @@ export function normalizeTelegram(raw?: string | null): string | null {
 
 const KEY = 'launchpad:token-metadata';
 
+// Built-in seed for tokens deployed before server-side metadata existed.
+// Keys MUST be lowercase. These are visible to all users (not localStorage-only).
+const SEED: Record<string, TokenMetadata> = {
+  '0x768923190d6cff2a1bf1139ed5fc5487458cb953': {
+    image: 'ipfs://bafkreibhb4ze4ujlz5oewg7ao6kv3syiybzjkyjgmwgsiao23fuhhglqfe',
+    createdAt: 0,
+  },
+};
+
 function getAll(): Record<string, TokenMetadata> {
   try {
     return JSON.parse(localStorage.getItem(KEY) || '{}');
@@ -75,5 +84,9 @@ export function saveTokenMetadata(address: string, meta: Omit<TokenMetadata, 'cr
 }
 
 export function getTokenMetadata(address: string): TokenMetadata | null {
-  return getAll()[address.toLowerCase()] ?? null;
+  const key = address.toLowerCase();
+  const local = getAll()[key];
+  const seed = SEED[key];
+  if (!local && !seed) return null;
+  return { ...(seed ?? {}), ...(local ?? {}) } as TokenMetadata;
 }
