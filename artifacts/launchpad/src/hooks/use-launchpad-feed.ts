@@ -14,6 +14,7 @@ export interface FeedToken {
   createdAtMs: number | null; // from TokenCreated event
   createdIndex: number; // factory array index (0 = oldest)
   lastTradeMs: number | null;
+  creator: `0x${string}` | null;
 }
 
 export interface LaunchpadFeedState {
@@ -158,19 +159,21 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
               createdAtMs: null,
               createdIndex: 0,
               lastTradeMs: null,
+              creator: null,
             });
           }
         }
 
-        // 3) Map TokenCreated → createdAtMs + createdIndex per address
+        // 3) Map TokenCreated → createdAtMs + createdIndex + creator per address
         const createdByAddr = new Map<
           string,
-          { blockNumber: bigint; index: number }
+          { blockNumber: bigint; index: number; creator: `0x${string}` }
         >();
         for (const l of createdLogs as any[]) {
           const tokAddr = (l.args.token as string).toLowerCase();
           const idx = Number(l.args.index ?? 0n);
-          createdByAddr.set(tokAddr, { blockNumber: l.blockNumber, index: idx });
+          const creator = (l.args.creator as `0x${string}`) ?? null;
+          createdByAddr.set(tokAddr, { blockNumber: l.blockNumber, index: idx, creator });
         }
 
         // 4) Reduce Buy/Sell to lastTrade block per address

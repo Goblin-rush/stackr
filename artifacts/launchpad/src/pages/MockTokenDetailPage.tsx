@@ -115,29 +115,34 @@ export default function MockTokenDetailPage() {
                     </p>
                   )}
 
-                  <div className="flex items-center gap-x-3 gap-y-1.5 mt-3 text-xs font-mono text-muted-foreground flex-wrap">
-                    <span className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors min-w-0">
-                      <span className="opacity-60">Contract:</span>
-                      <span className="text-foreground truncate">
-                        {token.contract.slice(0, 6)}…{token.contract.slice(-4)}
+                  <div className="mt-3 space-y-1 text-xs font-mono text-muted-foreground">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="opacity-60 shrink-0">Contract</span>
+                      <span className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer min-w-0">
+                        <span className="truncate">
+                          {token.contract.slice(0, 6)}…{token.contract.slice(-4)}
+                        </span>
+                        <Copy className="h-3 w-3 shrink-0" />
                       </span>
-                      <Copy className="h-3 w-3 shrink-0" />
-                    </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="opacity-60">Created by:</span>
-                      <span className="text-foreground">
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="opacity-60 shrink-0">Created by</span>
+                      <span className="text-foreground truncate">
                         {token.creator.slice(0, 6)}…{token.creator.slice(-4)}
                       </span>
-                    </span>
-                    <span className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors">
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 mt-3 text-xs font-mono text-muted-foreground">
+                    <a className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors">
                       <Globe className="h-3 w-3" /> Website
-                    </span>
-                    <span className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors">
+                    </a>
+                    <a className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors">
                       <Twitter className="h-3 w-3" /> Twitter
-                    </span>
-                    <span className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors">
+                    </a>
+                    <a className="flex items-center gap-1.5 hover:text-foreground cursor-pointer transition-colors">
                       <ExternalLink className="h-3 w-3" /> Etherscan
-                    </span>
+                    </a>
                   </div>
                 </div>
               </div>
