@@ -72,6 +72,18 @@ uri = "file://attached_assets/generated_images/aethpad_banner.png"
 type = "image"
 title = "aethpad banner backdrop"
 
+[[generated]]
+id = "qg46RX-vzy4hF6oY_Suyx"
+uri = "file://attached_assets/aethpad-mascot-eth-chibi.png"
+type = "image"
+title = "generated_image"
+
+[[generated]]
+id = "7D7RbUu6pTDKdriZ7tFlv"
+uri = "file://attached_assets/aethpad-mascot-frog.png"
+type = "image"
+title = "generated_image"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
@@ -143,3 +155,15 @@ id = "jnhgxt9kWBXVLn8ySFapa"
 uri = "file://artifacts/launchpad/public/og.svg"
 type = "image"
 title = "Aethpad — Social Card OG (1200×630)"
+
+[[outputs]]
+id = "O7IEQqLlCpSFoG-keGPGQ"
+uri = "file://attached_assets/aethpad-mascot-eth-chibi.png"
+type = "image"
+title = "Variant 1 — ETH Chibi"
+
+[[outputs]]
+id = "F348nGdqQOMG0ayYeEeon"
+uri = "file://attached_assets/aethpad-mascot-frog.png"
+type = "image"
+title = "Variant 2 — Mint Frog Degen"
