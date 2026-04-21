@@ -9,26 +9,28 @@ export function Navbar() {
   const { disconnect } = useDisconnect();
 
   return (
-    <nav className="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
-      <div className="container flex h-14 items-center max-w-7xl mx-auto px-4 md:px-8">
+    <nav className="border-b border-border bg-background sticky top-0 z-50">
+      <div className="container flex h-13 items-center max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex flex-1 items-center justify-between">
-          <Link href="/" className="flex items-center space-x-2">
-            <span className="font-mono font-bold text-xl tracking-tight text-primary">TERMINAL</span>
+          <Link href="/">
+            <span className="font-black text-lg tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none">
+              pump<span className="text-primary">.eth</span>
+            </span>
           </Link>
-          
-          <div className="flex items-center gap-4">
+
+          <div className="flex items-center gap-2">
             {isConnected ? (
-              <div className="flex items-center gap-4">
-                <span className="text-sm text-muted-foreground font-mono hidden sm:inline-block">
-                  {address?.slice(0, 6)}...{address?.slice(-4)}
+              <>
+                <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
+                  {address?.slice(0, 6)}···{address?.slice(-4)}
                 </span>
-                <Button variant="outline" size="sm" onClick={() => disconnect()}>
-                  Disconnect
+                <Button variant="ghost" size="sm" onClick={() => disconnect()} className="text-xs text-muted-foreground hover:text-foreground">
+                  disconnect
                 </Button>
-              </div>
+              </>
             ) : (
-              <Button size="sm" onClick={() => connect({ connector: metaMask() })}>
-                Connect Wallet
+              <Button size="sm" variant="ghost" onClick={() => connect({ connector: metaMask() })} className="text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary">
+                Connect wallet
               </Button>
             )}
           </div>

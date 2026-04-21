@@ -4,46 +4,57 @@ import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadTokens } from '@/hooks/use-launchpad';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
-import { Plus } from 'lucide-react';
 
 export default function HomeFeedPage() {
   const { data: tokens, isLoading } = useLaunchpadTokens(0n, 50n);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  // Reverse to show newest first
   const displayTokens = tokens ? [...tokens].reverse() : [];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      
-      <main className="flex-1 container max-w-7xl mx-auto px-4 py-8 md:px-8">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8 border-b border-border/50 pb-6">
-          <div>
-            <h1 className="text-4xl font-bold tracking-tighter">MARKET</h1>
-            <p className="text-muted-foreground font-mono text-sm mt-2 uppercase tracking-widest">Live Terminal Feed</p>
+
+      <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
+
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-semibold text-muted-foreground uppercase tracking-widest">
+              All tokens
+            </h1>
+            {!isLoading && displayTokens.length > 0 && (
+              <span className="text-xs bg-secondary border border-border text-muted-foreground px-2 py-0.5 rounded font-mono">
+                {displayTokens.length}
+              </span>
+            )}
           </div>
-          
-          <Button onClick={() => setIsCreateOpen(true)} className="font-bold tracking-wide shadow-lg shadow-primary/20">
-            <Plus className="mr-2 h-4 w-4" /> LAUNCH TOKEN
+          <Button
+            size="sm"
+            onClick={() => setIsCreateOpen(true)}
+            className="text-xs font-semibold h-8"
+          >
+            + Create token
           </Button>
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-48 rounded-lg bg-muted/50 animate-pulse border border-border/50" />
+              <div key={i} className="h-48 bg-card animate-pulse border border-border rounded-md" />
             ))}
           </div>
         ) : displayTokens.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-24 text-center border border-border/50 border-dashed rounded-lg bg-muted/10">
-            <p className="text-muted-foreground font-mono mb-4">NO ACTIVE MARKETS DETECTED</p>
-            <Button variant="outline" onClick={() => setIsCreateOpen(true)}>
-              Initialize First Token
-            </Button>
+          <div className="py-20 text-center">
+            <p className="text-muted-foreground text-sm">No tokens launched yet.</p>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="mt-3 text-primary text-sm underline underline-offset-2 hover:text-primary/80 transition-colors"
+            >
+              Be the first →
+            </button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
             {displayTokens.map((address) => (
               <TokenCard key={address} address={address} />
             ))}
