@@ -299,7 +299,7 @@ export default function TokenDetailPage() {
                     ))}
                     <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
                       <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                      LIVE · ON-CHAIN
+                      ON-CHAIN
                     </div>
                   </div>
                   <RealTimeChart

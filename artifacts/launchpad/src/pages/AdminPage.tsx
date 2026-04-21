@@ -204,7 +204,7 @@ function AdminTokenRow({ address }: { address: `0x${string}` }) {
               </span>
             ) : (
               <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider">
-                Live · {progressNum}%
+                Bonding · {progressNum}%
               </span>
             )}
           </div>
