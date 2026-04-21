@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 360" shape-rendering="geometricPrecision">
+  <rect width="900" height="360" fill="#070A09"/>
+
+  <!-- Concept 1: Bullish candle -->
+  <g transform="translate(60, 40)">
+    <rect width="240" height="240" rx="56" fill="#0B0F0D"/>
+    <!-- wick top -->
+    <rect x="116" y="44" width="8" height="32" fill="#4ADE80"/>
+    <!-- body -->
+    <rect x="84" y="76" width="72" height="120" fill="#4ADE80"/>
+    <!-- wick bottom -->
+    <rect x="116" y="196" width="8" height="32" fill="#4ADE80"/>
+    <text x="120" y="312" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="18" font-weight="600" fill="#9CA9A1">1 · CANDLE</text>
+  </g>
+
+  <!-- Concept 2: Up chevron / pump -->
+  <g transform="translate(330, 40)">
+    <rect width="240" height="240" rx="56" fill="#0B0F0D"/>
+    <g fill="none" stroke="#4ADE80" stroke-width="32" stroke-linecap="square" stroke-linejoin="miter">
+      <polyline points="56,168 120,88 184,168"/>
+      <polyline points="56,200 120,120 184,200" opacity="0.35"/>
+    </g>
+    <text x="120" y="312" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="18" font-weight="600" fill="#9CA9A1">2 · PUMP</text>
+  </g>
+
+  <!-- Concept 3: Rocket silhouette -->
+  <g transform="translate(600, 40)">
+    <rect width="240" height="240" rx="56" fill="#0B0F0D"/>
+    <g fill="#4ADE80">
+      <!-- body -->
+      <path d="M 120 40 C 150 70, 158 110, 158 150 L 158 178 L 82 178 L 82 150 C 82 110, 90 70, 120 40 Z"/>
+      <!-- left fin -->
+      <path d="M 82 150 L 56 196 L 82 192 Z"/>
+      <!-- right fin -->
+      <path d="M 158 150 L 184 196 L 158 192 Z"/>
+      <!-- window -->
+      <circle cx="120" cy="118" r="14" fill="#0B0F0D"/>
+      <!-- flame -->
+      <path d="M 100 188 L 120 218 L 140 188 Z" opacity="0.7"/>
+    </g>
+    <text x="120" y="312" text-anchor="middle" font-family="ui-monospace, Menlo, monospace" font-size="18" font-weight="600" fill="#9CA9A1">3 · ROCKET</text>
+  </g>
+</svg>
