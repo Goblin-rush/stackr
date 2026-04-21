@@ -82,11 +82,10 @@ export default function MockTokenDetailPage() {
             {/* HEADER */}
             <div className="border border-border rounded-md bg-card p-4 md:p-5 min-w-0">
               <div className="flex items-start gap-3 md:gap-4 min-w-0">
-                <div
-                  className="w-12 h-12 md:w-14 md:h-14 rounded-md flex items-center justify-center shrink-0 font-black text-white text-base"
-                  style={{ background: token.avatarColor }}
-                >
-                  {token.symbol.slice(0, 2)}
+                <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+                  <span className="text-sm font-bold text-muted-foreground">
+                    {token.symbol.slice(0, 2).toUpperCase()}
+                  </span>
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -219,10 +218,6 @@ export default function MockTokenDetailPage() {
                         {tf}
                       </button>
                     ))}
-                    <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
-                      <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                      LIVE
-                    </div>
                   </div>
                   <PriceChart
                     seed={token.slug}
