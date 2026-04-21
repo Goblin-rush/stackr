@@ -29,7 +29,7 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <button onClick={() => connect({ connector: metaMask() })} className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
+              <button onClick={() => connect({ connector: metaMask() })} style={{ color: '#ff6a00', fontWeight: 600 }} className="text-sm hover:opacity-75 transition-opacity">
                 Connect wallet
               </button>
             )}
