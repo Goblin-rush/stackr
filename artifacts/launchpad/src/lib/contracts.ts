@@ -1,5 +1,15 @@
 export const FACTORY_ADDRESS = '0x58439e7474725725b9A934299bA503e7F0625894' as const;
 
+// Tokens hidden from public feed and global trade tape (e.g. dev/test tokens).
+// Lowercase addresses only.
+export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
+  '0x768923190d6cff2a1bf1139ed5fc5487458cb953', // AETH test token
+]);
+
+export function isHiddenToken(address: string): boolean {
+  return HIDDEN_TOKENS.has(address.toLowerCase());
+}
+
 export const FACTORY_ABI = [
   {
     name: 'createToken',

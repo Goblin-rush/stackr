@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
-import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI } from '@/lib/contracts';
+import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI, isHiddenToken } from '@/lib/contracts';
 
 export interface GlobalTrade {
   id: string;
@@ -82,7 +82,7 @@ export function useGlobalTradeTape(maxTokens = 200) {
           const res = await client.multicall({ contracts: calls, allowFailure: true });
           addrs = res
             .map((r) => (r.status === 'success' ? (r.result as `0x${string}`) : null))
-            .filter((a): a is `0x${string}` => !!a);
+            .filter((a): a is `0x${string}` => !!a && !isHiddenToken(a));
         }
 
         if (cancelled || addrs.length === 0) {

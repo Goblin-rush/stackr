@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
-import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI, TOTAL_SUPPLY } from '@/lib/contracts';
+import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI, TOTAL_SUPPLY, isHiddenToken } from '@/lib/contracts';
 
 export interface FeedToken {
   address: `0x${string}`;
@@ -112,7 +112,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
           const res = await client.multicall({ contracts: calls, allowFailure: true });
           addrs = res
             .map((r) => (r.status === 'success' ? (r.result as `0x${string}`) : null))
-            .filter((a): a is `0x${string}` => !!a);
+            .filter((a): a is `0x${string}` => !!a && !isHiddenToken(a));
         }
 
         if (cancelled) return;
