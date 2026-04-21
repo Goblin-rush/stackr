@@ -221,7 +221,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   return (
     <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)}>
-      <DialogContent className="sm:max-w-[500px] bg-background border-border shadow-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-[500px] bg-background border-border shadow-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight">Initialize Token</DialogTitle>
           <DialogDescription className="text-muted-foreground">
