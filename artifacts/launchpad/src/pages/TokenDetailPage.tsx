@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { useWatchContractEvent } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
 import { StatusBar } from '@/components/layout/StatusBar';
+import { GlobalTradeTape } from '@/components/layout/GlobalTradeTape';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useChainTokenLive } from '@/hooks/use-chain-token-live';
@@ -64,6 +65,7 @@ export default function TokenDetailPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
+        <GlobalTradeTape />
         <main className="flex-1 container max-w-7xl mx-auto px-4 py-8 md:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-8">
@@ -83,6 +85,7 @@ export default function TokenDetailPage() {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
+        <GlobalTradeTape />
         <main className="flex-1 flex items-center justify-center">
           <p className="text-muted-foreground font-mono">Token not found or not indexed yet.</p>
         </main>
@@ -93,6 +96,7 @@ export default function TokenDetailPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
+      <GlobalTradeTape />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-8 md:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">

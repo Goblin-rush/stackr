@@ -127,3 +127,14 @@
     @apply font-sans antialiased bg-background text-foreground;
   }
 }
+
+@keyframes tape-scroll {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.animate-tape-scroll {
+  animation: tape-scroll 60s linear infinite;
+}
+.animate-tape-scroll:hover {
+  animation-play-state: paused;
+}

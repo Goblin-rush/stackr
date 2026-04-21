@@ -1,5 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { StatusBar } from '@/components/layout/StatusBar';
+import { GlobalTradeTape } from '@/components/layout/GlobalTradeTape';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -217,6 +218,7 @@ export default function HomeFeedPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onCreate={() => setIsCreateOpen(true)} />
+      <GlobalTradeTape />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-4 md:px-8">
         {/* Single control strip: search + create + tabs */}
