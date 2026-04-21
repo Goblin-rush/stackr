@@ -60,6 +60,18 @@ uri = "file://attached_assets/generated_images/shiba-pfp-v2.png"
 type = "image"
 title = "shiba rocket space pfp"
 
+[[generated]]
+id = "XC5qK8X_NuIy7kQmUdgn1"
+uri = "file://attached_assets/generated_images/aethpad_favicon.png"
+type = "image"
+title = "aethpad favicon mark"
+
+[[generated]]
+id = "Hy_MDjhdtOHahljILA-Fy"
+uri = "file://attached_assets/generated_images/aethpad_banner.png"
+type = "image"
+title = "aethpad banner backdrop"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
@@ -113,3 +125,15 @@ id = "3rTHNeWtjCCtKd52s9-wu"
 uri = "file://artifacts/launchpad/public/banner.svg"
 type = "image"
 title = "Aethpad — X Banner (1500×500)"
+
+[[outputs]]
+id = "dNwNAJ-4vwhz_pfaDFYL-"
+uri = "file://attached_assets/generated_images/aethpad_favicon.png"
+type = "image"
+title = "Aethpad — Favicon / PFP (1:1)"
+
+[[outputs]]
+id = "4odylWjGiku4hMP65ku-q"
+uri = "file://attached_assets/generated_images/aethpad_banner.png"
+type = "image"
+title = "Aethpad — Banner Backdrop (16:9)"
