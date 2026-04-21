@@ -14,7 +14,7 @@ export function Navbar() {
         <div className="flex flex-1 items-center justify-between">
           <Link href="/">
             <span className="font-black text-lg tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none">
-              Liquid
+              Aethpad
             </span>
           </Link>
 
