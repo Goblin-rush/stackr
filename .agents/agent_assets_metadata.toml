@@ -101,3 +101,15 @@ id = "3KGu3mYdsrCv5_KmxyVS6"
 uri = "file://attached_assets/generated_images/shiba-pfp-crop.jpg"
 type = "image"
 title = "Asteroid Shiba — PFP"
+
+[[outputs]]
+id = "tFQddPHBVnykj34ZP3hIv"
+uri = "file://artifacts/launchpad/public/favicon.svg"
+type = "image"
+title = "Aethpad — Favicon (Æ monogram)"
+
+[[outputs]]
+id = "3rTHNeWtjCCtKd52s9-wu"
+uri = "file://artifacts/launchpad/public/banner.svg"
+type = "image"
+title = "Aethpad — X Banner (1500×500)"
