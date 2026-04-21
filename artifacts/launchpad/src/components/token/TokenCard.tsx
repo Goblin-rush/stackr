@@ -3,32 +3,17 @@ import { useEthPrice } from '@/hooks/use-eth-price';
 import { TARGET_ETH, TOTAL_SUPPLY } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { Link } from 'wouter';
-import { getTokenMetadata } from '@/lib/token-metadata';
+import { getTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
 interface TokenCardProps {
   address: `0x${string}`;
-}
-
-const AVATAR_COLORS = [
-  'bg-orange-500',
-  'bg-sky-500',
-  'bg-emerald-500',
-  'bg-pink-500',
-  'bg-yellow-500',
-  'bg-violet-500',
-  'bg-red-500',
-  'bg-cyan-500',
-];
-
-function avatarColor(addr: string) {
-  const n = parseInt(addr.slice(2, 4), 16);
-  return AVATAR_COLORS[n % AVATAR_COLORS.length];
 }
 
 export function TokenCard({ address }: TokenCardProps) {
   const { name, symbol, realEthRaised, graduated, currentPrice } = useToken(address);
   const { data: ethPrice } = useEthPrice();
   const meta = getTokenMetadata(address);
+  const imageUrl = ipfsToHttp(meta?.image);
 
   if (!name || !symbol) {
     return (
@@ -47,10 +32,14 @@ export function TokenCard({ address }: TokenCardProps) {
       <div className="group bg-card border border-border rounded-md p-4 cursor-pointer hover:border-primary/40 transition-colors flex flex-col gap-3 h-full">
 
         <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-md ${avatarColor(address)} flex items-center justify-center shrink-0`}>
-            <span className="text-white font-black text-sm leading-none">
-              {symbol.slice(0, 2).toUpperCase()}
-            </span>
+          <div className="w-10 h-10 rounded-md bg-muted border border-border/50 flex items-center justify-center shrink-0 overflow-hidden">
+            {imageUrl ? (
+              <img src={imageUrl} alt={symbol} className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-muted-foreground font-black text-sm leading-none">
+                {symbol.slice(0, 2).toUpperCase()}
+              </span>
+            )}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">

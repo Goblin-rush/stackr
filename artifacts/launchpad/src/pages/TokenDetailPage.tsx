@@ -16,6 +16,7 @@ import { TOTAL_SUPPLY, BONDING_CURVE_ABI } from '@/lib/contracts';
 import { Copy, ExternalLink } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
@@ -100,7 +101,20 @@ export default function TokenDetailPage() {
             {/* Header / Meta */}
             <div className="p-6 border border-border/50 bg-card">
               <div className="flex justify-between items-start flex-wrap gap-3">
-                <div className="min-w-0">
+                <div className="min-w-0 flex items-start gap-4">
+                  {(() => {
+                    const url = ipfsToHttp(getTokenMetadata(address)?.image);
+                    return (
+                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-md bg-muted border border-border/50 overflow-hidden shrink-0 flex items-center justify-center">
+                        {url ? (
+                          <img src={url} alt={symbol || ''} className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-muted-foreground font-black text-lg">{(symbol || '').slice(0, 2).toUpperCase()}</span>
+                        )}
+                      </div>
+                    );
+                  })()}
+                  <div className="min-w-0">
                   <div className="flex items-center gap-3 flex-wrap">
                     <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground break-words">{name}</h1>
                     <span className="text-lg md:text-xl text-primary font-mono uppercase bg-primary/10 px-2 py-1 border border-primary/20">${symbol}</span>
@@ -112,7 +126,7 @@ export default function TokenDetailPage() {
                     ) : (
                       <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider flex items-center gap-1">
                         <span className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse" />
-                        Live · Bonding
+                        Bonding
                       </span>
                     )}
                   </div>
@@ -144,6 +158,7 @@ export default function TokenDetailPage() {
                     >
                       <ExternalLink className="h-3 w-3" /> Etherscan
                     </a>
+                  </div>
                   </div>
                 </div>
               </div>

@@ -3,7 +3,17 @@ export interface TokenMetadata {
   twitter?: string;
   telegram?: string;
   description?: string;
+  image?: string; // ipfs://CID
   createdAt: number;
+}
+
+const IPFS_GATEWAY = 'https://gateway.pinata.cloud/ipfs/';
+
+export function ipfsToHttp(uri?: string | null): string | null {
+  if (!uri) return null;
+  if (uri.startsWith('ipfs://')) return IPFS_GATEWAY + uri.slice(7);
+  if (/^https?:\/\//i.test(uri)) return uri;
+  return null;
 }
 
 const KEY = 'launchpad:token-metadata';

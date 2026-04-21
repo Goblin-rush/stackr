@@ -12,10 +12,11 @@ import { useCreateToken } from '@/hooks/use-launchpad';
 import { useLocation } from 'wouter';
 import { useWatchContractEvent, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI } from '@/lib/contracts';
-import { saveTokenMetadata } from '@/lib/token-metadata';
-import { Loader2 } from 'lucide-react';
+import { saveTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
+import { Loader2, Upload, X } from 'lucide-react';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 import { toast } from 'sonner';
+import { uploadImage } from '@/lib/upload';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required').max(32, 'Name too long'),
@@ -47,6 +48,57 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   const deployToastId = useRef<string | number | null>(null);
   const buyToastId = useRef<string | number | null>(null);
+
+  const [imageUri, setImageUri] = useState<string | null>(null); // ipfs://CID
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImagePick = async (file: File | null) => {
+    if (!file) return;
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(URL.createObjectURL(file));
+    setImageUploading(true);
+    const tid = toast.loading('Uploading image to IPFS...');
+    try {
+      const r = await uploadImage(file);
+      setImageUri(r.url);
+      toast.success('Image pinned to IPFS', { id: tid, description: r.cid.slice(0, 12) + '…' });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Upload failed';
+      toast.error(msg, { id: tid });
+      setImagePreview(null);
+    } finally {
+      setImageUploading(false);
+    }
+  };
+
+  const clearImage = () => {
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageUri(null);
+    setImagePreview(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  // Reset everything when the modal closes
+  useEffect(() => {
+    if (!open) {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImageUri(null);
+      setImagePreview(null);
+      setImageUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
+
+  // Revoke any leftover blob URL on unmount
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -114,6 +166,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
         website: vals.website || undefined,
         twitter: vals.twitter || undefined,
         telegram: vals.telegram || undefined,
+        image: imageUri || undefined,
       });
 
       const buyAmt = parseFloat(vals.initialBuy || '0');
@@ -178,6 +231,63 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+
+            <div>
+              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Token Image</p>
+              <div className="flex items-center gap-3">
+                <div className="relative w-20 h-20 rounded-md border border-border/50 bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
+                  {imagePreview ? (
+                    <>
+                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                      {imageUploading && (
+                        <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Upload className="h-5 w-5 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="flex flex-col gap-2 min-w-0 flex-1">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                    className="hidden"
+                    onChange={(e) => handleImagePick(e.target.files?.[0] ?? null)}
+                    disabled={isLoading || imageUploading}
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="font-mono text-xs"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isLoading || imageUploading}
+                    >
+                      {imageUri ? 'Change Image' : 'Upload Image'}
+                    </Button>
+                    {imageUri && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="font-mono text-xs"
+                        onClick={clearImage}
+                        disabled={isLoading || imageUploading}
+                      >
+                        <X className="h-3 w-3 mr-1" /> Remove
+                      </Button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground font-mono truncate">
+                    {imageUri ? `Pinned · ${imageUri.replace('ipfs://', '').slice(0, 20)}…` : 'PNG / JPG / GIF / WEBP · max 5MB · stored on IPFS'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
             <div className="grid grid-cols-2 gap-3">
               <FormField control={form.control} name="name" render={({ field }) => (
