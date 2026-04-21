@@ -8,6 +8,8 @@ import { useToken, useTokenBalance, useTokenPreviewBuy, useTokenPreviewSell, use
 import { BONDING_CURVE_ABI } from '@/lib/contracts';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useSlippage } from '@/hooks/use-slippage';
+import { SlippageSettings } from '@/components/token/SlippageSettings';
 
 interface TradeWidgetProps {
   address: `0x${string}`;
@@ -19,6 +21,7 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   const { data: tokenBalance } = useTokenBalance(address, userAddress);
   const { graduated, symbol } = useToken(address);
   const { toast } = useToast();
+  const { applyMinOut, percent: slippagePercent } = useSlippage();
 
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
   const [buyAmount, setBuyAmount] = useState('');
@@ -35,7 +38,7 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   const handleBuy = async () => {
     if (!buyAmountWei) return;
     try {
-      const minTokensOut = previewTokensOut ? (previewTokensOut * 99n) / 100n : 0n; // 1% slippage
+      const minTokensOut = previewTokensOut ? applyMinOut(previewTokensOut) : 0n;
       await writeContractAsync({
         address,
         abi: BONDING_CURVE_ABI,
@@ -54,7 +57,7 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   const handleSell = async () => {
     if (!sellAmountWei) return;
     try {
-      const minEthOut = previewEthOut ? (previewEthOut * 99n) / 100n : 0n; // 1% slippage
+      const minEthOut = previewEthOut ? applyMinOut(previewEthOut) : 0n;
       
       // Need approval? Assume no separate approval needed if we approve right before, 
       // but proper way is separate steps. For simplicity in the terminal vibes, we can try
@@ -93,10 +96,17 @@ export function TradeWidget({ address }: TradeWidgetProps) {
 
   const isLoading = isPending || isConfirming;
 
+  const minTokensOut = previewTokensOut ? applyMinOut(previewTokensOut) : 0n;
+  const minEthOut = previewEthOut ? applyMinOut(previewEthOut) : 0n;
+
   return (
     <div className="border border-border/50 rounded-lg overflow-hidden bg-card">
+      <div className="flex items-center justify-between px-3 pt-3">
+        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Trade</span>
+        <SlippageSettings />
+      </div>
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'buy' | 'sell')} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 rounded-none border-b border-border/50 h-12 bg-muted/20">
+        <TabsList className="grid w-full grid-cols-2 rounded-none border-b border-border/50 h-12 bg-muted/20 mt-3">
           <TabsTrigger value="buy" className="rounded-none data-[state=active]:bg-card data-[state=active]:text-primary font-mono uppercase tracking-widest text-xs">Buy</TabsTrigger>
           <TabsTrigger value="sell" className="rounded-none data-[state=active]:bg-card data-[state=active]:text-destructive font-mono uppercase tracking-widest text-xs">Sell</TabsTrigger>
         </TabsList>
@@ -122,11 +132,19 @@ export function TradeWidget({ address }: TradeWidgetProps) {
             </div>
 
             {buyAmountWei > 0n && (
-              <div className="bg-muted/30 p-3 rounded border border-border/30 flex justify-between items-center">
-                <span className="text-xs text-muted-foreground">You receive (est.)</span>
-                <span className="font-mono text-primary font-bold">
-                  {previewTokensOut ? Number(formatUnits(previewTokensOut, 18)).toLocaleString() : '0'} {symbol}
-                </span>
+              <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-muted-foreground">You receive (est.)</span>
+                  <span className="font-mono text-primary font-bold">
+                    {previewTokensOut ? Number(formatUnits(previewTokensOut, 18)).toLocaleString() : '0'} {symbol}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground border-t border-border/30 pt-1.5">
+                  <span>Min received ({slippagePercent}% slip)</span>
+                  <span className="text-foreground">
+                    {minTokensOut ? Number(formatUnits(minTokensOut, 18)).toLocaleString() : '0'} {symbol}
+                  </span>
+                </div>
               </div>
             )}
 

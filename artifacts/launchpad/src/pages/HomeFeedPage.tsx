@@ -3,55 +3,14 @@ import { TokenCard } from '@/components/token/TokenCard';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadTokens } from '@/hooks/use-launchpad';
 import { useState } from 'react';
+import { Link } from 'wouter';
+import { MOCK_TOKENS, type MockToken } from '@/lib/mock-tokens';
 
-const MOCK_TOKENS = [
-  {
-    name: 'Asteroid Shiba',
-    symbol: 'ASTEROIDSTR',
-    description: 'The degen dog that survived the asteroid. Community-driven meme coin on Ethereum.',
-    raised: 1.84,
-    target: 3.5,
-    mcap: '$24,300',
-    price: '0.0000142',
-    avatarColor: '#e85d04',
-  },
-  {
-    name: 'Pepe Classic',
-    symbol: 'PEPEC',
-    description: 'The original frog is back. Rarer than rare, bonding curve edition.',
-    raised: 3.5,
-    target: 3.5,
-    mcap: '$198,000',
-    price: '0.000198',
-    avatarColor: '#16a34a',
-    graduated: true,
-  },
-  {
-    name: 'MoonDoge',
-    symbol: 'MDOGE',
-    description: null,
-    raised: 0.32,
-    target: 3.5,
-    mcap: '$4,100',
-    price: '0.0000041',
-    avatarColor: '#7c3aed',
-  },
-  {
-    name: 'Chad Token',
-    symbol: 'CHAD',
-    description: 'Only chads hold this. Wagmi.',
-    raised: 2.1,
-    target: 3.5,
-    mcap: '$61,500',
-    price: '0.0000615',
-    avatarColor: '#0284c7',
-  },
-];
-
-function MockCard({ token }: { token: typeof MOCK_TOKENS[0] }) {
+function MockCard({ token }: { token: MockToken }) {
   const progress = Math.min((token.raised / token.target) * 100, 100);
   return (
-    <div className="bg-card border border-border rounded-md p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors cursor-pointer">
+    <Link href={`/preview/${token.slug}`}>
+      <div className="bg-card border border-border rounded-md p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors cursor-pointer h-full">
       <div className="flex items-start gap-3">
         <div
           className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 font-black text-sm text-white"
@@ -91,7 +50,8 @@ function MockCard({ token }: { token: typeof MOCK_TOKENS[0] }) {
         </span>
         <span className="text-muted-foreground font-mono">{token.price}</span>
       </div>
-    </div>
+      </div>
+    </Link>
   );
 }
 

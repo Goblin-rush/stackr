@@ -7,6 +7,7 @@ import { config } from "@/lib/wagmi";
 import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
+import MockTokenDetailPage from "@/pages/MockTokenDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -15,6 +16,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomeFeedPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
+      <Route path="/preview/:slug" component={MockTokenDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );

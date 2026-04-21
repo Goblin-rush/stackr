@@ -1,9 +1,14 @@
 import { useParams } from 'wouter';
+import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { BondingCurveProgress } from '@/components/token/BondingCurveProgress';
 import { TradeWidget } from '@/components/token/TradeWidget';
+import { PriceChart } from '@/components/token/PriceChart';
+import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
+import { HoldersList } from '@/components/token/HoldersList';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TOTAL_SUPPLY } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -16,6 +21,7 @@ export default function TokenDetailPage() {
   const priceInEth = currentPrice ? Number(formatEther(currentPrice)) : 0;
   const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
+  const [tab, setTab] = useState('chart');
 
   if (isLoading) {
     return (
@@ -99,6 +105,67 @@ export default function TokenDetailPage() {
             {/* Bonding Curve Section */}
             <div className="p-6 border border-border/50 bg-card">
               <BondingCurveProgress realEthRaised={realEthRaised} graduated={graduated} />
+            </div>
+
+            {/* Chart / Trades / Holders */}
+            <div className="border border-border/50 bg-card overflow-hidden">
+              <Tabs value={tab} onValueChange={setTab}>
+                <TabsList className="w-full justify-start rounded-none border-b border-border/50 bg-muted/10 h-10 px-2 gap-1">
+                  <TabsTrigger
+                    value="chart"
+                    className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
+                  >
+                    Chart
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="trades"
+                    className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
+                  >
+                    Trades
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="holders"
+                    className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
+                  >
+                    Holders
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="chart" className="m-0 p-3">
+                  <div className="flex items-center gap-1 mb-2 px-1">
+                    {['5m', '15m', '1h', '4h', '1d'].map((tf, i) => (
+                      <button
+                        key={tf}
+                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
+                          i === 1
+                            ? 'bg-primary/15 text-primary border border-primary/30'
+                            : 'text-muted-foreground hover:text-foreground border border-transparent'
+                        }`}
+                      >
+                        {tf}
+                      </button>
+                    ))}
+                  </div>
+                  <PriceChart
+                    seed={address}
+                    basePrice={priceInEth || 0.0000001}
+                    graduated={graduated}
+                    height={380}
+                  />
+                </TabsContent>
+
+                <TabsContent value="trades" className="m-0">
+                  <TradeHistoryTable
+                    seed={address}
+                    basePrice={priceInEth || 0.0000001}
+                    symbol={symbol || 'TOKEN'}
+                  />
+                </TabsContent>
+
+                <TabsContent value="holders" className="m-0">
+                  <HoldersList seed={address} symbol={symbol || 'TOKEN'} graduated={graduated} />
+                </TabsContent>
+              </Tabs>
             </div>
 
           </div>
