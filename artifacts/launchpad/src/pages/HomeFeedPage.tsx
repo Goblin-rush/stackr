@@ -218,7 +218,6 @@ export default function HomeFeedPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onCreate={() => setIsCreateOpen(true)} />
-      <GlobalTradeTape />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-4 md:px-8">
         {/* Single control strip: search + create + tabs */}

@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
+import DashboardPage from "@/pages/DashboardPage";
 
 const queryClient = new QueryClient();
 
@@ -20,6 +21,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeFeedPage} />
+      <Route path="/dashboard" component={DashboardPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />

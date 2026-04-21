@@ -1,11 +1,10 @@
 import { Link } from 'wouter';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
-import { useAccount, useBlockNumber, useGasPrice } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
-import { Plus, Menu, Rocket, X } from 'lucide-react';
+import { Plus, Menu, Rocket, X, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { formatGwei } from 'viem';
 import { useEthPrice } from '@/hooks/use-eth-price';
 
 interface NavbarProps {
@@ -29,10 +28,7 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { address } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const { data: block } = useBlockNumber({ watch: true, query: { refetchInterval: 12_000 } });
-  const { data: gas } = useGasPrice({ query: { refetchInterval: 15_000 } });
   const { data: ethPrice } = useEthPrice();
-  const gwei = gas ? Number(formatGwei(gas)) : null;
 
   // Auto-connect: if user opens this in a dapp browser (MetaMask/Trust/Rainbow in-app)
   // and there's an injected wallet, set it as active so trades work seamlessly.
@@ -59,6 +55,13 @@ export function Navbar({ onCreate }: NavbarProps) {
         <Link href="/">
           <span className="font-black text-base tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none whitespace-nowrap">
             Aethpad
+          </span>
+        </Link>
+
+        <Link href="/dashboard">
+          <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer ml-2">
+            <LayoutDashboard className="h-3.5 w-3.5" />
+            Dashboard
           </span>
         </Link>
 
@@ -118,6 +121,15 @@ export function Navbar({ onCreate }: NavbarProps) {
                   Launchpad
                 </div>
               </Link>
+              <Link href="/dashboard">
+                <div
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                >
+                  <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                  My Dashboard
+                </div>
+              </Link>
               {onCreate && (
                 <button
                   onClick={() => {
@@ -147,16 +159,8 @@ export function Navbar({ onCreate }: NavbarProps) {
               <div className="flex items-center justify-between">
                 <span>Network</span>
                 <span className="flex items-center gap-1.5 text-foreground/80">
-                  <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full" /> ETH·Mainnet
+                  <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full" /> Base
                 </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Block</span>
-                <span className="text-foreground/90 tabular-nums">{block ? `#${block.toString()}` : '—'}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>Gas</span>
-                <span className="text-foreground/90 tabular-nums">{gwei != null ? `${gwei.toFixed(2)} gwei` : '—'}</span>
               </div>
               <div className="flex items-center justify-between">
                 <span>ETH</span>
