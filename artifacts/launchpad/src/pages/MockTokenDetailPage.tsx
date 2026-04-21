@@ -96,15 +96,9 @@ export default function MockTokenDetailPage() {
                     <span className="text-sm text-primary font-mono uppercase bg-primary/10 px-2 py-0.5 border border-primary/20 rounded">
                       ${token.symbol}
                     </span>
-                    {live.graduated ? (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded uppercase tracking-wider flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                        Graduated · DEX
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse" />
-                        Live · Bonding
+                    {live.graduated && (
+                      <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-wider">
+                        · DEX
                       </span>
                     )}
                   </div>
