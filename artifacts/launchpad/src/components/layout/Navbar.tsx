@@ -80,13 +80,13 @@ export function Navbar({ onCreate }: NavbarProps) {
             </div>
             <nav className="flex-1 py-2">
               <Link href="/">
-                <a
+                <div
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer"
                 >
                   <Rocket className="h-4 w-4 text-muted-foreground" />
                   Launchpad
-                </a>
+                </div>
               </Link>
               {onCreate && (
                 <button
