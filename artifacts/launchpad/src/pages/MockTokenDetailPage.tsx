@@ -1,19 +1,60 @@
 import { useParams, Link } from 'wouter';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { PriceChart } from '@/components/token/PriceChart';
+import { PriceChart, type Timeframe } from '@/components/token/PriceChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
-import { getMockToken } from '@/lib/mock-tokens';
+import { SlippageSettings } from '@/components/token/SlippageSettings';
+import { useLiveToken } from '@/hooks/use-live-token';
+import { useSlippage } from '@/hooks/use-slippage';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Copy, ArrowLeft, ExternalLink, Globe, Twitter } from 'lucide-react';
 
+const TIMEFRAMES: Timeframe[] = ['5m', '15m', '1h', '4h', '1d'];
+const TARGET_ETH = 3.5;
+const VIRTUAL_ETH = 1.5;
+const VIRTUAL_TOKENS = 1_073_000_000;
+const K = VIRTUAL_ETH * VIRTUAL_TOKENS;
+
 export default function MockTokenDetailPage() {
   const { slug } = useParams<{ slug: string }>();
-  const token = getMockToken(slug);
+  const live = useLiveToken(slug);
   const [tab, setTab] = useState('chart');
+  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
+  const [side, setSide] = useState<'buy' | 'sell'>('buy');
+  const [amount, setAmount] = useState('');
+  const { applyMinOut, percent: slippagePercent } = useSlippage();
 
-  if (!token) {
+  const baseEthRaisedRef = useState(() => live?.token.raised ?? 0)[0];
+
+  const amountNum = parseFloat(amount);
+  const isValidAmount = Number.isFinite(amountNum) && amountNum > 0;
+
+  const previewOut = useMemo(() => {
+    if (!live || !isValidAmount) return null;
+    if (side === 'buy') {
+      const newReserve = live.ethReserve + amountNum;
+      const tokensOut = K / live.ethReserve - K / newReserve;
+      return { tokens: tokensOut, eth: amountNum, isBuy: true };
+    } else {
+      const tokenReserve = K / live.ethReserve;
+      const tokensIn = amountNum;
+      const newTokenReserve = tokenReserve + tokensIn;
+      const newEthReserve = K / newTokenReserve;
+      const ethOut = live.ethReserve - newEthReserve;
+      return { tokens: tokensIn, eth: ethOut, isBuy: false };
+    }
+  }, [live, amountNum, isValidAmount, side]);
+
+  const minReceived = useMemo(() => {
+    if (!previewOut) return null;
+    const expected = previewOut.isBuy ? previewOut.tokens : previewOut.eth;
+    const scaled = BigInt(Math.max(0, Math.floor(expected * 1e9)));
+    const min = applyMinOut(scaled);
+    return Number(min) / 1e9;
+  }, [previewOut, applyMinOut]);
+
+  if (!live) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -24,9 +65,11 @@ export default function MockTokenDetailPage() {
     );
   }
 
-  const progress = Math.min((token.raised / token.target) * 100, 100);
-  const change24h = token.graduated ? -2.4 : 18.7;
-  const volume24h = token.graduated ? 42.1 : token.raised * 1.8;
+  const { token } = live;
+  const progress = Math.min((live.ethRaised / TARGET_ETH) * 100, 100);
+  const change24h = live.priceChange24hPct;
+
+  const presets = side === 'buy' ? ['0.05', '0.1', '0.5', '1'] : ['25%', '50%', '75%', 'MAX'];
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -40,10 +83,8 @@ export default function MockTokenDetailPage() {
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
           {/* MAIN COLUMN */}
           <div className="lg:col-span-8 space-y-4 min-w-0">
-
             {/* HEADER */}
             <div className="border border-border rounded-md bg-card p-4 md:p-5 min-w-0">
               <div className="flex items-start gap-3 md:gap-4 min-w-0">
@@ -62,13 +103,15 @@ export default function MockTokenDetailPage() {
                     <span className="text-sm text-primary font-mono uppercase bg-primary/10 px-2 py-0.5 border border-primary/20 rounded">
                       ${token.symbol}
                     </span>
-                    {token.graduated ? (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded uppercase tracking-wider">
+                    {live.graduated ? (
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded uppercase tracking-wider flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
                         Graduated · DEX
                       </span>
                     ) : (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider">
-                        Bonding
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse" />
+                        Live · Bonding
                       </span>
                     )}
                   </div>
@@ -110,21 +153,32 @@ export default function MockTokenDetailPage() {
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5 pt-4 border-t border-border/60">
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Price</p>
-                  <p className="font-mono text-base font-bold text-foreground">${token.price}</p>
+                  <p className="font-mono text-base font-bold text-foreground tabular-nums">
+                    ${(live.price * 3000).toFixed(7)}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">24h Change</p>
-                  <p className={`font-mono text-base font-bold ${change24h >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {change24h >= 0 ? '+' : ''}{change24h.toFixed(2)}%
+                  <p
+                    className={`font-mono text-base font-bold tabular-nums ${
+                      change24h >= 0 ? 'text-emerald-400' : 'text-red-400'
+                    }`}
+                  >
+                    {change24h >= 0 ? '+' : ''}
+                    {change24h.toFixed(2)}%
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">Market Cap</p>
-                  <p className="font-mono text-base font-bold text-foreground">{token.mcap}</p>
+                  <p className="font-mono text-base font-bold text-foreground tabular-nums">
+                    ${live.marketCapUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-muted-foreground uppercase tracking-widest mb-1">24h Volume</p>
-                  <p className="font-mono text-base font-bold text-foreground">{volume24h.toFixed(2)} ETH</p>
+                  <p className="font-mono text-base font-bold text-foreground tabular-nums">
+                    {live.volume24hEth.toFixed(2)} ETH
+                  </p>
                 </div>
               </div>
             </div>
@@ -144,6 +198,9 @@ export default function MockTokenDetailPage() {
                     className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
                   >
                     Trades
+                    <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">
+                      {live.trades.length}
+                    </span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="holders"
@@ -155,11 +212,12 @@ export default function MockTokenDetailPage() {
 
                 <TabsContent value="chart" className="m-0 p-3">
                   <div className="flex items-center gap-1 mb-2 px-1 flex-wrap">
-                    {['5m', '15m', '1h', '4h', '1d'].map((tf, i) => (
+                    {TIMEFRAMES.map((tf) => (
                       <button
                         key={tf}
-                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
-                          i === 1
+                        onClick={() => setTimeframe(tf)}
+                        className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded transition-colors ${
+                          timeframe === tf
                             ? 'bg-primary/15 text-primary border border-primary/30'
                             : 'text-muted-foreground hover:text-foreground border border-transparent'
                         }`}
@@ -167,19 +225,27 @@ export default function MockTokenDetailPage() {
                         {tf}
                       </button>
                     ))}
-                    <div className="ml-auto text-[10px] font-mono text-muted-foreground hidden md:block">
-                      Powered by lightweight-charts
+                    <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
+                      <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                      LIVE
                     </div>
                   </div>
-                  <PriceChart seed={token.slug} basePrice={token.priceNum} graduated={token.graduated} height={380} />
+                  <PriceChart
+                    seed={token.slug}
+                    baseEthRaised={baseEthRaisedRef}
+                    graduated={live.graduated}
+                    timeframe={timeframe}
+                    height={380}
+                    liveTrade={live.lastTrade}
+                  />
                 </TabsContent>
 
                 <TabsContent value="trades" className="m-0">
-                  <TradeHistoryTable seed={token.slug} basePrice={token.priceNum} symbol={token.symbol} />
+                  <TradeHistoryTable trades={live.trades} symbol={token.symbol} />
                 </TabsContent>
 
                 <TabsContent value="holders" className="m-0">
-                  <HoldersList seed={token.slug} symbol={token.symbol} graduated={token.graduated} />
+                  <HoldersList holders={live.holders} symbol={token.symbol} />
                 </TabsContent>
               </Tabs>
             </div>
@@ -187,23 +253,22 @@ export default function MockTokenDetailPage() {
 
           {/* SIDEBAR */}
           <div className="lg:col-span-4 space-y-4 min-w-0">
-
             {/* BONDING CURVE PROGRESS */}
             <div className="border border-border rounded-md bg-card p-4">
               <div className="flex items-baseline justify-between mb-3">
                 <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-widest">
                   Bonding curve
                 </span>
-                <span className="font-mono text-xs text-foreground">
-                  {token.raised.toFixed(3)}{' '}
-                  <span className="text-muted-foreground">/ {token.target} ETH</span>
+                <span className="font-mono text-xs text-foreground tabular-nums">
+                  {live.ethRaised.toFixed(3)}{' '}
+                  <span className="text-muted-foreground">/ {TARGET_ETH} ETH</span>
                 </span>
               </div>
 
               <div className="relative h-2.5 w-full bg-secondary rounded-full overflow-hidden">
                 <div
-                  className={`absolute top-0 left-0 h-full rounded-full transition-all duration-700 ${
-                    token.graduated
+                  className={`absolute top-0 left-0 h-full rounded-full transition-[width] duration-700 ${
+                    live.graduated
                       ? 'bg-gradient-to-r from-emerald-500 to-emerald-400'
                       : 'bg-gradient-to-r from-primary/80 to-primary'
                   }`}
@@ -212,66 +277,133 @@ export default function MockTokenDetailPage() {
               </div>
 
               <div className="flex justify-between mt-2">
-                <span className="text-[11px] text-muted-foreground font-mono">
+                <span className="text-[11px] text-muted-foreground font-mono tabular-nums">
                   {progress.toFixed(2)}% filled
                 </span>
-                {token.graduated ? (
+                {live.graduated ? (
                   <span className="text-[11px] text-emerald-400 font-medium">Graduated ✓</span>
                 ) : (
-                  <span className="text-[11px] text-muted-foreground">target {token.target} ETH</span>
+                  <span className="text-[11px] text-muted-foreground">target {TARGET_ETH} ETH</span>
                 )}
               </div>
 
-              {token.graduated && (
+              {live.graduated && (
                 <div className="mt-3 bg-emerald-500/8 border border-emerald-500/20 p-2.5 rounded text-[11px] text-emerald-400 font-mono">
                   Liquidity migrated to DEX. LP tokens burned.
                 </div>
               )}
             </div>
 
-            {/* TRADE WIDGET (mock) */}
+            {/* TRADE WIDGET */}
             <div className="border border-border rounded-md bg-card overflow-hidden">
-              <div className="grid grid-cols-2 border-b border-border h-10 bg-muted/10">
-                <button className="text-xs font-mono uppercase tracking-widest text-emerald-400 bg-card border-r border-border">
+              <div className="flex items-center justify-between px-3 pt-3">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+                  Trade
+                </span>
+                <SlippageSettings />
+              </div>
+
+              <div className="grid grid-cols-2 border-b border-border h-10 bg-muted/10 mt-3">
+                <button
+                  onClick={() => {
+                    setSide('buy');
+                    setAmount('');
+                  }}
+                  className={`text-xs font-mono uppercase tracking-widest transition-colors ${
+                    side === 'buy'
+                      ? 'text-emerald-400 bg-card border-r border-border'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
                   Buy
                 </button>
-                <button className="text-xs font-mono uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
+                <button
+                  onClick={() => {
+                    setSide('sell');
+                    setAmount('');
+                  }}
+                  className={`text-xs font-mono uppercase tracking-widest transition-colors ${
+                    side === 'sell'
+                      ? 'text-red-400 bg-card border-l border-border'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
                   Sell
                 </button>
               </div>
+
               <div className="p-4 space-y-3">
                 <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground uppercase tracking-widest">
-                  <span>Amount (ETH)</span>
+                  <span>Amount ({side === 'buy' ? 'ETH' : token.symbol})</span>
                   <span>Balance: 0.0000</span>
                 </div>
                 <div className="relative">
                   <input
                     type="text"
+                    inputMode="decimal"
                     placeholder="0.0"
-                    className="w-full font-mono text-lg bg-muted/30 border border-border/50 h-12 px-3 rounded outline-none focus:border-primary/40"
-                    readOnly
+                    value={amount}
+                    onChange={(e) => {
+                      const v = e.target.value;
+                      if (v === '' || /^\d*\.?\d*$/.test(v)) setAmount(v);
+                    }}
+                    className="w-full font-mono text-lg bg-muted/30 border border-border/50 h-12 px-3 pr-16 rounded outline-none focus:border-primary/40 tabular-nums"
                   />
-                  <span className="absolute right-4 top-3.5 text-muted-foreground font-mono text-sm">ETH</span>
+                  <span className="absolute right-3 top-3.5 text-muted-foreground font-mono text-sm">
+                    {side === 'buy' ? 'ETH' : token.symbol}
+                  </span>
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {['0.05', '0.1', '0.5', '1'].map((v) => (
+                  {presets.map((v) => (
                     <button
                       key={v}
+                      onClick={() => setAmount(v.replace('%', '').replace('MAX', '0'))}
                       className="text-[11px] font-mono py-1 bg-muted/30 hover:bg-muted/60 rounded text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {v}
                     </button>
                   ))}
                 </div>
-                <button className="w-full h-11 font-bold tracking-widest text-xs uppercase bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors">
+
+                {previewOut && (
+                  <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">You receive (est.)</span>
+                      <span className={side === 'buy' ? 'text-emerald-400 font-bold' : 'text-foreground font-bold'}>
+                        {previewOut.isBuy
+                          ? `${previewOut.tokens.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${token.symbol}`
+                          : `${previewOut.eth.toFixed(6)} ETH`}
+                      </span>
+                    </div>
+                    {minReceived !== null && (
+                      <div className="flex justify-between text-[10px] border-t border-border/30 pt-1.5">
+                        <span className="text-muted-foreground">
+                          Min received ({slippagePercent}% slip)
+                        </span>
+                        <span className="text-foreground">
+                          {previewOut.isBuy
+                            ? `${minReceived.toLocaleString(undefined, { maximumFractionDigits: 0 })} ${token.symbol}`
+                            : `${minReceived.toFixed(6)} ETH`}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                <button
+                  className={`w-full h-11 font-bold tracking-widest text-xs uppercase rounded transition-colors ${
+                    side === 'buy'
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90'
+                      : 'bg-red-500 text-white hover:bg-red-500/90'
+                  }`}
+                >
                   Connect wallet
                 </button>
                 <p className="text-[10px] text-center text-muted-foreground font-mono">
-                  Preview only · 1% slippage applied
+                  Preview only · Live simulation
                 </p>
               </div>
             </div>
-
           </div>
         </div>
       </main>

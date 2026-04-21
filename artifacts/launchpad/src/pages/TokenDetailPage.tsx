@@ -5,7 +5,7 @@ import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { BondingCurveProgress } from '@/components/token/BondingCurveProgress';
 import { TradeWidget } from '@/components/token/TradeWidget';
-import { PriceChart } from '@/components/token/PriceChart';
+import { PriceChart, type Timeframe } from '@/components/token/PriceChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -22,6 +22,8 @@ export default function TokenDetailPage() {
   const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
   const [tab, setTab] = useState('chart');
+  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
+  const baseEthRaised = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
 
   if (isLoading) {
     return (
@@ -133,11 +135,12 @@ export default function TokenDetailPage() {
 
                 <TabsContent value="chart" className="m-0 p-3">
                   <div className="flex items-center gap-1 mb-2 px-1">
-                    {['5m', '15m', '1h', '4h', '1d'].map((tf, i) => (
+                    {(['5m', '15m', '1h', '4h', '1d'] as Timeframe[]).map((tf) => (
                       <button
                         key={tf}
+                        onClick={() => setTimeframe(tf)}
                         className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded ${
-                          i === 1
+                          timeframe === tf
                             ? 'bg-primary/15 text-primary border border-primary/30'
                             : 'text-muted-foreground hover:text-foreground border border-transparent'
                         }`}
@@ -148,22 +151,19 @@ export default function TokenDetailPage() {
                   </div>
                   <PriceChart
                     seed={address}
-                    basePrice={priceInEth || 0.0000001}
+                    baseEthRaised={baseEthRaised}
                     graduated={graduated}
+                    timeframe={timeframe}
                     height={380}
                   />
                 </TabsContent>
 
                 <TabsContent value="trades" className="m-0">
-                  <TradeHistoryTable
-                    seed={address}
-                    basePrice={priceInEth || 0.0000001}
-                    symbol={symbol || 'TOKEN'}
-                  />
+                  <TradeHistoryTable trades={[]} symbol={symbol || 'TOKEN'} />
                 </TabsContent>
 
                 <TabsContent value="holders" className="m-0">
-                  <HoldersList seed={address} symbol={symbol || 'TOKEN'} graduated={graduated} />
+                  <HoldersList holders={[]} symbol={symbol || 'TOKEN'} />
                 </TabsContent>
               </Tabs>
             </div>
