@@ -2,7 +2,7 @@ import { Link } from 'wouter';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { metaMask } from 'wagmi/connectors';
-import { Plus, Menu, Rocket, X, Twitter, Send, Github } from 'lucide-react';
+import { Plus, Menu, Rocket, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface NavbarProps {
@@ -101,35 +101,6 @@ export function Navbar({ onCreate }: NavbarProps) {
                 </button>
               )}
             </nav>
-            <div className="border-t border-border px-4 py-3 flex items-center gap-3">
-              <a
-                href="https://x.com"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Twitter / X"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Twitter className="h-4 w-4" />
-              </a>
-              <a
-                href="https://t.me"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Telegram"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Send className="h-4 w-4" />
-              </a>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noreferrer"
-                aria-label="GitHub"
-                className="text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <Github className="h-4 w-4" />
-              </a>
-            </div>
           </div>
         </>
       )}
