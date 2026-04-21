@@ -4,154 +4,36 @@ import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useMemo } from 'react';
 import { Link } from 'wouter';
-import { MOCK_TOKENS, type MockToken } from '@/lib/mock-tokens';
 import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
-import { Search, Plus, Sparkles, Flame, GraduationCap, BarChart3, Clock, Activity } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade';
 
-const SORT_TABS: { id: FeedSort; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { id: 'new', label: 'New', icon: Sparkles },
-  { id: 'movers', label: 'Movers', icon: Flame },
-  { id: 'graduated', label: 'Graduated', icon: GraduationCap },
-  { id: 'mcap', label: 'Market cap', icon: BarChart3 },
-  { id: 'oldest', label: 'Oldest', icon: Clock },
-  { id: 'lasttrade', label: 'Last trade', icon: Activity },
+const SORT_TABS: { id: FeedSort; label: string }[] = [
+  { id: 'new', label: 'New' },
+  { id: 'movers', label: 'Movers' },
+  { id: 'graduated', label: 'Graduated' },
+  { id: 'mcap', label: 'Market cap' },
+  { id: 'oldest', label: 'Oldest' },
+  { id: 'lasttrade', label: 'Last trade' },
 ];
 
 const TARGET_ETH_NUM = Number(formatEther(TARGET_ETH));
 
-const AVATAR_COLORS = [
-  'bg-orange-500', 'bg-sky-500', 'bg-emerald-500', 'bg-pink-500',
-  'bg-yellow-500', 'bg-violet-500', 'bg-red-500', 'bg-cyan-500',
-];
-
-function avatarColor(addr: string) {
-  const n = parseInt(addr.slice(2, 4), 16);
-  return AVATAR_COLORS[n % AVATAR_COLORS.length];
-}
-
 function timeAgo(ts: number | null): string {
   if (!ts) return '–';
   const diff = Date.now() - ts;
-  if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`;
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
-  return `${Math.floor(diff / 86_400_000)}d ago`;
+  if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s`;
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
+  return `${Math.floor(diff / 86_400_000)}d`;
 }
 
-function FeedCard({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
-  const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
-  const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
-
-  return (
-    <Link href={`/token/${token.address}`}>
-      <div className="group bg-card border border-border rounded-md p-4 cursor-pointer hover:border-primary/40 transition-colors flex flex-col gap-3 h-full">
-        <div className="flex items-start gap-3">
-          <div className={`w-10 h-10 rounded-md ${avatarColor(token.address)} flex items-center justify-center shrink-0 ring-1 ring-white/10`}>
-            <span className="text-white font-black text-sm leading-none">
-              {(token.symbol || '?').slice(0, 2).toUpperCase()}
-            </span>
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">
-                {token.name || 'Unnamed'}
-              </p>
-              {token.graduated ? (
-                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded shrink-0 uppercase tracking-wider">
-                  DEX
-                </span>
-              ) : (
-                <span className="text-[9px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded shrink-0 uppercase tracking-wider flex items-center gap-1">
-                  <span className="h-1 w-1 bg-amber-400 rounded-full animate-pulse" />
-                  Live
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground font-mono">${token.symbol || '???'}</p>
-          </div>
-        </div>
-
-        <div className="mt-auto space-y-1.5">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span className="font-mono tabular-nums">{token.realEthRaised.toFixed(3)} ETH</span>
-            <span className="text-primary font-medium tabular-nums">{progress.toFixed(1)}%</span>
-          </div>
-          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between items-end text-xs border-t border-border pt-2">
-          <div>
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">MCap</p>
-            <p className="text-foreground font-mono tabular-nums text-xs">
-              {mcUsd
-                ? mcUsd > 1_000_000
-                  ? `$${(mcUsd / 1_000_000).toFixed(2)}M`
-                  : mcUsd > 1000
-                  ? `$${(mcUsd / 1000).toFixed(1)}K`
-                  : `$${mcUsd.toFixed(0)}`
-                : `${token.marketCapEth.toFixed(2)} ETH`}
-            </p>
-          </div>
-          <div className="text-right">
-            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
-              {token.lastTradeMs ? 'Last trade' : 'Created'}
-            </p>
-            <p className="text-muted-foreground font-mono text-xs">
-              {timeAgo(token.lastTradeMs ?? token.createdAtMs)}
-            </p>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-}
-
-function MockCard({ token }: { token: MockToken }) {
-  const progress = Math.min((token.raised / token.target) * 100, 100);
-  return (
-    <Link href={`/preview/${token.slug}`}>
-      <div className="bg-card/80 backdrop-blur border border-border rounded-lg p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors cursor-pointer h-full">
-        <div className="flex items-start gap-3">
-          <div className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 font-black text-sm text-white" style={{ background: token.avatarColor }}>
-            {token.symbol.slice(0, 2)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-bold text-sm text-foreground truncate">{token.name}</p>
-              {'graduated' in token && token.graduated && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded shrink-0">DEX</span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground font-mono">${token.symbol}</p>
-            {token.description && (
-              <p className="text-xs text-muted-foreground mt-1 leading-relaxed line-clamp-2">{token.description}</p>
-            )}
-          </div>
-        </div>
-        <div className="mt-auto space-y-1.5">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{token.raised.toFixed(2)} ETH</span>
-            <span className="text-primary font-medium">{progress.toFixed(1)}%</span>
-          </div>
-          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-            <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
-          </div>
-        </div>
-        <div className="flex justify-between text-xs border-t border-border pt-2">
-          <span className="text-muted-foreground">MCap: <span className="text-foreground font-mono">{token.mcap}</span></span>
-          <span className="text-muted-foreground font-mono">{token.price}</span>
-        </div>
-      </div>
-    </Link>
-  );
+function formatUsd(n: number): string {
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return `$${n.toFixed(0)}`;
 }
 
 function sortTokens(tokens: FeedToken[], sort: FeedSort): FeedToken[] {
@@ -162,21 +44,82 @@ function sortTokens(tokens: FeedToken[], sort: FeedSort): FeedToken[] {
     case 'oldest':
       return arr.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0) || a.createdIndex - b.createdIndex);
     case 'movers':
-      // active bonding only, by raised desc
-      return arr
-        .filter((t) => !t.graduated)
-        .sort((a, b) => b.realEthRaised - a.realEthRaised);
+      return arr.filter((t) => !t.graduated).sort((a, b) => b.realEthRaised - a.realEthRaised);
     case 'graduated':
       return arr.filter((t) => t.graduated).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
     case 'mcap':
       return arr.sort((a, b) => b.marketCapEth - a.marketCapEth);
     case 'lasttrade':
-      return arr
-        .filter((t) => t.lastTradeMs)
-        .sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
+      return arr.filter((t) => t.lastTradeMs).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
     default:
       return arr;
   }
+}
+
+function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
+  const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
+  const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
+  const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
+
+  return (
+    <Link href={`/token/${token.address}`}>
+      <a className="grid grid-cols-12 items-center gap-3 px-3 py-2.5 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
+        {/* Token (3 cols) */}
+        <div className="col-span-4 md:col-span-3 flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+            <span className="text-[10px] font-bold text-muted-foreground">
+              {(token.symbol || '?').slice(0, 2).toUpperCase()}
+            </span>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
+              {token.name || 'Unnamed'}
+            </p>
+            <p className="text-[11px] text-muted-foreground font-mono leading-tight">
+              ${token.symbol || '???'}
+              {token.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
+            </p>
+          </div>
+        </div>
+
+        {/* Price (hidden on mobile) */}
+        <div className="hidden md:block col-span-2 text-right">
+          <p className="text-xs font-mono tabular-nums text-foreground">
+            {priceUsd ? `$${priceUsd.toFixed(priceUsd < 0.01 ? 8 : 4)}` : `${token.currentPriceEth.toExponential(2)}`}
+          </p>
+        </div>
+
+        {/* Market cap */}
+        <div className="col-span-3 md:col-span-2 text-right">
+          <p className="text-xs font-mono tabular-nums text-foreground">
+            {mcUsd ? formatUsd(mcUsd) : `${token.marketCapEth.toFixed(2)} ETH`}
+          </p>
+        </div>
+
+        {/* Progress (raised + bar) */}
+        <div className="col-span-3 md:col-span-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
+              <div className="h-full bg-primary" style={{ width: `${progress}%` }} />
+            </div>
+            <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-10 text-right">
+              {progress.toFixed(0)}%
+            </span>
+          </div>
+          <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
+            {token.realEthRaised.toFixed(3)} / {TARGET_ETH_NUM} ETH
+          </p>
+        </div>
+
+        {/* Age */}
+        <div className="col-span-2 md:col-span-2 text-right">
+          <p className="text-xs font-mono text-muted-foreground tabular-nums">
+            {timeAgo(token.lastTradeMs ?? token.createdAtMs)}
+          </p>
+        </div>
+      </a>
+    </Link>
+  );
 }
 
 export default function HomeFeedPage() {
@@ -200,94 +143,96 @@ export default function HomeFeedPage() {
     return list;
   }, [tokens, sort, query]);
 
-  const showMocks = !isLoading && tokens.length === 0 && !query.trim();
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      <Navbar />
+      <Navbar onCreate={() => setIsCreateOpen(true)} />
 
-      <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
-        {/* Header */}
-        <div className="mb-5 flex items-center justify-start">
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
-          >
-            <Plus className="h-3 w-3" />
-            Create
-          </button>
-        </div>
-
-        {/* Search bar */}
-        <div className="relative mb-4">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search by name, symbol, or contract address…"
-            className="w-full pl-9 pr-9 py-2.5 bg-card/60 backdrop-blur border border-border rounded-md text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/40 transition-colors"
-          />
-          {query && (
-            <button
-              onClick={() => setQuery('')}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground hover:text-foreground"
-            >
-              clear
-            </button>
-          )}
-        </div>
-
-        {/* Filter tabs */}
-        <div className="flex items-center gap-1 mb-5 overflow-x-auto scrollbar-none -mx-1 px-1">
-          {SORT_TABS.map((t) => {
-            const Icon = t.icon;
-            const active = sort === t.id;
-            return (
+      <main className="flex-1 container max-w-7xl mx-auto px-4 py-4 md:px-8">
+        {/* Single control strip: search + tabs */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2 mb-3">
+          <div className="relative md:w-72">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search name, symbol, address…"
+              className="w-full pl-8 pr-8 py-1.5 bg-card border border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
+            />
+            {query && (
               <button
-                key={t.id}
-                onClick={() => setSort(t.id)}
-                className={`inline-flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md whitespace-nowrap transition-colors ${
-                  active
-                    ? 'bg-primary/15 text-primary border border-primary/30'
-                    : 'text-muted-foreground hover:text-foreground bg-card/40 border border-border hover:border-border/80'
-                }`}
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
               >
-                <Icon className="h-3.5 w-3.5" />
-                {t.label}
+                <X className="h-3 w-3" />
               </button>
-            );
-          })}
+            )}
+          </div>
+
+          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none flex-1">
+            {SORT_TABS.map((t) => {
+              const active = sort === t.id;
+              return (
+                <button
+                  key={t.id}
+                  onClick={() => setSort(t.id)}
+                  className={`text-xs font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+                    active
+                      ? 'text-primary bg-primary/10'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Grid */}
+        {/* Table header */}
+        <div className="grid grid-cols-12 gap-3 px-3 py-2 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          <div className="col-span-4 md:col-span-3">Token</div>
+          <div className="hidden md:block col-span-2 text-right">Price</div>
+          <div className="col-span-3 md:col-span-2 text-right">Mcap</div>
+          <div className="col-span-3 md:col-span-3">Bonding</div>
+          <div className="col-span-2 md:col-span-2 text-right">Age</div>
+        </div>
+
+        {/* Rows */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="divide-y divide-border">
             {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-44 bg-card/60 animate-pulse border border-border rounded-lg" />
+              <div key={i} className="h-12 bg-card/30 animate-pulse" />
             ))}
           </div>
         ) : filtered.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+          <div className="border-b border-border">
             {filtered.map((token) => (
-              <FeedCard key={token.address} token={token} ethPrice={ethPrice} />
+              <TokenRow key={token.address} token={token} ethPrice={ethPrice} />
             ))}
           </div>
-        ) : showMocks ? (
-          <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 mb-4">
-              {MOCK_TOKENS.map((t) => <MockCard key={t.symbol} token={t} />)}
-            </div>
-            <p className="text-center text-xs text-muted-foreground py-2">
-              Preview only — <button onClick={() => setIsCreateOpen(true)} className="text-primary underline underline-offset-2">launch the first real token</button>
-            </p>
-          </>
         ) : (
-          <div className="text-center py-16">
-            <p className="text-sm text-muted-foreground font-mono">
-              {query ? `No tokens match "${query}"` : 'No tokens in this view yet.'}
+          <div className="text-center py-20 border-b border-border">
+            <p className="text-xs text-muted-foreground font-mono mb-3">
+              {query ? `No tokens match "${query}"` : 'No tokens deployed yet on this factory.'}
             </p>
+            {!query && (
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="text-xs font-semibold text-primary hover:underline underline-offset-2"
+              >
+                Launch the first token →
+              </button>
+            )}
           </div>
+        )}
+
+        {/* Footer count */}
+        {!isLoading && filtered.length > 0 && (
+          <p className="text-[10px] font-mono text-muted-foreground text-right mt-2">
+            {filtered.length} of {tokens.length}
+          </p>
         )}
       </main>
 
