@@ -23,6 +23,18 @@ const SORT_TABS: { id: FeedSort; label: string }[] = [
 
 const TARGET_ETH_NUM = Number(formatEther(TARGET_ETH));
 
+const NOW = Date.now();
+const DEMO_TOKENS: FeedToken[] = [
+  { address: '0x9a2c000000000000000000000000000000000b71' as `0x${string}`, name: 'Pepe Extended', symbol: 'PEPEX', realEthRaised: TARGET_ETH_NUM * 0.64, currentPriceEth: 0.0000000412 / 2300, marketCapEth: 248_400 / 2300, graduated: false, createdAtMs: NOW - 2 * 3_600_000, createdIndex: 7, lastTradeMs: NOW - 8_000, creator: null },
+  { address: '0x4f81000000000000000000000000000000000002' as `0x${string}`, name: 'We All Gonna Make It', symbol: 'WAGMI', realEthRaised: TARGET_ETH_NUM * 0.47, currentPriceEth: 0.0000000301 / 2300, marketCapEth: 184_000 / 2300, graduated: false, createdAtMs: NOW - 5 * 3_600_000, createdIndex: 6, lastTradeMs: NOW - 23_000, creator: null },
+  { address: '0x71e0000000000000000000000000000000009f4c' as `0x${string}`, name: 'Fud Off', symbol: 'FUDOFF', realEthRaised: TARGET_ETH_NUM * 0.33, currentPriceEth: 0.0000000218 / 2300, marketCapEth: 132_700 / 2300, graduated: false, createdAtMs: NOW - 8 * 3_600_000, createdIndex: 5, lastTradeMs: NOW - 92_000, creator: null },
+  { address: '0x2bd9000000000000000000000000000000000030' as `0x${string}`, name: 'Sigma Chad', symbol: 'CHAD', realEthRaised: TARGET_ETH_NUM * 0.24, currentPriceEth: 0.0000000159 / 2300, marketCapEth: 96_500 / 2300, graduated: false, createdAtMs: NOW - 11 * 3_600_000, createdIndex: 4, lastTradeMs: NOW - 5_000, creator: null },
+  { address: '0xc017000000000000000000000000000000005e22' as `0x${string}`, name: 'Normie Coin', symbol: 'NORM', realEthRaised: TARGET_ETH_NUM * 0.18, currentPriceEth: 0.0000000118 / 2300, marketCapEth: 71_200 / 2300, graduated: false, createdAtMs: NOW - 13 * 3_600_000, createdIndex: 3, lastTradeMs: NOW - 240_000, creator: null },
+  { address: '0xae45000000000000000000000000000000000077' as `0x${string}`, name: 'Giga Brain', symbol: 'GIGA', realEthRaised: TARGET_ETH_NUM * 0.14, currentPriceEth: 0.0000000098 / 2300, marketCapEth: 58_900 / 2300, graduated: false, createdAtMs: NOW - 15 * 3_600_000, createdIndex: 2, lastTradeMs: NOW - 47_000, creator: null },
+  { address: '0x18de00000000000000000000000000000000c4a9' as `0x${string}`, name: 'Wojak Capital', symbol: 'WOJK', realEthRaised: TARGET_ETH_NUM * 0.10, currentPriceEth: 0.0000000070 / 2300, marketCapEth: 42_100 / 2300, graduated: false, createdAtMs: NOW - 17 * 3_600_000, createdIndex: 1, lastTradeMs: NOW - 600_000, creator: null },
+  { address: '0x6610000000000000000000000000000000008f3d' as `0x${string}`, name: 'Based God', symbol: 'BASED', realEthRaised: TARGET_ETH_NUM * 0.07, currentPriceEth: 0.0000000051 / 2300, marketCapEth: 31_000 / 2300, graduated: false, createdAtMs: NOW - 19 * 3_600_000, createdIndex: 0, lastTradeMs: NOW - 18_000, creator: null },
+];
+
 function timeAgo(ts: number | null): string {
   if (!ts) return '–';
   const diff = Date.now() - ts;
@@ -195,7 +207,8 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
 }
 
 export default function HomeFeedPage() {
-  const { tokens, isLoading } = useLaunchpadFeed(200);
+  const { tokens: realTokens, isLoading } = useLaunchpadFeed(200);
+  const tokens = realTokens.length > 0 ? realTokens : DEMO_TOKENS;
   const { data: ethPrice } = useEthPrice();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [sort, setSort] = useState<FeedSort>('new');
