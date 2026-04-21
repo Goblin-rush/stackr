@@ -1,4 +1,5 @@
 require("@nomicfoundation/hardhat-ethers");
+require("@nomicfoundation/hardhat-chai-matchers");
 
 const networks = {};
 if (process.env.Private_key && process.env.Private_key.length === 64) {

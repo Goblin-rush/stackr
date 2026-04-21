@@ -48,6 +48,7 @@ contract AethpadBondingCurveV2 is ReentrancyGuard {
     // ─── Immutables ────────────────────────────────────────────────
     IAethpadTokenV2 public token;
     address public immutable factory;
+    address public immutable trustedInitializer;
     IUniswapV2Router02 public immutable uniswapRouter;
     IUniswapV2Factory public immutable uniswapFactory;
 
@@ -72,6 +73,7 @@ contract AethpadBondingCurveV2 is ReentrancyGuard {
         address _uniswapRouter
     ) {
         factory = _factory;
+        trustedInitializer = msg.sender; // Deployer (or Factory if direct)
         uniswapRouter = IUniswapV2Router02(_uniswapRouter);
         uniswapFactory = IUniswapV2Factory(IUniswapV2Router02(_uniswapRouter).factory());
         virtualTokenReserve = CURVE_TOKEN_SUPPLY;
@@ -79,7 +81,7 @@ contract AethpadBondingCurveV2 is ReentrancyGuard {
 
     function initToken(address _token) external {
         require(address(token) == address(0), "Already init");
-        require(msg.sender == factory, "Only factory");
+        require(msg.sender == trustedInitializer || msg.sender == factory, "Only factory");
         token = IAethpadTokenV2(_token);
     }
 
