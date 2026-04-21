@@ -130,17 +130,19 @@ export function Navbar({ onCreate }: NavbarProps) {
                   Create token
                 </button>
               )}
+            </nav>
+            <div className="border-t border-border px-4 pt-3 pb-2 md:hidden">
               <a
                 href={X_URL}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Aethpad on X"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-foreground hover:bg-secondary transition-colors"
+                className="inline-flex p-1.5 -ml-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
-                <XIcon className="h-4 w-4 text-muted-foreground" />
+                <XIcon className="h-4 w-4" />
               </a>
-            </nav>
+            </div>
             <div className="border-t border-border p-4 text-[10px] font-mono uppercase tracking-wider text-muted-foreground space-y-1.5 md:hidden">
               <div className="flex items-center justify-between">
                 <span>Network</span>
