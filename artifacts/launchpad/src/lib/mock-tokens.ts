@@ -12,6 +12,7 @@ export interface MockToken {
   graduated?: boolean;
   contract: string;
   creator: string;
+  createdAtMs: number;
 }
 
 export const MOCK_TOKENS: MockToken[] = [
@@ -28,6 +29,7 @@ export const MOCK_TOKENS: MockToken[] = [
     avatarColor: '#e85d04',
     contract: '0x7a2c9b1e8f4d6a3b5c2e9d1f4b8a7c6e5d3f2a1b',
     creator: '0x4f3e2a1b8c7d6e5f4a3b2c1d9e8f7a6b5c4d3e2f',
+    createdAtMs: Date.now() - 1000 * 60 * 47,
   },
   {
     slug: 'pepe-classic',
@@ -43,6 +45,7 @@ export const MOCK_TOKENS: MockToken[] = [
     graduated: true,
     contract: '0x9b8c7d6e5f4a3b2c1d9e8f7a6b5c4d3e2f1a0b9c',
     creator: '0x1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b',
+    createdAtMs: Date.now() - 1000 * 60 * 60 * 8,
   },
   {
     slug: 'moondoge',
@@ -57,6 +60,7 @@ export const MOCK_TOKENS: MockToken[] = [
     avatarColor: '#7c3aed',
     contract: '0x3e2d1c9b8a7f6e5d4c3b2a1f9e8d7c6b5a4f3e2d',
     creator: '0x8d7e6f5a4b3c2d1e9f8a7b6c5d4e3f2a1b9c8d7e',
+    createdAtMs: Date.now() - 1000 * 60 * 13,
   },
   {
     slug: 'chad-token',
@@ -71,6 +75,7 @@ export const MOCK_TOKENS: MockToken[] = [
     avatarColor: '#0284c7',
     contract: '0x5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e9f8a7b6c5d',
     creator: '0xa9b8c7d6e5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0',
+    createdAtMs: Date.now() - 1000 * 60 * 60 * 3,
   },
 ];
 

@@ -67,38 +67,44 @@ interface RowDisplay {
   raisedLabel: string;
   progress: number;
   ageLabel: string;
+  creatorLabel: string | null;
   isDemo?: boolean;
 }
 
 function Row({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
-      <div className="px-3 py-2.5 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
+      <div className="px-4 py-4 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
         {/* Mobile: stacked layout */}
-        <div className="md:hidden flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+        <div className="md:hidden flex items-start gap-3">
+          <div className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
             <span className="text-[10px] font-bold text-muted-foreground">
               {d.symbol.slice(0, 2).toUpperCase()}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-2">
+            <div className="flex items-baseline justify-between gap-3">
               <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                 {d.name}
               </p>
-              <p className="text-xs font-mono tabular-nums text-foreground shrink-0">{d.mcapLabel}</p>
+              <p className="text-sm font-mono tabular-nums text-foreground shrink-0">{d.mcapLabel}</p>
             </div>
-            <div className="flex items-center justify-between gap-2 mt-0.5">
+            <div className="flex items-center justify-between gap-3 mt-1.5">
               <p className="text-[11px] text-muted-foreground font-mono truncate">
                 ${d.symbol}
-                {d.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
-                {d.isDemo && <span className="ml-1.5 italic">· demo</span>}
+                {d.graduated && <span className="ml-2 text-emerald-400">· DEX</span>}
+                {d.isDemo && <span className="ml-2 italic">· demo</span>}
               </p>
               <p className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
                 {d.ageLabel}
               </p>
             </div>
-            <div className="flex items-center gap-2 mt-1.5">
+            {d.creatorLabel && (
+              <p className="text-[10px] text-muted-foreground/70 font-mono mt-1 truncate">
+                by {d.creatorLabel}
+              </p>
+            )}
+            <div className="flex items-center gap-2.5 mt-3">
               <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
                 <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
               </div>
@@ -110,9 +116,9 @@ function Row({ d }: { d: RowDisplay }) {
         </div>
 
         {/* Desktop: table grid */}
-        <div className="hidden md:grid grid-cols-12 items-center gap-3">
-          <div className="col-span-3 flex items-center gap-2.5 min-w-0">
-            <div className="w-7 h-7 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
+        <div className="hidden md:grid grid-cols-12 items-center gap-4">
+          <div className="col-span-3 flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
               <span className="text-[10px] font-bold text-muted-foreground">
                 {d.symbol.slice(0, 2).toUpperCase()}
               </span>
@@ -121,9 +127,12 @@ function Row({ d }: { d: RowDisplay }) {
               <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
                 {d.name}
               </p>
-              <p className="text-[11px] text-muted-foreground font-mono leading-tight">
+              <p className="text-[11px] text-muted-foreground font-mono leading-tight mt-0.5 truncate">
                 ${d.symbol}
                 {d.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
+                {d.creatorLabel && (
+                  <span className="ml-1.5 opacity-60">· by {d.creatorLabel}</span>
+                )}
               </p>
             </div>
           </div>
@@ -155,6 +164,11 @@ function Row({ d }: { d: RowDisplay }) {
   );
 }
 
+function shortAddr(a: string | null): string | null {
+  if (!a) return null;
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
+
 function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
   const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
@@ -173,6 +187,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
         raisedLabel: `${token.realEthRaised.toFixed(3)} / ${TARGET_ETH_NUM} ETH`,
         progress,
         ageLabel: timeAgo(token.lastTradeMs ?? token.createdAtMs),
+        creatorLabel: shortAddr(token.creator),
       }}
     />
   );
@@ -191,7 +206,8 @@ function MockTokenRow({ token }: { token: MockToken }) {
         mcapLabel: token.mcap,
         raisedLabel: `${token.raised.toFixed(2)} / ${token.target} ETH`,
         progress,
-        ageLabel: '–',
+        ageLabel: timeAgo(token.createdAtMs),
+        creatorLabel: shortAddr(token.creator),
         isDemo: true,
       }}
     />
