@@ -262,6 +262,13 @@ export default function HomeFeedPage() {
                 </button>
               )}
             </div>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap"
+            >
+              <Plus className="h-3 w-3" />
+              Create
+            </button>
           </div>
 
           <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none flex-1">

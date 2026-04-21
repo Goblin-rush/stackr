@@ -33,15 +33,6 @@ export function Navbar({ onCreate }: NavbarProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            {onCreate && (
-              <button
-                onClick={onCreate}
-                className="inline-flex items-center gap-1 text-xs font-bold border border-primary/40 text-primary px-2.5 py-1.5 rounded-md hover:bg-primary/10 transition-colors"
-              >
-                <Plus className="h-3.5 w-3.5" />
-                Create
-              </button>
-            )}
             {isConnected ? (
               <>
                 <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
