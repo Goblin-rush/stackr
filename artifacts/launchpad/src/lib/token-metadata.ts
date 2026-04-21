@@ -16,6 +16,48 @@ export function ipfsToHttp(uri?: string | null): string | null {
   return null;
 }
 
+/** Normalize a website input. Adds https:// if missing scheme. Returns null if invalid. */
+export function normalizeWebsite(raw?: string | null): string | null {
+  if (!raw) return null;
+  const v = raw.trim();
+  if (!v) return null;
+  const url = /^https?:\/\//i.test(v) ? v : `https://${v}`;
+  try {
+    const u = new URL(url);
+    if (!u.hostname.includes('.')) return null;
+    return u.toString();
+  } catch {
+    return null;
+  }
+}
+
+/** Normalize a Twitter/X handle or URL into a full https URL. */
+export function normalizeTwitter(raw?: string | null): string | null {
+  if (!raw) return null;
+  const v = raw.trim().replace(/^@+/, '');
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) {
+    try { return new URL(v).toString(); } catch { return null; }
+  }
+  // Strip leading "twitter.com/" or "x.com/" if present
+  const handle = v.replace(/^(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\//i, '').replace(/^\/+/, '');
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) return null;
+  return `https://x.com/${handle}`;
+}
+
+/** Normalize a Telegram handle, t.me link, or URL into a full https URL. */
+export function normalizeTelegram(raw?: string | null): string | null {
+  if (!raw) return null;
+  const v = raw.trim().replace(/^@+/, '');
+  if (!v) return null;
+  if (/^https?:\/\//i.test(v)) {
+    try { return new URL(v).toString(); } catch { return null; }
+  }
+  const handle = v.replace(/^(?:https?:\/\/)?(?:www\.)?t\.me\//i, '').replace(/^\/+/, '');
+  if (!/^[A-Za-z0-9_+\-]{2,}$/.test(handle)) return null;
+  return `https://t.me/${handle}`;
+}
+
 const KEY = 'launchpad:token-metadata';
 
 function getAll(): Record<string, TokenMetadata> {

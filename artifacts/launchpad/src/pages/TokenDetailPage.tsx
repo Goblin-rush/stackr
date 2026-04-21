@@ -13,10 +13,10 @@ import { HoldersList } from '@/components/token/HoldersList';
 import { type Timeframe } from '@/components/token/PriceChart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TOTAL_SUPPLY, BONDING_CURVE_ABI } from '@/lib/contracts';
-import { Copy, ExternalLink } from 'lucide-react';
+import { Copy, ExternalLink, Globe, Send } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
+import { getTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
 
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
