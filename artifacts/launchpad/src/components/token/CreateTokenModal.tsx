@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -14,6 +14,8 @@ import { useWatchContractEvent, useWriteContract, useWaitForTransactionReceipt }
 import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI } from '@/lib/contracts';
 import { saveTokenMetadata } from '@/lib/token-metadata';
 import { Loader2 } from 'lucide-react';
+import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
+import { toast } from 'sonner';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required').max(32, 'Name too long'),
@@ -36,24 +38,45 @@ type Step = 'idle' | 'deploying' | 'confirming-deploy' | 'buying' | 'confirming-
 
 export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) {
   const [, setLocation] = useLocation();
-  const { createToken, isPending, isConfirming, error } = useCreateToken();
+  const { createToken, isPending, isConfirming, error, hash: deployHash } = useCreateToken();
   const [step, setStep] = useState<Step>('idle');
   const [newTokenAddress, setNewTokenAddress] = useState<`0x${string}` | null>(null);
 
   const { writeContractAsync: buyWrite, data: buyHash } = useWriteContract();
   const { isLoading: isBuyConfirming, isSuccess: isBuySuccess } = useWaitForTransactionReceipt({ hash: buyHash });
 
+  const deployToastId = useRef<string | number | null>(null);
+  const buyToastId = useRef<string | number | null>(null);
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: { name: '', symbol: '', description: '', website: '', twitter: '', telegram: '', initialBuy: '' },
   });
 
+  // When deploy hash arrives, swap pending toast → submitted with etherscan link
+  useEffect(() => {
+    if (deployHash && deployToastId.current) {
+      txSubmittedToast(deployToastId.current, deployHash, 'Deploying token');
+    }
+  }, [deployHash]);
+
+  // When buy hash arrives, swap pending toast → submitted
+  useEffect(() => {
+    if (buyHash && buyToastId.current) {
+      txSubmittedToast(buyToastId.current, buyHash, 'Initial buy');
+    }
+  }, [buyHash]);
+
   // Navigate after buy confirms
   useEffect(() => {
     if (isBuySuccess && step === 'confirming-buy' && newTokenAddress) {
+      if (buyToastId.current && buyHash) {
+        txSuccessToast(buyToastId.current, buyHash, 'Initial buy confirmed');
+        buyToastId.current = null;
+      }
       setStep('done');
     }
-  }, [isBuySuccess, step, newTokenAddress]);
+  }, [isBuySuccess, step, newTokenAddress, buyHash]);
 
   // Navigate on done
   useEffect(() => {
@@ -79,6 +102,12 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
       const tokenAddr = log.args.token as `0x${string}`;
       setNewTokenAddress(tokenAddr);
 
+      // Finalize the deploy toast as success
+      if (deployToastId.current && deployHash) {
+        txSuccessToast(deployToastId.current, deployHash, `${log.args.symbol || 'Token'} deployed`);
+        deployToastId.current = null;
+      }
+
       const vals = form.getValues();
       saveTokenMetadata(tokenAddr, {
         description: vals.description || undefined,
@@ -90,6 +119,8 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
       const buyAmt = parseFloat(vals.initialBuy || '0');
       if (buyAmt > 0) {
         setStep('buying');
+        const id = txPendingToast(`Buying initial ${buyAmt} ETH`);
+        buyToastId.current = id;
         try {
           await buyWrite({
             address: tokenAddr,
@@ -99,7 +130,9 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
             value: parseEther(String(buyAmt)),
           });
           setStep('confirming-buy');
-        } catch {
+        } catch (err) {
+          txErrorToast(id, err);
+          buyToastId.current = null;
           setStep('done');
         }
       } else {
@@ -109,11 +142,15 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   });
 
   async function onSubmit(data: FormValues) {
+    setStep('deploying');
+    const id = txPendingToast(`Deploying ${data.symbol.toUpperCase()}`);
+    deployToastId.current = id;
     try {
-      setStep('deploying');
       await createToken(data.name, data.symbol.toUpperCase());
       setStep('confirming-deploy');
-    } catch {
+    } catch (err) {
+      txErrorToast(id, err);
+      deployToastId.current = null;
       setStep('idle');
     }
   }

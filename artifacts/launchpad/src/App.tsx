@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { WagmiProvider } from "@privy-io/wagmi";
 import { Toaster } from "@/components/ui/toaster";
+import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { config } from "@/lib/wagmi";
 import { mainnet } from "wagmi/chains";
@@ -54,6 +55,7 @@ function App() {
               <Router />
             </WouterRouter>
             <Toaster />
+            <SonnerToaster position="top-right" theme="dark" richColors closeButton />
           </TooltipProvider>
         </WagmiProvider>
       </QueryClientProvider>

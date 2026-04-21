@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -7,9 +7,9 @@ import { parseEther, formatEther, formatUnits, parseUnits } from 'viem';
 import { useToken, useTokenBalance, useTokenPreviewBuy, useTokenPreviewSell, useTokenTrade } from '@/hooks/use-token';
 import { BONDING_CURVE_ABI } from '@/lib/contracts';
 import { Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import { useSlippage } from '@/hooks/use-slippage';
 import { SlippageSettings } from '@/components/token/SlippageSettings';
+import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 
 interface TradeWidgetProps {
   address: `0x${string}`;
@@ -20,7 +20,6 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   const { data: ethBalance } = useBalance({ address: userAddress });
   const { data: tokenBalance } = useTokenBalance(address, userAddress);
   const { graduated, symbol } = useToken(address);
-  const { toast } = useToast();
   const { applyMinOut, percent: slippagePercent } = useSlippage();
 
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
@@ -33,55 +32,80 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   const { data: previewTokensOut } = useTokenPreviewBuy(address, buyAmountWei);
   const { data: previewEthOut } = useTokenPreviewSell(address, sellAmountWei);
 
-  const { writeContractAsync, isPending, isConfirming } = useTokenTrade();
+  const { writeContractAsync, isPending, isConfirming, isConfirmed, hash } = useTokenTrade();
+
+  // Track the toast id and the EXACT hash we want to finalize on (the final tx of the flow).
+  // For buy: that's the buy hash. For sell: that's the sell hash (NOT the approve hash).
+  const pendingToastRef = useRef<{ id: string | number; label: string; expectedHash: `0x${string}` | null } | null>(null);
+
+  // When `hash` matches the expected final hash, swap pending → submitted with etherscan link.
+  useEffect(() => {
+    const p = pendingToastRef.current;
+    if (hash && p && p.expectedHash === hash) {
+      txSubmittedToast(p.id, hash, p.label);
+    }
+  }, [hash]);
+
+  // When the receipt of the expected hash confirms, finalize the toast as success.
+  useEffect(() => {
+    const p = pendingToastRef.current;
+    if (isConfirmed && hash && p && p.expectedHash === hash) {
+      txSuccessToast(p.id, hash, `${p.label} confirmed`);
+      pendingToastRef.current = null;
+    }
+  }, [isConfirmed, hash]);
 
   const handleBuy = async () => {
     if (!buyAmountWei) return;
+    const id = txPendingToast(`Buying ${symbol || 'tokens'}`);
+    pendingToastRef.current = { id, label: `Bought ${symbol || 'tokens'}`, expectedHash: null };
     try {
       const minTokensOut = previewTokensOut ? applyMinOut(previewTokensOut) : 0n;
-      await writeContractAsync({
+      const txHash = await writeContractAsync({
         address,
         abi: BONDING_CURVE_ABI,
         functionName: 'buy',
         args: [minTokensOut],
         value: buyAmountWei,
       });
-      toast({ title: 'Transaction submitted', description: 'Your buy order is pending.' });
+      // Mark which hash to finalize on (buy is single-tx).
+      if (pendingToastRef.current) pendingToastRef.current.expectedHash = txHash;
       setBuyAmount('');
     } catch (error) {
       console.error('Buy failed', error);
-      toast({ title: 'Transaction failed', description: 'Could not complete buy order.', variant: 'destructive' });
+      txErrorToast(id, error);
+      pendingToastRef.current = null;
     }
   };
 
   const handleSell = async () => {
     if (!sellAmountWei) return;
+    const id = txPendingToast(`Selling ${symbol || 'tokens'}`);
+    pendingToastRef.current = { id, label: `Sold ${symbol || 'tokens'}`, expectedHash: null };
     try {
       const minEthOut = previewEthOut ? applyMinOut(previewEthOut) : 0n;
-      
-      // Need approval? Assume no separate approval needed if we approve right before, 
-      // but proper way is separate steps. For simplicity in the terminal vibes, we can try
-      // to batch or just do one step if the contract allowed (it doesn't, approve then sell).
-      // Let's do approve first:
+
+      // Approve happens silently (no toast swap — expectedHash stays null until sell submitted).
       await writeContractAsync({
         address,
         abi: BONDING_CURVE_ABI,
         functionName: 'approve',
         args: [address, sellAmountWei],
       });
-      // In a real app we'd wait for receipt of approve, but since we are mocking/fast-tracking:
-      await writeContractAsync({
+      const sellHash = await writeContractAsync({
         address,
         abi: BONDING_CURVE_ABI,
         functionName: 'sell',
         args: [sellAmountWei, minEthOut],
       });
-      
-      toast({ title: 'Transaction submitted', description: 'Your sell order is pending.' });
+      // Now lock the toast onto the sell hash for final confirmation.
+      if (pendingToastRef.current) pendingToastRef.current.expectedHash = sellHash;
+
       setSellAmount('');
     } catch (error) {
       console.error('Sell failed', error);
-      toast({ title: 'Transaction failed', description: 'Could not complete sell order.', variant: 'destructive' });
+      txErrorToast(id, error);
+      pendingToastRef.current = null;
     }
   };
 
