@@ -208,18 +208,13 @@ export default function HomeFeedPage() {
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
         {/* Header */}
-        <div className="mb-6 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground">
-              Launchpad <span className="text-primary">Terminal</span>
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Live ETH bonding-curve tokens · {tokens.length} indexed
-            </p>
-          </div>
+        <div className="mb-5 flex items-center justify-between gap-4">
+          <span className="text-xs text-muted-foreground font-mono">
+            {tokens.length} {tokens.length === 1 ? 'token' : 'tokens'} indexed
+          </span>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20 self-start md:self-auto"
+            className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors shadow-sm shadow-primary/20"
           >
             <Plus className="h-3 w-3" />
             Create
