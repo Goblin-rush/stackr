@@ -54,40 +54,40 @@
   Restrained, terminal/trader aesthetic. No gradients, no glow effects.
 */
 :root {
-  --background: 195 13% 5%;
+  --background: 200 8% 11%;
   --foreground: 0 0% 96%;
 
-  --card: 195 13% 9%;
+  --card: 200 8% 14%;
   --card-foreground: 0 0% 96%;
-  --card-border: 195 10% 16%;
+  --card-border: 200 6% 22%;
 
-  --popover: 195 13% 9%;
+  --popover: 200 8% 14%;
   --popover-foreground: 0 0% 96%;
-  --popover-border: 195 10% 16%;
+  --popover-border: 200 6% 22%;
 
   /* Pale mint cyan — calm, not neon */
   --primary: 166 75% 65%;
   --primary-foreground: 195 25% 8%;
   --primary-border: 166 75% 65%;
 
-  --secondary: 195 12% 13%;
+  --secondary: 200 7% 18%;
   --secondary-foreground: 0 0% 96%;
-  --secondary-border: 195 10% 18%;
+  --secondary-border: 200 6% 24%;
 
-  --muted: 195 12% 12%;
-  --muted-foreground: 195 8% 55%;
-  --muted-border: 195 10% 18%;
+  --muted: 200 7% 17%;
+  --muted-foreground: 200 5% 60%;
+  --muted-border: 200 6% 24%;
 
   --accent: 166 75% 65%;
-  --accent-foreground: 195 25% 8%;
+  --accent-foreground: 200 15% 12%;
   --accent-border: 166 75% 65%;
 
   --destructive: 0 65% 55%;
   --destructive-foreground: 0 0% 98%;
   --destructive-border: 0 65% 55%;
 
-  --border: 195 10% 16%;
-  --input: 195 12% 13%;
+  --border: 200 6% 22%;
+  --input: 200 7% 18%;
   --ring: 166 75% 65%;
 
   --radius: 0.375rem;

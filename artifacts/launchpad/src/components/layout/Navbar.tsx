@@ -26,20 +26,11 @@ export function Navbar({ onCreate }: NavbarProps) {
     <nav className="border-b border-border bg-card sticky top-0 z-50">
       <div className="container flex h-12 items-center max-w-7xl mx-auto px-4 md:px-8">
         <div className="flex flex-1 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              className="p-1.5 -ml-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-            >
-              <Menu className="h-4 w-4" />
-            </button>
-            <Link href="/">
-              <span className="font-black text-base tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none">
-                Aethpad
-              </span>
-            </Link>
-          </div>
+          <Link href="/">
+            <span className="font-black text-base tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none">
+              Aethpad
+            </span>
+          </Link>
 
           <div className="flex items-center gap-2">
             {isConnected ? (
@@ -59,6 +50,13 @@ export function Navbar({ onCreate }: NavbarProps) {
                 Connect wallet
               </button>
             )}
+            <button
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            >
+              <Menu className="h-4 w-4" />
+            </button>
           </div>
         </div>
       </div>
