@@ -83,6 +83,15 @@ export function Navbar({ onCreate }: NavbarProps) {
         </div>
 
         <div className="flex items-center gap-2 ml-auto md:ml-0">
+          <a
+            href={X_URL}
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Aethpad on X"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <XIcon className="h-3.5 w-3.5" />
+          </a>
           {authenticated && displayAddr ? (
             <>
               <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
