@@ -1,13 +1,25 @@
 import { Link } from 'wouter';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
-import { useAccount } from 'wagmi';
+import { useAccount, useBlockNumber, useGasPrice } from 'wagmi';
 import { Button } from '@/components/ui/button';
 import { Plus, Menu, Rocket, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
+import { formatGwei } from 'viem';
+import { useEthPrice } from '@/hooks/use-eth-price';
 
 interface NavbarProps {
   onCreate?: () => void;
+}
+
+const X_URL = 'https://x.com/aethpad?s=21';
+
+export function XIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M18.244 2H21l-6.52 7.45L22 22h-6.81l-4.78-6.27L4.8 22H2l7-8L2 2h6.92l4.32 5.74L18.244 2Zm-1.19 18h1.86L7.07 4h-2L17.054 20Z" />
+    </svg>
+  );
 }
 
 export function Navbar({ onCreate }: NavbarProps) {
@@ -16,6 +28,11 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { setActiveWallet } = useSetActiveWallet();
   const { address } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
+
+  const { data: block } = useBlockNumber({ watch: true, query: { refetchInterval: 12_000 } });
+  const { data: gas } = useGasPrice({ query: { refetchInterval: 15_000 } });
+  const { data: ethPrice } = useEthPrice();
+  const gwei = gas ? Number(formatGwei(gas)) : null;
 
   // Auto-connect: if user opens this in a dapp browser (MetaMask/Trust/Rainbow in-app)
   // and there's an injected wallet, set it as active so trades work seamlessly.
@@ -38,41 +55,59 @@ export function Navbar({ onCreate }: NavbarProps) {
 
   return (
     <nav className="border-b border-border bg-card sticky top-0 z-50">
-      <div className="container flex h-12 items-center max-w-7xl mx-auto px-4 md:px-8">
-        <div className="flex flex-1 items-center justify-between">
-          <Link href="/">
-            <span className="font-black text-base tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none">
-              Aethpad
-            </span>
-          </Link>
+      <div className="container flex h-12 items-center max-w-7xl mx-auto px-4 md:px-8 gap-4">
+        <Link href="/">
+          <span className="font-black text-base tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none whitespace-nowrap">
+            Aethpad
+          </span>
+        </Link>
 
-          <div className="flex items-center gap-2">
-            {authenticated && displayAddr ? (
-              <>
-                <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
-                  {displayAddr.slice(0, 6)}···{displayAddr.slice(-4)}
-                </span>
-                <Button variant="ghost" size="sm" onClick={() => logout()} className="text-xs text-muted-foreground hover:text-foreground">
-                  disconnect
-                </Button>
-              </>
-            ) : (
-              <button
-                onClick={() => login()}
-                disabled={!ready}
-                className="inline-flex items-center text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
-              >
-                {ready ? 'Connect wallet' : 'Loading…'}
-              </button>
-            )}
+        {/* Inline status info (formerly footer) — hidden on small screens */}
+        <div className="hidden md:flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-muted-foreground overflow-x-auto scrollbar-none flex-1 min-w-0">
+          <span className="flex items-center gap-1.5 whitespace-nowrap">
+            <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+            <span className="text-foreground/80">ETH·MAINNET</span>
+          </span>
+          <span className="text-border">|</span>
+          <span className="whitespace-nowrap">
+            BLK <span className="text-foreground/90 tabular-nums">{block ? `#${block.toString()}` : '—'}</span>
+          </span>
+          <span className="text-border">|</span>
+          <span className="whitespace-nowrap">
+            GAS <span className="text-foreground/90 tabular-nums">{gwei != null ? gwei.toFixed(2) : '—'}</span> gwei
+          </span>
+          <span className="text-border hidden lg:inline">|</span>
+          <span className="hidden lg:inline whitespace-nowrap">
+            ETH <span className="text-foreground/90 tabular-nums">${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto md:ml-0">
+          {authenticated && displayAddr ? (
+            <>
+              <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
+                {displayAddr.slice(0, 6)}···{displayAddr.slice(-4)}
+              </span>
+              <Button variant="ghost" size="sm" onClick={() => logout()} className="text-xs text-muted-foreground hover:text-foreground">
+                disconnect
+              </Button>
+            </>
+          ) : (
             <button
-              onClick={() => setMenuOpen(true)}
-              aria-label="Open menu"
-              className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+              onClick={() => login()}
+              disabled={!ready}
+              className="inline-flex items-center text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
             >
-              <Menu className="h-4 w-4" />
+              {ready ? 'Connect wallet' : 'Loading…'}
             </button>
-          </div>
+          )}
+          <button
+            onClick={() => setMenuOpen(true)}
+            aria-label="Open menu"
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+          >
+            <Menu className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -115,7 +150,37 @@ export function Navbar({ onCreate }: NavbarProps) {
                   Create token
                 </button>
               )}
+              <a
+                href={X_URL}
+                target="_blank"
+                rel="noreferrer"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+              >
+                <XIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                Follow on X
+              </a>
             </nav>
+            <div className="border-t border-border p-4 text-[10px] font-mono uppercase tracking-wider text-muted-foreground space-y-1.5 md:hidden">
+              <div className="flex items-center justify-between">
+                <span>Network</span>
+                <span className="flex items-center gap-1.5 text-foreground/80">
+                  <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full" /> ETH·Mainnet
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Block</span>
+                <span className="text-foreground/90 tabular-nums">{block ? `#${block.toString()}` : '—'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Gas</span>
+                <span className="text-foreground/90 tabular-nums">{gwei != null ? `${gwei.toFixed(2)} gwei` : '—'}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>ETH</span>
+                <span className="text-foreground/90 tabular-nums">{ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</span>
+              </div>
+            </div>
           </div>
         </>
       )}
