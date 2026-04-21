@@ -19,13 +19,14 @@ import { TOTAL_SUPPLY, BONDING_CURVE_ABI } from '@/lib/contracts';
 import { Copy, ExternalLink, Globe, Send } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
+import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
 
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
   const { name, symbol, realEthRaised, graduated, currentPrice, isLoading, refetch } = useToken(address);
   const { data: ethPrice } = useEthPrice();
   const live = useChainTokenLive(address);
+  const meta = useTokenMetadata(address);
   const [tab, setTab] = useState('chart');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [copiedAddr, setCopiedAddr] = useState(false);
@@ -109,7 +110,7 @@ export default function TokenDetailPage() {
               <div className="flex justify-between items-start flex-wrap gap-3">
                 <div className="min-w-0 flex items-start gap-4">
                   {(() => {
-                    const url = ipfsToHttp(getTokenMetadata(address)?.image);
+                    const url = ipfsToHttp(meta?.image);
                     return (
                       <div className="w-16 h-16 md:w-20 md:h-20 rounded-md bg-muted border border-border/50 overflow-hidden shrink-0 flex items-center justify-center">
                         {url ? (
@@ -167,7 +168,6 @@ export default function TokenDetailPage() {
                   </div>
 
                   {(() => {
-                    const meta = getTokenMetadata(address);
                     const web = normalizeWebsite(meta?.website);
                     const tw = normalizeTwitter(meta?.twitter);
                     const tg = normalizeTelegram(meta?.telegram);

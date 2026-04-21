@@ -25,6 +25,7 @@ export interface ChainLiveState {
   lastTrade: LiveTrade | null;
   realEthRaised: number;
   currentPrice: number;
+  creator: `0x${string}` | null;
   graduated: boolean;
   volume24hEth: number;
   priceChange24hPct: number;
@@ -67,6 +68,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
     lastTrade: null,
     realEthRaised: 0,
     currentPrice: 0,
+    creator: null,
     graduated: false,
     volume24hEth: 0,
     priceChange24hPct: 0,
@@ -308,6 +310,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
               { address, abi: BONDING_CURVE_ABI, functionName: 'realEthRaised' },
               { address, abi: BONDING_CURVE_ABI, functionName: 'currentPrice' },
               { address, abi: BONDING_CURVE_ABI, functionName: 'graduated' },
+              { address, abi: BONDING_CURVE_ABI, functionName: 'owner' },
             ],
             allowFailure: true,
           }),
@@ -409,6 +412,10 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           contractState[2]?.status === 'success'
             ? !!contractState[2].result
             : gradLogs.length > 0 || earlyGraduated;
+        const creator =
+          contractState[3]?.status === 'success'
+            ? (contractState[3].result as `0x${string}`)
+            : null;
 
         setState((s) => ({
           ...s,
@@ -417,6 +424,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           lastTrade: newest ?? null,
           realEthRaised,
           currentPrice,
+          creator,
           graduated,
           volume24hEth: stats.volume24hEth,
           priceChange24hPct: stats.priceChange24hPct,

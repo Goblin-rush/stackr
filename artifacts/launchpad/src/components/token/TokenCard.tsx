@@ -3,7 +3,7 @@ import { useEthPrice } from '@/hooks/use-eth-price';
 import { TARGET_ETH, TOTAL_SUPPLY } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { Link } from 'wouter';
-import { getTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
+import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
 interface TokenCardProps {
   address: `0x${string}`;
@@ -12,7 +12,7 @@ interface TokenCardProps {
 export function TokenCard({ address }: TokenCardProps) {
   const { name, symbol, realEthRaised, graduated, currentPrice } = useToken(address);
   const { data: ethPrice } = useEthPrice();
-  const meta = getTokenMetadata(address);
+  const meta = useTokenMetadata(address);
   const imageUrl = ipfsToHttp(meta?.image);
 
   if (!name || !symbol) {

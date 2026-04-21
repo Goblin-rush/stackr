@@ -1,3 +1,5 @@
+import { useEffect, useState } from 'react';
+
 export interface TokenMetadata {
   website?: string;
   twitter?: string;
@@ -39,7 +41,6 @@ export function normalizeTwitter(raw?: string | null): string | null {
   if (/^https?:\/\//i.test(v)) {
     try { return new URL(v).toString(); } catch { return null; }
   }
-  // Strip leading "twitter.com/" or "x.com/" if present
   const handle = v.replace(/^(?:https?:\/\/)?(?:www\.)?(?:twitter|x)\.com\//i, '').replace(/^\/+/, '');
   if (!/^[A-Za-z0-9_]{1,15}$/.test(handle)) return null;
   return `https://x.com/${handle}`;
@@ -61,7 +62,7 @@ export function normalizeTelegram(raw?: string | null): string | null {
 const KEY = 'launchpad:token-metadata';
 
 // Built-in seed for tokens deployed before server-side metadata existed.
-// Keys MUST be lowercase. These are visible to all users (not localStorage-only).
+// Keys MUST be lowercase.
 const SEED: Record<string, TokenMetadata> = {
   '0x768923190d6cff2a1bf1139ed5fc5487458cb953': {
     image: 'ipfs://bafkreibhb4ze4ujlz5oewg7ao6kv3syiybzjkyjgmwgsiao23fuhhglqfe',
@@ -69,7 +70,15 @@ const SEED: Record<string, TokenMetadata> = {
   },
 };
 
-function getAll(): Record<string, TokenMetadata> {
+// In-memory cache populated from the API.
+const remoteCache = new Map<string, TokenMetadata>();
+const subscribers = new Set<() => void>();
+
+function notify() {
+  for (const cb of subscribers) cb();
+}
+
+function getLocalAll(): Record<string, TokenMetadata> {
   try {
     return JSON.parse(localStorage.getItem(KEY) || '{}');
   } catch {
@@ -77,16 +86,91 @@ function getAll(): Record<string, TokenMetadata> {
   }
 }
 
-export function saveTokenMetadata(address: string, meta: Omit<TokenMetadata, 'createdAt'>) {
-  const all = getAll();
-  all[address.toLowerCase()] = { ...meta, createdAt: Date.now() };
-  localStorage.setItem(KEY, JSON.stringify(all));
-}
-
+/** Synchronous read: merges SEED + remote cache + local. local wins, then remote, then seed. */
 export function getTokenMetadata(address: string): TokenMetadata | null {
   const key = address.toLowerCase();
-  const local = getAll()[key];
+  const local = getLocalAll()[key];
+  const remote = remoteCache.get(key);
   const seed = SEED[key];
-  if (!local && !seed) return null;
-  return { ...(seed ?? {}), ...(local ?? {}) } as TokenMetadata;
+  if (!local && !remote && !seed) return null;
+  return { ...(seed ?? {}), ...(remote ?? {}), ...(local ?? {}) } as TokenMetadata;
+}
+
+/** Save locally only. */
+export function saveTokenMetadataLocal(address: string, meta: Omit<TokenMetadata, 'createdAt'>) {
+  const all = getLocalAll();
+  all[address.toLowerCase()] = { ...meta, createdAt: Date.now() };
+  localStorage.setItem(KEY, JSON.stringify(all));
+  notify();
+}
+
+/** Save locally AND publish to the API server so other users can see it. */
+export async function saveTokenMetadata(
+  address: string,
+  meta: Omit<TokenMetadata, 'createdAt'>,
+): Promise<void> {
+  saveTokenMetadataLocal(address, meta);
+  try {
+    await fetch(`/api/tokens/${address}/metadata`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(meta),
+    });
+    // Also seed remote cache so any open tab sees it without refetch.
+    remoteCache.set(address.toLowerCase(), { ...meta, createdAt: Date.now() });
+    notify();
+  } catch {
+    // Server save failed — local copy still works for the creator.
+  }
+}
+
+/** Fetch a single token's metadata from the API and cache it. */
+export async function fetchTokenMetadataRemote(address: string): Promise<TokenMetadata | null> {
+  const key = address.toLowerCase();
+  try {
+    const r = await fetch(`/api/tokens/${address}/metadata`);
+    if (r.status === 404) return null;
+    if (!r.ok) return null;
+    const meta = (await r.json()) as TokenMetadata;
+    remoteCache.set(key, meta);
+    notify();
+    return meta;
+  } catch {
+    return null;
+  }
+}
+
+/** Bulk prefetch all known token metadata into the cache. Called once at app boot. */
+export async function prefetchAllTokenMetadata(): Promise<void> {
+  try {
+    const r = await fetch('/api/tokens/metadata');
+    if (!r.ok) return;
+    const all = (await r.json()) as Record<string, TokenMetadata>;
+    for (const [addr, meta] of Object.entries(all)) {
+      remoteCache.set(addr.toLowerCase(), meta);
+    }
+    notify();
+  } catch {
+    // ignore
+  }
+}
+
+/** Hook that returns merged metadata and re-renders when remote/local changes. */
+export function useTokenMetadata(address: string | undefined | null): TokenMetadata | null {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const cb = () => force((n) => n + 1);
+    subscribers.add(cb);
+    if (address) {
+      const key = address.toLowerCase();
+      if (!remoteCache.has(key)) {
+        void fetchTokenMetadataRemote(address);
+      }
+    }
+    return () => {
+      subscribers.delete(cb);
+    };
+  }, [address]);
+  if (!address) return null;
+  return getTokenMetadata(address);
 }
