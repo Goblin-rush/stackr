@@ -159,6 +159,60 @@ export default function TokenDetailPage() {
                       <ExternalLink className="h-3 w-3" /> Etherscan
                     </a>
                   </div>
+
+                  {(() => {
+                    const meta = getTokenMetadata(address);
+                    const web = normalizeWebsite(meta?.website);
+                    const tw = normalizeTwitter(meta?.twitter);
+                    const tg = normalizeTelegram(meta?.telegram);
+                    if (!web && !tw && !tg && !meta?.description) return null;
+                    return (
+                      <div className="mt-3 space-y-3">
+                        {meta?.description && (
+                          <p className="text-sm text-foreground/80 leading-relaxed max-w-2xl">
+                            {meta.description}
+                          </p>
+                        )}
+                        {(web || tw || tg) && (
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {web && (
+                              <a
+                                href={web}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
+                              >
+                                <Globe className="h-3 w-3" />
+                                <span className="truncate max-w-[160px]">{web.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                              </a>
+                            )}
+                            {tw && (
+                              <a
+                                href={tw}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
+                              >
+                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                <span>@{tw.split('/').pop()}</span>
+                              </a>
+                            )}
+                            {tg && (
+                              <a
+                                href={tg}
+                                target="_blank"
+                                rel="noreferrer noopener"
+                                className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
+                              >
+                                <Send className="h-3 w-3" />
+                                <span>@{tg.split('/').pop()}</span>
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                   </div>
                 </div>
               </div>
