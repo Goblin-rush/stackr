@@ -1,4 +1,4 @@
-import type { LiveHolder } from '@/hooks/use-live-token';
+import type { LiveHolder } from '@/types/live';
 
 interface HoldersListProps {
   holders: LiveHolder[];

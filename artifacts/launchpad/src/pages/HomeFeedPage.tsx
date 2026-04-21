@@ -7,7 +7,6 @@ import { Link } from 'wouter';
 import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { Search, X, Plus } from 'lucide-react';
-import { MOCK_TOKENS, type MockToken } from '@/lib/mock-tokens';
 
 type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade';
 
@@ -193,27 +192,6 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   );
 }
 
-function MockTokenRow({ token }: { token: MockToken }) {
-  const progress = Math.min((token.raised / token.target) * 100, 100);
-  return (
-    <Row
-      d={{
-        href: `/preview/${token.slug}`,
-        symbol: token.symbol,
-        name: token.name,
-        graduated: !!token.graduated,
-        priceLabel: token.price,
-        mcapLabel: token.mcap,
-        raisedLabel: `${token.raised.toFixed(2)} / ${token.target} ETH`,
-        progress,
-        ageLabel: timeAgo(token.createdAtMs),
-        creatorLabel: shortAddr(token.creator),
-        isDemo: true,
-      }}
-    />
-  );
-}
-
 export default function HomeFeedPage() {
   const { tokens, isLoading } = useLaunchpadFeed(200);
   const { data: ethPrice } = useEthPrice();
@@ -314,16 +292,17 @@ export default function HomeFeedPage() {
             ))}
           </div>
         ) : tokens.length === 0 && !query.trim() ? (
-          <>
-            <div className="border-b border-border">
-              {MOCK_TOKENS.map((t) => (
-                <MockTokenRow key={t.slug} token={t} />
-              ))}
-            </div>
-            <p className="text-center text-[11px] text-muted-foreground font-mono py-3">
-              Demo data shown — <button onClick={() => setIsCreateOpen(true)} className="text-primary hover:underline underline-offset-2">launch the first real token →</button>
-            </p>
-          </>
+          <div className="text-center py-20 border-b border-border">
+            <p className="text-sm text-foreground font-mono mb-2">No tokens launched yet</p>
+            <p className="text-xs text-muted-foreground font-mono mb-4">Be the first to deploy on Aethpad</p>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Launch the first token
+            </button>
+          </div>
         ) : (
           <div className="text-center py-20 border-b border-border">
             <p className="text-xs text-muted-foreground font-mono">

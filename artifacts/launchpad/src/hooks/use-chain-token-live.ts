@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
 import { BONDING_CURVE_ABI } from '@/lib/contracts';
-import type { LiveTrade, LiveHolder } from '@/hooks/use-live-token';
+import type { LiveTrade, LiveHolder } from '@/types/live';
 
 const TARGET_ETH = 3.5;
 const TOTAL_SUPPLY = 1_000_000_000;

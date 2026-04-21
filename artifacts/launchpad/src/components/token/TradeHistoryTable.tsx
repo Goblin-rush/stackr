@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { LiveTrade } from '@/hooks/use-live-token';
+import type { LiveTrade } from '@/types/live';
 
 interface TradeHistoryTableProps {
   trades: LiveTrade[];

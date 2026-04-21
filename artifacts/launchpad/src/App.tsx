@@ -9,7 +9,6 @@ import { mainnet } from "wagmi/chains";
 import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
-import MockTokenDetailPage from "@/pages/MockTokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
 
 const queryClient = new QueryClient();
@@ -21,7 +20,6 @@ function Router() {
     <Switch>
       <Route path="/" component={HomeFeedPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
-      <Route path="/preview/:slug" component={MockTokenDetailPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

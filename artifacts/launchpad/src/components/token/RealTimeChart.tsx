@@ -9,7 +9,7 @@ import {
   type HistogramData,
   type UTCTimestamp,
 } from 'lightweight-charts';
-import type { LiveTrade } from '@/hooks/use-live-token';
+import type { LiveTrade } from '@/types/live';
 import type { Timeframe } from '@/components/token/PriceChart';
 
 const TIMEFRAME_SECONDS: Record<Timeframe, number> = {
