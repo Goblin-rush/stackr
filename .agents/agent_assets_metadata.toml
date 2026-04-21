@@ -118,13 +118,13 @@ title = "Asteroid Shiba — PFP"
 id = "tFQddPHBVnykj34ZP3hIv"
 uri = "file://artifacts/launchpad/public/favicon.svg"
 type = "image"
-title = "Aethpad — Favicon (Æ monogram)"
+title = "Aethpad — Favicon / PFP (256×256)"
 
 [[outputs]]
 id = "3rTHNeWtjCCtKd52s9-wu"
 uri = "file://artifacts/launchpad/public/banner.svg"
 type = "image"
-title = "Aethpad — X Banner (1500×500)"
+title = "Aethpad — Banner / OG (1500×500)"
 
 [[outputs]]
 id = "dNwNAJ-4vwhz_pfaDFYL-"
@@ -137,3 +137,9 @@ id = "4odylWjGiku4hMP65ku-q"
 uri = "file://attached_assets/generated_images/aethpad_banner.png"
 type = "image"
 title = "Aethpad — Banner Backdrop (16:9)"
+
+[[outputs]]
+id = "jnhgxt9kWBXVLn8ySFapa"
+uri = "file://artifacts/launchpad/public/og.svg"
+type = "image"
+title = "Aethpad — Social Card OG (1200×630)"
