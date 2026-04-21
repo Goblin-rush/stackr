@@ -1,14 +1,5 @@
-import { useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { FACTORY_ABI, FACTORY_ADDRESS } from '@/lib/contracts';
-
-export function useLaunchpadTokens(offset: bigint = 0n, limit: bigint = 50n) {
-  return useReadContract({
-    address: FACTORY_ADDRESS,
-    abi: FACTORY_ABI,
-    functionName: 'getTokens',
-    args: [offset, limit],
-  });
-}
 
 export function useCreateToken() {
   const { data: hash, isPending, writeContractAsync, error } = useWriteContract();

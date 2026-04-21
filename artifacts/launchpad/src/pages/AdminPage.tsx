@@ -82,15 +82,19 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
 
   const total = totalTokens ? Number(totalTokens) : 0;
 
-  const { data: tokens } = useReadContract({
-    address: FACTORY_ADDRESS,
-    abi: FACTORY_ABI,
-    functionName: 'getTokens',
-    args: [0n, BigInt(Math.max(total, 1))],
+  const { data: tokens } = useReadContracts({
+    contracts: Array.from({ length: total }, (_, i) => ({
+      address: FACTORY_ADDRESS,
+      abi: FACTORY_ABI,
+      functionName: 'allTokens' as const,
+      args: [BigInt(i)],
+    })),
     query: { enabled: total > 0 },
   });
 
-  const tokenAddresses = (tokens as `0x${string}`[] | undefined) ?? [];
+  const tokenAddresses = (tokens ?? [])
+    .map((r) => (r?.status === 'success' ? (r.result as `0x${string}`) : null))
+    .filter((a): a is `0x${string}` => !!a);
 
   return (
     <div className="space-y-6">

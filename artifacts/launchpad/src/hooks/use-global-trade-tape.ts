@@ -64,12 +64,26 @@ export function useGlobalTradeTape(maxTokens = 200) {
 
     (async () => {
       try {
-        const addrs = (await client.readContract({
+        // Use totalTokens + allTokens(i) since factory.getTokens() returns empty (bug)
+        const total = (await client.readContract({
           address: FACTORY_ADDRESS,
           abi: FACTORY_ABI,
-          functionName: 'getTokens',
-          args: [0n, BigInt(maxTokens)],
-        })) as `0x${string}`[];
+          functionName: 'totalTokens',
+        })) as bigint;
+        const totalNum = Math.min(Number(total), maxTokens);
+        let addrs: `0x${string}`[] = [];
+        if (totalNum > 0) {
+          const calls = Array.from({ length: totalNum }, (_, i) => ({
+            address: FACTORY_ADDRESS,
+            abi: FACTORY_ABI,
+            functionName: 'allTokens' as const,
+            args: [BigInt(i)],
+          }));
+          const res = await client.multicall({ contracts: calls, allowFailure: true });
+          addrs = res
+            .map((r) => (r.status === 'success' ? (r.result as `0x${string}`) : null))
+            .filter((a): a is `0x${string}` => !!a);
+        }
 
         if (cancelled || addrs.length === 0) {
           // still subscribe to TokenCreated so future tokens populate symbol map

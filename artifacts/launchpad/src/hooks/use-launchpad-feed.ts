@@ -93,13 +93,27 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
       try {
         setState((s) => ({ ...s, isLoading: true, loadError: null, refresh }));
 
-        // 1) Fetch token addresses
-        const addrs = (await client.readContract({
+        // 1) Fetch token addresses via totalTokens + allTokens(i) multicall
+        //    (factory's getTokens(offset,limit) returns empty due to a bug — workaround)
+        const total = (await client.readContract({
           address: FACTORY_ADDRESS,
           abi: FACTORY_ABI,
-          functionName: 'getTokens',
-          args: [0n, BigInt(maxTokens)],
-        })) as `0x${string}`[];
+          functionName: 'totalTokens',
+        })) as bigint;
+        const totalNum = Math.min(Number(total), maxTokens);
+        let addrs: `0x${string}`[] = [];
+        if (totalNum > 0) {
+          const calls = Array.from({ length: totalNum }, (_, i) => ({
+            address: FACTORY_ADDRESS,
+            abi: FACTORY_ABI,
+            functionName: 'allTokens' as const,
+            args: [BigInt(i)],
+          }));
+          const res = await client.multicall({ contracts: calls, allowFailure: true });
+          addrs = res
+            .map((r) => (r.status === 'success' ? (r.result as `0x${string}`) : null))
+            .filter((a): a is `0x${string}` => !!a);
+        }
 
         if (cancelled) return;
         if (addrs.length === 0) {
@@ -111,16 +125,15 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
         const fromBlock = tip > LOOKBACK_BLOCKS ? tip - LOOKBACK_BLOCKS : 0n;
 
         // 2) In parallel: TokenCreated logs, Buy logs (all addrs), Sell logs (all addrs), per-token reads
+        //    Each wrapped to prevent one failing call from killing the whole load.
+        const safeLogs = async <T,>(p: Promise<T[]>): Promise<T[]> => {
+          try { return await p; } catch { return []; }
+        };
         const [createdLogs, buyLogs, sellLogs, gradLogs] = await Promise.all([
-          client.getLogs({
-            address: FACTORY_ADDRESS,
-            event: TOKEN_CREATED,
-            fromBlock: 0n,
-            toBlock: tip,
-          }),
-          client.getLogs({ address: addrs, event: BUY_EVENT, fromBlock, toBlock: tip }),
-          client.getLogs({ address: addrs, event: SELL_EVENT, fromBlock, toBlock: tip }),
-          client.getLogs({ address: addrs, event: GRADUATED_EVENT, fromBlock, toBlock: tip }),
+          safeLogs(client.getLogs({ address: FACTORY_ADDRESS, event: TOKEN_CREATED, fromBlock, toBlock: tip })),
+          safeLogs(client.getLogs({ address: addrs, event: BUY_EVENT, fromBlock, toBlock: tip })),
+          safeLogs(client.getLogs({ address: addrs, event: SELL_EVENT, fromBlock, toBlock: tip })),
+          safeLogs(client.getLogs({ address: addrs, event: GRADUATED_EVENT, fromBlock, toBlock: tip })),
         ]);
 
         // Per-token chunked multicall for: name, symbol, realEthRaised, graduated, currentPrice
@@ -304,15 +317,12 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
         // 8) Polling fallback every 20s — also catches new tokens whose event subs missed
         pollTimer = window.setInterval(async () => {
           try {
-            const latestAddrs = (await client.readContract({
+            const latestTotal = (await client.readContract({
               address: FACTORY_ADDRESS,
               abi: FACTORY_ABI,
-              functionName: 'getTokens',
-              args: [0n, BigInt(maxTokens)],
-            })) as `0x${string}`[];
-            const knownLower = new Set(tokensRef.current.keys());
-            const newOnes = latestAddrs.filter((a) => !knownLower.has(a.toLowerCase()));
-            if (newOnes.length > 0) refresh(); // trigger full reload to enrich new ones
+              functionName: 'totalTokens',
+            })) as bigint;
+            if (Number(latestTotal) > tokensRef.current.size) refresh();
           } catch {
             /* ignore */
           }
