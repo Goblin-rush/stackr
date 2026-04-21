@@ -28,13 +28,12 @@ export default function HomeFeedPage() {
               </span>
             )}
           </div>
-          <Button
-            size="sm"
+          <button
             onClick={() => setIsCreateOpen(true)}
-            className="text-xs font-semibold h-8"
+            className="text-xs font-semibold bg-primary text-white px-3 py-1.5 rounded hover:bg-primary/90 transition-colors"
           >
             + Create token
-          </Button>
+          </button>
         </div>
 
         {isLoading ? (

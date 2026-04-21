@@ -29,9 +29,9 @@ export function Navbar() {
                 </Button>
               </>
             ) : (
-              <Button size="sm" variant="ghost" onClick={() => connect({ connector: metaMask() })} className="text-xs font-medium text-muted-foreground hover:text-foreground hover:bg-secondary">
+              <button onClick={() => connect({ connector: metaMask() })} className="text-xs font-medium text-primary hover:text-primary/80 transition-colors">
                 Connect wallet
-              </Button>
+              </button>
             )}
           </div>
         </div>
