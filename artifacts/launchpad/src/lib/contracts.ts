@@ -43,6 +43,13 @@ export const FACTORY_ABI = [
     outputs: [{ type: 'address[]' }],
   },
   {
+    name: 'owner',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+  {
     name: 'TokenCreated',
     type: 'event',
     inputs: [
@@ -83,6 +90,28 @@ export const BONDING_CURVE_ABI = [
       { name: 'minEthOut', type: 'uint256' },
     ],
     outputs: [],
+  },
+  {
+    name: 'owner',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address' }],
+  },
+  {
+    name: 'withdrawEth',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'EthWithdrawn',
+    type: 'event',
+    inputs: [
+      { name: 'to', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
   },
   {
     name: 'approve',
