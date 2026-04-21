@@ -1,59 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" shape-rendering="geometricPrecision">
-  <defs>
-    <pattern id="dots" x="0" y="0" width="32" height="32" patternUnits="userSpaceOnUse">
-      <circle cx="1" cy="1" r="1" fill="#1A2520"/>
-    </pattern>
-    <linearGradient id="curve" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#4ADE80" stop-opacity="0"/>
-      <stop offset="60%" stop-color="#4ADE80" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#4ADE80" stop-opacity="0.42"/>
-    </linearGradient>
-    <linearGradient id="curveLine" x1="0" y1="1" x2="1" y2="0">
-      <stop offset="0%" stop-color="#4ADE80" stop-opacity="0.25"/>
-      <stop offset="100%" stop-color="#4ADE80" stop-opacity="0.85"/>
-    </linearGradient>
-  </defs>
-
   <rect width="1500" height="500" fill="#0B0F0D"/>
-  <rect width="1500" height="500" fill="url(#dots)"/>
 
-  <!-- Bonding curve motif filling right half -->
-  <path d="M 0 500 C 600 500, 900 460, 1100 360 S 1400 140, 1500 60 L 1500 500 Z" fill="url(#curve)"/>
-  <path d="M 0 500 C 600 500, 900 460, 1100 360 S 1400 140, 1500 60" fill="none" stroke="url(#curveLine)" stroke-width="2.5"/>
-  <circle cx="1500" cy="60" r="6" fill="#4ADE80"/>
-
-  <!-- Hairline frame -->
-  <rect x="0.5" y="0.5" width="1499" height="499" fill="none" stroke="#1F2A24"/>
-
-  <!-- Æ Monogram block -->
-  <g transform="translate(96, 130)">
-    <rect width="240" height="240" rx="48" fill="#0F1614" stroke="#243029"/>
-    <g transform="translate(40, 40)" fill="#4ADE80">
-      <polygon points="0,160 28,160 46,0 18,0"/>
-      <rect x="46" y="0" width="28" height="160"/>
-      <rect x="18" y="100" width="56" height="18"/>
-      <rect x="74" y="0" width="62" height="22"/>
-      <rect x="74" y="48" width="48" height="20"/>
-      <rect x="74" y="138" width="62" height="22"/>
-    </g>
+  <!-- Mark: A -->
+  <g transform="translate(540, 160)" fill="none" stroke="#4ADE80" stroke-width="22" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M 0 180 L 60 0 L 120 180"/>
+    <path d="M 22 124 L 98 124"/>
   </g>
 
   <!-- Wordmark -->
-  <g transform="translate(380, 218)">
-    <text x="0" y="0" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace"
-          font-size="96" font-weight="900" letter-spacing="-2" fill="#F5F7F4">AETHPAD</text>
-    <text x="2" y="46" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace"
-          font-size="22" font-weight="500" letter-spacing="6" fill="#6B7A72">BONDING&#160;CURVE&#160;LAUNCHPAD</text>
-    <g transform="translate(0, 80)">
-      <rect width="10" height="10" fill="#4ADE80"/>
-      <text x="22" y="9" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace"
-            font-size="16" font-weight="600" letter-spacing="3" fill="#9CA9A1">ETHEREUM&#160;MAINNET</text>
-    </g>
-  </g>
-
-  <!-- Bottom-right tag -->
-  <g transform="translate(1380, 460)">
-    <text text-anchor="end" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, monospace"
-          font-size="14" font-weight="500" letter-spacing="3" fill="#3A4A41">FAIR&#160;·&#160;PERMISSIONLESS&#160;·&#160;ON&#8209;CHAIN</text>
-  </g>
+  <text x="700" y="304"
+        font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, 'Roboto Mono', monospace"
+        font-size="116" font-weight="800" letter-spacing="-4" fill="#F5F7F4">AETHPAD</text>
 </svg>

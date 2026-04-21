@@ -1,12 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" shape-rendering="geometricPrecision">
   <rect width="256" height="256" rx="56" fill="#0B0F0D"/>
-  <rect x="0.5" y="0.5" width="255" height="255" rx="55.5" fill="none" stroke="#1F2A24" stroke-width="1"/>
-  <g fill="#4ADE80">
-    <polygon points="38,212 76,212 100,52 62,52"/>
-    <rect x="100" y="52" width="36" height="160"/>
-    <rect x="62" y="134" width="74" height="22"/>
-    <rect x="136" y="52" width="82" height="28"/>
-    <rect x="136" y="116" width="64" height="24"/>
-    <rect x="136" y="184" width="82" height="28"/>
+  <g fill="none" stroke="#4ADE80" stroke-width="28" stroke-linecap="square" stroke-linejoin="miter">
+    <path d="M 56 212 L 128 44 L 200 212"/>
+    <path d="M 84 152 L 172 152"/>
   </g>
 </svg>
