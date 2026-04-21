@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useAccount, useBalance } from 'wagmi';
+import { useAccount, useBalance, useConnect } from 'wagmi';
+import { metaMask } from 'wagmi/connectors';
 import { parseEther, formatEther, formatUnits, parseUnits } from 'viem';
 import { useToken, useTokenBalance, useTokenPreviewBuy, useTokenPreviewSell, useTokenTrade } from '@/hooks/use-token';
 import { BONDING_CURVE_ABI } from '@/lib/contracts';
@@ -17,6 +18,7 @@ interface TradeWidgetProps {
 
 export function TradeWidget({ address }: TradeWidgetProps) {
   const { isConnected, address: userAddress } = useAccount();
+  const { connect } = useConnect();
   const { data: ethBalance } = useBalance({ address: userAddress });
   const { data: tokenBalance } = useTokenBalance(address, userAddress);
   const { graduated, symbol } = useToken(address);
@@ -56,6 +58,10 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   }, [isConfirmed, hash]);
 
   const handleBuy = async () => {
+    if (!isConnected) {
+      connect({ connector: metaMask() });
+      return;
+    }
     if (!buyAmountWei) return;
     const id = txPendingToast(`Buying ${symbol || 'tokens'}`);
     pendingToastRef.current = { id, label: `Bought ${symbol || 'tokens'}`, expectedHash: null };
@@ -79,6 +85,10 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   };
 
   const handleSell = async () => {
+    if (!isConnected) {
+      connect({ connector: metaMask() });
+      return;
+    }
     if (!sellAmountWei) return;
     const id = txPendingToast(`Selling ${symbol || 'tokens'}`);
     pendingToastRef.current = { id, label: `Sold ${symbol || 'tokens'}`, expectedHash: null };
@@ -108,15 +118,6 @@ export function TradeWidget({ address }: TradeWidgetProps) {
       pendingToastRef.current = null;
     }
   };
-
-  if (!isConnected) {
-    return (
-      <div className="border border-border/50 rounded-lg p-6 bg-card flex flex-col items-center justify-center text-center h-[300px]">
-        <p className="text-muted-foreground mb-4 font-mono text-sm">Wallet not connected</p>
-        <p className="text-sm">Connect your wallet to trade {symbol || 'tokens'}</p>
-      </div>
-    );
-  }
 
   const isLoading = isPending || isConfirming;
 
@@ -175,9 +176,9 @@ export function TradeWidget({ address }: TradeWidgetProps) {
             <Button 
               className="w-full h-12 font-bold tracking-wider text-primary-foreground" 
               onClick={handleBuy}
-              disabled={isLoading || !buyAmountWei}
+              disabled={isLoading || (isConnected && !buyAmountWei)}
             >
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'PLACE BUY ORDER'}
+              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : !isConnected ? 'CONNECT WALLET TO BUY' : 'PLACE BUY ORDER'}
             </Button>
           </TabsContent>
 
@@ -230,9 +231,9 @@ export function TradeWidget({ address }: TradeWidgetProps) {
                   variant="destructive"
                   className="w-full h-12 font-bold tracking-wider" 
                   onClick={handleSell}
-                  disabled={isLoading || !sellAmountWei || graduated}
+                  disabled={isLoading || (isConnected && !sellAmountWei) || graduated}
                 >
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'PLACE SELL ORDER'}
+                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : !isConnected ? 'CONNECT WALLET TO SELL' : 'PLACE SELL ORDER'}
                 </Button>
               </>
             )}
