@@ -1,0 +1,145 @@
+import { useEffect, useRef, useState } from 'react';
+import type { LiveTrade } from '@/types/live';
+import { ArrowUpRight, ArrowDownRight, ExternalLink } from 'lucide-react';
+
+interface Props {
+  trades: LiveTrade[];
+  symbol: string;
+}
+
+function timeAgo(ts: number): string {
+  const diff = Date.now() - ts;
+  if (diff < 1000) return 'now';
+  if (diff < 60_000) return `${Math.floor(diff / 1000)}s`;
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
+  return `${Math.floor(diff / 86_400_000)}d`;
+}
+
+function shortAddr(a: string) {
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
+
+function formatEth(n: number): string {
+  if (n >= 1) return n.toFixed(3);
+  if (n >= 0.001) return n.toFixed(4);
+  return n.toFixed(6);
+}
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(2)}K`;
+  if (n >= 1) return n.toFixed(2);
+  return n.toFixed(4);
+}
+
+export function TradeTape({ trades, symbol }: Props) {
+  const [, force] = useState(0);
+  const lastIdRef = useRef<number | null>(null);
+  const [flashId, setFlashId] = useState<number | null>(null);
+
+  // Tick every 5s so "time ago" labels stay fresh
+  useEffect(() => {
+    const t = setInterval(() => force((n) => n + 1), 5_000);
+    return () => clearInterval(t);
+  }, []);
+
+  // Flash highlight on new trade
+  useEffect(() => {
+    const newest = trades[0];
+    if (!newest) return;
+    if (lastIdRef.current === null) {
+      lastIdRef.current = newest.id;
+      return;
+    }
+    if (newest.id !== lastIdRef.current) {
+      lastIdRef.current = newest.id;
+      setFlashId(newest.id);
+      const t = setTimeout(() => setFlashId(null), 1200);
+      return () => clearTimeout(t);
+    }
+    return;
+  }, [trades]);
+
+  const recent = trades.slice(0, 8);
+
+  if (recent.length === 0) {
+    return (
+      <div className="px-3 py-2 border-b border-border/50 text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+        Tape · waiting for trades…
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-b border-border/50">
+      <div className="px-3 py-1.5 flex items-center gap-2 border-b border-border/30 bg-muted/20">
+        <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+        <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+          Tape · last {recent.length}
+        </span>
+      </div>
+      <div className="divide-y divide-border/30">
+        {recent.map((t) => {
+          const isBuy = t.type === 'buy';
+          const flash = flashId === t.id;
+          return (
+            <div
+              key={`${t.txHash}-${t.id}`}
+              className={`px-3 py-1.5 grid grid-cols-12 items-center gap-2 text-[11px] font-mono tabular-nums transition-colors ${
+                flash ? (isBuy ? 'bg-emerald-500/10' : 'bg-red-500/10') : 'hover:bg-muted/20'
+              }`}
+            >
+              {/* Type */}
+              <div className="col-span-2 flex items-center gap-1">
+                {isBuy ? (
+                  <ArrowUpRight className="h-3 w-3 text-emerald-400 shrink-0" />
+                ) : (
+                  <ArrowDownRight className="h-3 w-3 text-red-400 shrink-0" />
+                )}
+                <span className={`uppercase font-bold ${isBuy ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {t.type}
+                </span>
+              </div>
+              {/* ETH amount */}
+              <div className="col-span-3 text-right">
+                <span className="text-foreground">{formatEth(t.ethAmount)}</span>
+                <span className="text-muted-foreground ml-1">ETH</span>
+              </div>
+              {/* Token amount */}
+              <div className="col-span-3 text-right hidden sm:block">
+                <span className="text-foreground/70">{formatTokens(t.tokenAmount)}</span>
+                <span className="text-muted-foreground ml-1 truncate">{symbol}</span>
+              </div>
+              {/* Address */}
+              <div className="col-span-4 sm:col-span-3 text-right">
+                <a
+                  href={`https://etherscan.io/address/${t.account}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
+                  title={t.account}
+                >
+                  {shortAddr(t.account)}
+                </a>
+              </div>
+              {/* Time + tx link */}
+              <div className="col-span-3 sm:col-span-1 text-right text-muted-foreground">
+                <a
+                  href={`https://etherscan.io/tx/${t.txHash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-0.5 hover:text-primary transition-colors"
+                  title={`tx ${t.txHash.slice(0, 10)}…`}
+                >
+                  {timeAgo(t.timestamp)}
+                  <ExternalLink className="h-2.5 w-2.5 opacity-60" />
+                </a>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

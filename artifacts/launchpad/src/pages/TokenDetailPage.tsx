@@ -9,6 +9,7 @@ import { useChainTokenLive } from '@/hooks/use-chain-token-live';
 import { BondingCurveProgress } from '@/components/token/BondingCurveProgress';
 import { TradeWidget } from '@/components/token/TradeWidget';
 import { RealTimeChart } from '@/components/token/RealTimeChart';
+import { TradeTape } from '@/components/token/TradeTape';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import { type Timeframe } from '@/components/token/PriceChart';
@@ -357,6 +358,10 @@ export default function TokenDetailPage() {
           {/* Trade Widget (Right) */}
           <div className="lg:col-span-4 space-y-6">
             <TradeWidget address={address} />
+
+            <div className="border border-border/50 bg-muted/10">
+              <TradeTape trades={live.trades} symbol={symbol || 'TOKEN'} />
+            </div>
 
             <div className="p-4 border border-border/50 bg-muted/10 text-xs font-mono text-muted-foreground space-y-2">
               <p className="uppercase tracking-widest text-foreground font-bold mb-3 border-b border-border/50 pb-2">Terminal Guidelines</p>
