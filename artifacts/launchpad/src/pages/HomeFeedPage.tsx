@@ -208,7 +208,7 @@ export default function HomeFeedPage() {
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
         {/* Header */}
-        <div className="mb-5 flex items-center justify-end">
+        <div className="mb-5 flex items-center justify-start">
           <button
             onClick={() => setIsCreateOpen(true)}
             className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
