@@ -62,20 +62,7 @@ export function Navbar({ onCreate }: NavbarProps) {
           </span>
         </Link>
 
-        {/* Inline status info (formerly footer) — hidden on small screens */}
-        <div className="hidden md:flex items-center gap-3 text-[10px] font-mono uppercase tracking-wider text-muted-foreground overflow-x-auto scrollbar-none flex-1 min-w-0">
-          <span className="flex items-center gap-1.5 whitespace-nowrap">
-            <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            <span className="text-foreground/80">ETH·MAINNET</span>
-          </span>
-          <span className="text-border">|</span>
-          <span className="whitespace-nowrap">
-            BLK <span className="text-foreground/90 tabular-nums">{block ? `#${block.toString()}` : '—'}</span>
-          </span>
-          <span className="text-border">|</span>
-          <span className="whitespace-nowrap">
-            GAS <span className="text-foreground/90 tabular-nums">{gwei != null ? gwei.toFixed(2) : '—'}</span> gwei
-          </span>
+        <div className="flex items-center gap-2 ml-auto">
           <a
             href={X_URL}
             target="_blank"
@@ -85,13 +72,6 @@ export function Navbar({ onCreate }: NavbarProps) {
           >
             <XIcon className="h-3.5 w-3.5" />
           </a>
-          <span className="text-border hidden lg:inline">|</span>
-          <span className="hidden lg:inline whitespace-nowrap">
-            ETH <span className="text-foreground/90 tabular-nums">${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}</span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto md:ml-0">
           {authenticated && displayAddr ? (
             <>
               <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
