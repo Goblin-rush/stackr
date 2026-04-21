@@ -1,4 +1,5 @@
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { GlobalTradeTape } from '@/components/layout/GlobalTradeTape';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';

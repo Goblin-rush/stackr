@@ -76,13 +76,6 @@ export function Navbar({ onCreate }: NavbarProps) {
           <span className="whitespace-nowrap">
             GAS <span className="text-foreground/90 tabular-nums">{gwei != null ? gwei.toFixed(2) : '—'}</span> gwei
           </span>
-          <span className="text-border hidden lg:inline">|</span>
-          <span className="hidden lg:inline whitespace-nowrap">
-            ETH <span className="text-foreground/90 tabular-nums">${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}</span>
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto md:ml-0">
           <a
             href={X_URL}
             target="_blank"
@@ -92,6 +85,13 @@ export function Navbar({ onCreate }: NavbarProps) {
           >
             <XIcon className="h-3.5 w-3.5" />
           </a>
+          <span className="text-border hidden lg:inline">|</span>
+          <span className="hidden lg:inline whitespace-nowrap">
+            ETH <span className="text-foreground/90 tabular-nums">${ethPrice ? ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 }) : '—'}</span>
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 ml-auto md:ml-0">
           {authenticated && displayAddr ? (
             <>
               <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
