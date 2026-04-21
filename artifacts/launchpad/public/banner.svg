@@ -1,14 +1,14 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" shape-rendering="geometricPrecision">
-  <rect width="1500" height="500" fill="#0B0F0D"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1500 500" shape-rendering="crispEdges">
+  <rect width="1500" height="500" fill="#0A0E0C"/>
 
-  <!-- Mark: A -->
-  <g transform="translate(540, 160)" fill="none" stroke="#4ADE80" stroke-width="22" stroke-linecap="square" stroke-linejoin="miter">
-    <path d="M 0 180 L 60 0 L 120 180"/>
-    <path d="M 22 124 L 98 124"/>
+  <!-- Brutalist L-block mark -->
+  <g transform="translate(120, 130)">
+    <path d="M 0 0 H 240 V 120 H 120 V 240 H 0 Z" fill="#4ADE80"/>
   </g>
 
   <!-- Wordmark -->
-  <text x="700" y="304"
-        font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Menlo, 'Roboto Mono', monospace"
-        font-size="116" font-weight="800" letter-spacing="-4" fill="#F5F7F4">AETHPAD</text>
+  <text x="430" y="305"
+        font-family="ui-monospace, 'IBM Plex Mono', 'JetBrains Mono', Menlo, monospace"
+        font-size="148" font-weight="800" letter-spacing="-6" fill="#F5F7F4"
+        shape-rendering="geometricPrecision">AETHPAD</text>
 </svg>
