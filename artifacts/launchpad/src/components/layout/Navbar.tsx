@@ -1,7 +1,8 @@
 import { Link } from 'wouter';
-import { useAccount, useConnect, useDisconnect } from 'wagmi';
+import { usePrivy, useWallets } from '@privy-io/react-auth';
+import { useSetActiveWallet } from '@privy-io/wagmi';
+import { useAccount } from 'wagmi';
 import { Button } from '@/components/ui/button';
-import { metaMask } from 'wagmi/connectors';
 import { Plus, Menu, Rocket, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -10,17 +11,30 @@ interface NavbarProps {
 }
 
 export function Navbar({ onCreate }: NavbarProps) {
-  const { address, isConnected } = useAccount();
-  const { connect } = useConnect();
-  const { disconnect } = useDisconnect();
+  const { ready, authenticated, login, logout, user } = usePrivy();
+  const { wallets } = useWallets();
+  const { setActiveWallet } = useSetActiveWallet();
+  const { address } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  // Auto-connect: if user opens this in a dapp browser (MetaMask/Trust/Rainbow in-app)
+  // and there's an injected wallet, set it as active so trades work seamlessly.
+  useEffect(() => {
+    if (!ready || !authenticated || !wallets.length) return;
+    const injected = wallets.find((w) => w.walletClientType === 'metamask' || w.connectorType === 'injected');
+    const target = injected ?? wallets[0];
+    if (target) setActiveWallet(target).catch(() => {});
+  }, [ready, authenticated, wallets, setActiveWallet]);
+
+  // Close menu on Esc
   useEffect(() => {
     if (!menuOpen) return;
     const close = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [menuOpen]);
+
+  const displayAddr = address ?? (user?.wallet?.address as `0x${string}` | undefined);
 
   return (
     <nav className="border-b border-border bg-card sticky top-0 z-50">
@@ -33,21 +47,22 @@ export function Navbar({ onCreate }: NavbarProps) {
           </Link>
 
           <div className="flex items-center gap-2">
-            {isConnected ? (
+            {authenticated && displayAddr ? (
               <>
                 <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
-                  {address?.slice(0, 6)}···{address?.slice(-4)}
+                  {displayAddr.slice(0, 6)}···{displayAddr.slice(-4)}
                 </span>
-                <Button variant="ghost" size="sm" onClick={() => disconnect()} className="text-xs text-muted-foreground hover:text-foreground">
+                <Button variant="ghost" size="sm" onClick={() => logout()} className="text-xs text-muted-foreground hover:text-foreground">
                   disconnect
                 </Button>
               </>
             ) : (
               <button
-                onClick={() => connect({ connector: metaMask() })}
-                className="inline-flex items-center text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors"
+                onClick={() => login()}
+                disabled={!ready}
+                className="inline-flex items-center text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
               >
-                Connect wallet
+                {ready ? 'Connect wallet' : 'Loading…'}
               </button>
             )}
             <button

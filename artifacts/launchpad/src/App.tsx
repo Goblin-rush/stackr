@@ -1,9 +1,11 @@
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { WagmiProvider } from "wagmi";
+import { PrivyProvider } from "@privy-io/react-auth";
+import { WagmiProvider } from "@privy-io/wagmi";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { config } from "@/lib/wagmi";
+import { mainnet } from "wagmi/chains";
 import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
@@ -11,6 +13,8 @@ import MockTokenDetailPage from "@/pages/MockTokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
 
 const queryClient = new QueryClient();
+
+const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string;
 
 function Router() {
   return (
@@ -26,16 +30,36 @@ function Router() {
 
 function App() {
   return (
-    <WagmiProvider config={config}>
+    <PrivyProvider
+      appId={PRIVY_APP_ID}
+      config={{
+        loginMethods: ['email', 'google', 'apple', 'twitter', 'wallet'],
+        appearance: {
+          theme: 'dark',
+          accentColor: '#00d9b2',
+          logo: undefined,
+          showWalletLoginFirst: false,
+        },
+        embeddedWallets: {
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
+        },
+        defaultChain: mainnet,
+        supportedChains: [mainnet],
+      }}
+    >
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-        </TooltipProvider>
+        <WagmiProvider config={config}>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <Toaster />
+          </TooltipProvider>
+        </WagmiProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    </PrivyProvider>
   );
 }
 
