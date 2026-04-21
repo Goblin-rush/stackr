@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
+import MockHomePage from "@/pages/MockHomePage";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +20,8 @@ const PRIVY_APP_ID = import.meta.env.VITE_PRIVY_APP_ID as string;
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomeFeedPage} />
+      <Route path="/" component={MockHomePage} />
+      <Route path="/live" component={HomeFeedPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
