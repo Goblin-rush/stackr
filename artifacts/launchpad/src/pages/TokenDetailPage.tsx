@@ -2,6 +2,7 @@ import { useParams } from 'wouter';
 import { useState, useEffect } from 'react';
 import { useWatchContractEvent } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
+import { Footer } from '@/components/layout/Footer';
 import { GlobalTradeTape } from '@/components/layout/GlobalTradeTape';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -379,6 +380,7 @@ export default function TokenDetailPage() {
 
         </div>
       </main>
+      <Footer />
     </div>
   );
 }

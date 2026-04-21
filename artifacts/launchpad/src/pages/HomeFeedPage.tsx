@@ -316,6 +316,7 @@ export default function HomeFeedPage() {
 
       </main>
 
+      <Footer />
       <CreateTokenModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </div>
   );

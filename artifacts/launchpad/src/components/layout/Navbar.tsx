@@ -159,16 +159,6 @@ export function Navbar({ onCreate }: NavbarProps) {
                   Create token
                 </button>
               )}
-              <a
-                href={X_URL}
-                target="_blank"
-                rel="noreferrer"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
-              >
-                <XIcon className="h-3.5 w-3.5 text-muted-foreground" />
-                Follow on X
-              </a>
             </nav>
             <div className="border-t border-border p-4 text-[10px] font-mono uppercase tracking-wider text-muted-foreground space-y-1.5 md:hidden">
               <div className="flex items-center justify-between">
