@@ -249,18 +249,14 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
               )} />
             </div>
 
-            <div className="bg-secondary/50 p-3 rounded-md border border-border/50 text-xs font-mono text-muted-foreground space-y-1">
-              <div className="flex justify-between">
-                <span>Deployment Fee</span>
-                <span>Gas only (~0.002 ETH)</span>
-              </div>
-              {initialBuyVal > 0 && (
-                <div className="flex justify-between text-primary">
+            {initialBuyVal > 0 && (
+              <div className="bg-secondary/50 p-3 rounded-md border border-border/50 text-xs font-mono text-primary">
+                <div className="flex justify-between">
                   <span>Initial Buy</span>
                   <span>{initialBuyVal.toFixed(4)} ETH + gas</span>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {error && (
               <p className="text-sm text-destructive break-words">{error.message || 'An error occurred'}</p>
