@@ -309,6 +309,7 @@ export default function TokenDetailPage() {
                     </div>
                   </div>
                   <RealTimeChart
+                    baselinePrice={priceInEth}
                     trades={live.trades}
                     lastTrade={live.lastTrade}
                     timeframe={timeframe}

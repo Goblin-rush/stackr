@@ -26,6 +26,7 @@ interface RealTimeChartProps {
   timeframe: Timeframe;
   snapshotKey: string | number; // changes when initial backfill completes or token changes
   height?: number;
+  baselinePrice?: number; // current price to draw a horizontal line when no trades yet
 }
 
 interface BucketAgg {
@@ -88,10 +89,11 @@ function buildCandles(trades: LiveTrade[], timeframe: Timeframe) {
   return { candles, volumes };
 }
 
-export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, height = 380 }: RealTimeChartProps) {
+export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, height = 380, baselinePrice }: RealTimeChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+  const baselineLineRef = useRef<ReturnType<ISeriesApi<'Candlestick'>['createPriceLine']> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
   const lastSeenIdRef = useRef<number | null>(null);
   const tradesRef = useRef<LiveTrade[]>(trades);
@@ -196,6 +198,27 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshotKey, timeframe]);
 
+  // Draw / remove a horizontal "current bonding-curve price" line when there are no trades yet.
+  useEffect(() => {
+    const series = candleSeriesRef.current;
+    if (!series) return;
+
+    if (baselineLineRef.current) {
+      series.removePriceLine(baselineLineRef.current);
+      baselineLineRef.current = null;
+    }
+    if (trades.length === 0 && baselinePrice && Number.isFinite(baselinePrice) && baselinePrice > 0) {
+      baselineLineRef.current = series.createPriceLine({
+        price: baselinePrice,
+        color: '#4ADE80',
+        lineWidth: 2,
+        lineStyle: 2,
+        axisLabelVisible: true,
+        title: 'curve',
+      });
+    }
+  }, [trades.length, baselinePrice, snapshotKey, timeframe]);
+
   // Incremental live updates: process every trade newer than lastSeenId, in chronological order.
   // This handles bursts where multiple trades arrive in a single onLogs call but React batches renders.
   useEffect(() => {
@@ -255,9 +278,9 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
     <div className="relative">
       <div ref={containerRef} style={{ height: `${height}px`, width: '100%' }} />
       {trades.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <p className="text-xs font-mono text-muted-foreground">
-            No trades yet — chart will populate after the first buy.
+        <div className="absolute inset-x-0 top-3 flex items-center justify-center pointer-events-none">
+          <p className="text-[10px] font-mono text-muted-foreground bg-background/60 px-2 py-1 rounded">
+            No trades yet — showing current bonding-curve price.
           </p>
         </div>
       )}
