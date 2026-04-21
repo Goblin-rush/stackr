@@ -51,7 +51,7 @@ const MOCK_TOKENS = [
 function MockCard({ token }: { token: typeof MOCK_TOKENS[0] }) {
   const progress = Math.min((token.raised / token.target) * 100, 100);
   return (
-    <div className="bg-card border border-border rounded-md p-4 flex flex-col gap-3 opacity-60 select-none pointer-events-none">
+    <div className="bg-card border border-border rounded-md p-4 flex flex-col gap-3 hover:border-primary/40 transition-colors cursor-pointer">
       <div className="flex items-start gap-3">
         <div
           className="w-10 h-10 rounded-md flex items-center justify-center shrink-0 font-black text-sm text-white"
