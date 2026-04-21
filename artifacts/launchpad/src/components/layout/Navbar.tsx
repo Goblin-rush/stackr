@@ -101,9 +101,6 @@ export function Navbar({ onCreate }: NavbarProps) {
                 </button>
               )}
             </nav>
-            <div className="border-t border-border px-4 py-3 text-[10px] font-mono text-muted-foreground">
-              Ethereum Mainnet · Live
-            </div>
           </div>
         </>
       )}
