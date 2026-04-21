@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" shape-rendering="geometricPrecision">
+  <defs>
+    <style type="text/css">
+      @font-face {
+        font-family: 'Space Grotesk';
+        font-style: normal;
+        font-weight: 700;
+        font-display: block;
+        src: url(https://fonts.gstatic.com/s/spacegrotesk/v16/V8mDoQDjQSkFtoMM3T6r8E7mF71Q-gOoraIAEjjxUUxjLA.woff2) format('woff2');
+      }
+      .wm { font-family: 'Space Grotesk', 'Helvetica Neue', Arial, sans-serif; font-weight: 700; }
+      .meta { font-family: ui-monospace, 'IBM Plex Mono', Menlo, monospace; font-weight: 500; }
+    </style>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0A0E0C"/>
+
+  <!-- Æ mark, top-left -->
+  <g transform="translate(96, 96)">
+    <rect width="180" height="180" rx="40" fill="#0B0F0D" stroke="#1F2A24"/>
+    <g transform="translate(28, 24) scale(0.52)" fill="#4ADE80">
+      <polygon points="56,200 82,200 104,56 78,56"/>
+      <rect x="104" y="56" width="28" height="144"/>
+      <rect x="72" y="128" width="60" height="18"/>
+      <rect x="132" y="56" width="68" height="22"/>
+      <rect x="132" y="120" width="52" height="20"/>
+      <rect x="132" y="178" width="68" height="22"/>
+    </g>
+  </g>
+
+  <!-- Big wordmark -->
+  <text x="96" y="430" class="wm"
+        font-size="180" letter-spacing="-8" fill="#F5F7F4">AETHPAD</text>
+
+  <!-- Subline -->
+  <text x="100" y="490" class="meta"
+        font-size="22" letter-spacing="6" fill="#6B7A72">BONDING&#160;CURVE&#160;LAUNCHPAD&#160;·&#160;ETHEREUM</text>
+
+  <!-- Bottom-left accent -->
+  <g transform="translate(96, 540)">
+    <rect width="10" height="10" fill="#4ADE80"/>
+    <text x="22" y="9" class="meta" font-size="16" letter-spacing="3" fill="#9CA9A1">aethpad.com</text>
+  </g>
+</svg>
