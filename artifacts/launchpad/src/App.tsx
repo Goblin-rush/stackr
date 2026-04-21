@@ -11,6 +11,7 @@ import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
+import PreviewPage from "@/pages/PreviewPage";
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ function Router() {
       <Route path="/" component={HomeFeedPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
       <Route path="/admin" component={AdminPage} />
+      <Route path="/preview" component={PreviewPage} />
       <Route component={NotFound} />
     </Switch>
   );
