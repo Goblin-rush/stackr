@@ -1,6 +1,6 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { GlobalTradeTape } from '@/components/layout/GlobalTradeTape';
+import { TrustBanner } from '@/components/layout/TrustBanner';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -218,49 +218,62 @@ export default function HomeFeedPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onCreate={() => setIsCreateOpen(true)} />
+      <TrustBanner />
 
-      <main className="flex-1 container max-w-7xl mx-auto px-4 py-4 md:px-8">
-        {/* Single control strip: search + create + tabs */}
+      <main className="flex-1 container max-w-7xl mx-auto px-4 py-5 md:px-8">
+        {/* Header: title + actions */}
+        <div className="flex items-end justify-between mb-4 border-b-2 border-border pb-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-widest text-primary">
+              MARKET FEED
+            </p>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-none mt-1">
+              All Tokens
+            </h1>
+          </div>
+          <button
+            onClick={() => setIsCreateOpen(true)}
+            className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/85 transition-colors whitespace-nowrap border-2 border-primary"
+          >
+            <Plus className="h-3 w-3" strokeWidth={3} />
+            Launch
+          </button>
+        </div>
+
+        {/* Search + sort tabs */}
         <div className="flex flex-col md:flex-row md:items-center gap-2 mb-3">
-          <div className="flex items-center gap-2 md:w-auto">
-            <div className="relative flex-1 md:w-72">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-              <input
-                type="text"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search name, symbol, address…"
-                className="w-full pl-8 pr-8 py-1.5 bg-card border border-border rounded-md text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary/50 transition-colors"
-              />
-              {query && (
-                <button
-                  onClick={() => setQuery('')}
-                  aria-label="Clear search"
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-1 text-xs font-bold bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:bg-primary/90 transition-colors whitespace-nowrap"
-            >
-              <Plus className="h-3 w-3" />
-              Create
-            </button>
+          <div className="relative md:w-72">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="search name / symbol / address…"
+              className="w-full pl-8 pr-8 py-2 bg-card border-2 border-border text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+            />
+            {query && (
+              <button
+                onClick={() => setQuery('')}
+                aria-label="Clear search"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            )}
           </div>
 
-          <div className="flex items-center gap-0.5 overflow-x-auto scrollbar-none flex-1">
-            {SORT_TABS.map((t) => {
+          <div className="flex items-center gap-0 overflow-x-auto scrollbar-none flex-1 border-2 border-border md:ml-2">
+            {SORT_TABS.map((t, i) => {
               const active = sort === t.id;
               return (
                 <button
                   key={t.id}
                   onClick={() => setSort(t.id)}
-                  className={`text-xs font-medium px-2.5 py-1.5 rounded-md whitespace-nowrap transition-colors ${
+                  className={`text-[10px] font-black uppercase tracking-widest px-3 py-2 whitespace-nowrap transition-colors ${
+                    i > 0 ? 'border-l-2 border-border' : ''
+                  } ${
                     active
-                      ? 'text-primary bg-primary/10'
+                      ? 'bg-primary text-primary-foreground'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
                   }`}
                 >
@@ -272,7 +285,7 @@ export default function HomeFeedPage() {
         </div>
 
         {/* Table header (desktop only) */}
-        <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2 border-b border-border text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+        <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2.5 border-y-2 border-border bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground">
           <div className="col-span-3">Token</div>
           <div className="col-span-2 text-right">Price</div>
           <div className="col-span-2 text-right">Mcap</div>

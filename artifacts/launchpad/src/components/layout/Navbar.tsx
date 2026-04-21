@@ -2,7 +2,6 @@ import { Link } from 'wouter';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAccount } from 'wagmi';
-import { Button } from '@/components/ui/button';
 import { Plus, Menu, Rocket, X, LayoutDashboard } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -27,11 +26,8 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { setActiveWallet } = useSetActiveWallet();
   const { address } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
-
   const { data: ethPrice } = useEthPrice();
 
-  // Auto-connect: if user opens this in a dapp browser (MetaMask/Trust/Rainbow in-app)
-  // and there's an injected wallet, set it as active so trades work seamlessly.
   useEffect(() => {
     if (!ready || !authenticated || !wallets.length) return;
     const injected = wallets.find((w) => w.walletClientType === 'metamask' || w.connectorType === 'injected');
@@ -39,7 +35,6 @@ export function Navbar({ onCreate }: NavbarProps) {
     if (target) setActiveWallet(target).catch(() => {});
   }, [ready, authenticated, wallets, setActiveWallet]);
 
-  // Close menu on Esc
   useEffect(() => {
     if (!menuOpen) return;
     const close = (e: KeyboardEvent) => e.key === 'Escape' && setMenuOpen(false);
@@ -50,44 +45,65 @@ export function Navbar({ onCreate }: NavbarProps) {
   const displayAddr = address ?? (user?.wallet?.address as `0x${string}` | undefined);
 
   return (
-    <nav className="border-b border-border bg-card sticky top-0 z-50">
-      <div className="container flex h-12 items-center max-w-7xl mx-auto px-4 md:px-8 gap-4">
+    <nav className="border-b-2 border-border bg-background sticky top-0 z-50">
+      <div className="container flex h-14 items-center max-w-7xl mx-auto px-4 md:px-8 gap-3">
+        {/* Brutal wordmark */}
         <Link href="/">
-          <span className="font-black text-base tracking-tight text-foreground hover:text-primary transition-colors cursor-pointer select-none whitespace-nowrap">
-            Aethpad
-          </span>
+          <div className="flex items-baseline gap-1.5 cursor-pointer select-none whitespace-nowrap group">
+            <span className="font-black text-lg tracking-tighter text-foreground group-hover:text-primary transition-colors">
+              AETHPAD
+            </span>
+            <span className="font-black text-lg tracking-tighter text-primary">//v2</span>
+          </div>
         </Link>
 
-        <Link href="/dashboard">
-          <span className="hidden md:inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors cursor-pointer ml-2">
-            <LayoutDashboard className="h-3.5 w-3.5" />
-            Dashboard
-          </span>
-        </Link>
+        {/* BASE chip — prominent chain identifier */}
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest border-2 border-primary text-primary px-2 py-1 leading-none">
+          <span className="h-1.5 w-1.5 bg-primary animate-pulse" />
+          BASE
+        </span>
+
+        {/* Desktop nav */}
+        <div className="hidden md:flex items-center gap-1 ml-3">
+          <Link href="/">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-secondary px-2.5 py-1.5 cursor-pointer transition-colors">
+              Feed
+            </span>
+          </Link>
+          <Link href="/dashboard">
+            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-secondary px-2.5 py-1.5 cursor-pointer transition-colors">
+              <LayoutDashboard className="h-3 w-3" />
+              Dashboard
+            </span>
+          </Link>
+        </div>
 
         <div className="flex items-center gap-2 ml-auto">
           {authenticated && displayAddr ? (
             <>
-              <span className="hidden sm:block text-xs font-mono text-muted-foreground bg-secondary border border-border px-2.5 py-1.5 rounded">
-                {displayAddr.slice(0, 6)}···{displayAddr.slice(-4)}
+              <span className="hidden sm:block text-[11px] font-mono font-semibold text-foreground bg-secondary border border-border px-2.5 py-1.5">
+                {displayAddr.slice(0, 6)}··{displayAddr.slice(-4)}
               </span>
-              <Button variant="ghost" size="sm" onClick={() => logout()} className="text-xs text-muted-foreground hover:text-foreground">
+              <button
+                onClick={() => logout()}
+                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-destructive px-2 py-1.5 transition-colors"
+              >
                 disconnect
-              </Button>
+              </button>
             </>
           ) : (
             <button
               onClick={() => login()}
               disabled={!ready}
-              className="inline-flex items-center text-xs font-bold bg-primary text-primary-foreground px-2.5 py-1.5 rounded-md hover:bg-primary/90 transition-colors disabled:opacity-50"
+              className="inline-flex items-center text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/85 transition-colors disabled:opacity-50 border-2 border-primary"
             >
-              {ready ? 'Connect wallet' : 'Loading…'}
+              {ready ? 'Connect' : '…'}
             </button>
           )}
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border border-border"
           >
             <Menu className="h-4 w-4" />
           </button>
@@ -100,13 +116,16 @@ export function Navbar({ onCreate }: NavbarProps) {
             onClick={() => setMenuOpen(false)}
             className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
           />
-          <div className="fixed left-0 top-0 bottom-0 w-64 bg-card border-r border-border z-50 flex flex-col">
-            <div className="flex items-center justify-between h-12 px-4 border-b border-border">
-              <span className="font-black text-base tracking-tight text-foreground">Aethpad</span>
+          <div className="fixed left-0 top-0 bottom-0 w-72 bg-card border-r-2 border-border z-50 flex flex-col">
+            <div className="flex items-center justify-between h-14 px-4 border-b-2 border-border">
+              <div className="flex items-baseline gap-1">
+                <span className="font-black text-lg tracking-tighter text-foreground">AETHPAD</span>
+                <span className="font-black text-lg tracking-tighter text-primary">//v2</span>
+              </div>
               <button
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close menu"
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -115,18 +134,18 @@ export function Navbar({ onCreate }: NavbarProps) {
               <Link href="/">
                 <div
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                  className="flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary"
                 >
-                  <Rocket className="h-4 w-4 text-muted-foreground" />
-                  Launchpad
+                  <Rocket className="h-3.5 w-3.5 text-muted-foreground" />
+                  Feed
                 </div>
               </Link>
               <Link href="/dashboard">
                 <div
                   onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors cursor-pointer"
+                  className="flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary"
                 >
-                  <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
+                  <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
                   My Dashboard
                 </div>
               </Link>
@@ -136,35 +155,35 @@ export function Navbar({ onCreate }: NavbarProps) {
                     setMenuOpen(false);
                     onCreate();
                   }}
-                  className="w-full text-left flex items-center gap-2.5 px-4 py-2.5 text-sm text-foreground hover:bg-secondary transition-colors"
+                  className="w-full text-left flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors border-l-2 border-transparent hover:border-primary"
                 >
-                  <Plus className="h-4 w-4 text-muted-foreground" />
+                  <Plus className="h-3.5 w-3.5 text-muted-foreground" />
                   Create token
                 </button>
               )}
             </nav>
-            <div className="border-t border-border px-4 pt-3 pb-2 md:hidden">
+            <div className="border-t-2 border-border px-4 pt-3 pb-2 md:hidden">
               <a
                 href={X_URL}
                 target="_blank"
                 rel="noreferrer"
                 aria-label="Aethpad on X"
                 onClick={() => setMenuOpen(false)}
-                className="inline-flex p-1.5 -ml-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="inline-flex p-1.5 -ml-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
               >
                 <XIcon className="h-4 w-4" />
               </a>
             </div>
-            <div className="border-t border-border p-4 text-[10px] font-mono uppercase tracking-wider text-muted-foreground space-y-1.5 md:hidden">
+            <div className="border-t-2 border-border p-4 text-[10px] font-mono uppercase tracking-widest text-muted-foreground space-y-2">
               <div className="flex items-center justify-between">
-                <span>Network</span>
-                <span className="flex items-center gap-1.5 text-foreground/80">
-                  <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full" /> Base
+                <span>Chain</span>
+                <span className="flex items-center gap-1.5 text-primary font-bold">
+                  <span className="h-1.5 w-1.5 bg-primary" /> BASE
                 </span>
               </div>
               <div className="flex items-center justify-between">
                 <span>ETH</span>
-                <span className="text-foreground/90 tabular-nums">{ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</span>
+                <span className="text-foreground font-semibold tabular-nums">{ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</span>
               </div>
             </div>
           </div>
