@@ -40,13 +40,7 @@ export function GlobalTradeTape() {
 
   return (
     <div className="border-b border-border bg-card/40 h-7 overflow-hidden relative">
-      <div className="absolute left-0 top-0 bottom-0 z-10 flex items-center px-3 bg-card/80 backdrop-blur-sm border-r border-border">
-        <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-          <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-          Tape
-        </span>
-      </div>
-      <div className="h-full flex items-center pl-20 pr-4">
+      <div className="h-full flex items-center px-4">
         <div className="flex items-center gap-5 animate-tape-scroll whitespace-nowrap">
           {items.map((t, i) => {
             const isBuy = t.type === 'buy';

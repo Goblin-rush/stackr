@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/launchpad/"
+previewPath = "/"
 title = "Bonding Curve Launchpad"
 version = "1.0.0"
 id = "artifacts/launchpad"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/launchpad/" ]
+paths = [ "/" ]
 localPort = 19433
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "19433"
-BASE_PATH = "/launchpad/"
+BASE_PATH = "/"
