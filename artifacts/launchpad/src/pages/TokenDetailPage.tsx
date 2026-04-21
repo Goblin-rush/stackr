@@ -367,15 +367,6 @@ export default function TokenDetailPage() {
               <TradeTape trades={live.trades} symbol={symbol || 'TOKEN'} />
             </div>
 
-            <div className="p-4 border border-border/50 bg-muted/10 text-xs font-mono text-muted-foreground space-y-2">
-              <p className="uppercase tracking-widest text-foreground font-bold mb-3 border-b border-border/50 pb-2">Terminal Guidelines</p>
-              <ul className="space-y-2 list-disc pl-4">
-                <li>Bonding curve ensures continuous liquidity.</li>
-                <li>Price increases as supply is bought.</li>
-                <li>At 3.5 ETH raised, trading graduates and ETH auto-forwards to admin.</li>
-                <li>Sells disabled after graduation. Buys remain open.</li>
-              </ul>
-            </div>
           </div>
 
         </div>
