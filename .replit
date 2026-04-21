@@ -49,3 +49,8 @@ externalPort = 3001
 
 [nix]
 channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+VITE_ALCHEMY_RPC_URL = "https://eth-mainnet.g.alchemy.com/v2/-ukJuDymTWUsoMl6jc041"
