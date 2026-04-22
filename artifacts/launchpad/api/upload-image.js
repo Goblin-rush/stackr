@@ -27,12 +27,18 @@ export default async function handler(req, res) {
 
     if (!pinataRes.ok) {
       const errText = await pinataRes.text();
-      res.status(502).json({ error: 'Pinata error', detail: errText });
+      const statusCode = pinataRes.status >= 400 && pinataRes.status < 500 ? 400 : 502;
+      res.status(statusCode).json({ error: 'Pinata error', detail: errText });
       return;
     }
 
     const data = await pinataRes.json();
-    res.status(200).json({ cid: data.IpfsHash });
+    const cid = data.IpfsHash;
+    res.status(200).json({
+      cid,
+      url: `ipfs://${cid}`,
+      gatewayUrl: `https://gateway.pinata.cloud/ipfs/${cid}`,
+    });
   } catch (err) {
     console.error('upload-image error:', err);
     res.status(500).json({ error: 'Upload failed' });
