@@ -111,7 +111,7 @@ export async function saveTokenMetadata(
 ): Promise<void> {
   saveTokenMetadataLocal(address, meta);
   try {
-    await fetch(`/api/tokens/${address}/metadata`, {
+    await fetch(`/api/metadata?address=${address.toLowerCase()}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(meta),
@@ -128,7 +128,7 @@ export async function saveTokenMetadata(
 export async function fetchTokenMetadataRemote(address: string): Promise<TokenMetadata | null> {
   const key = address.toLowerCase();
   try {
-    const r = await fetch(`/api/tokens/${address}/metadata`);
+    const r = await fetch(`/api/metadata?address=${key}`);
     if (r.status === 404) return null;
     if (!r.ok) return null;
     const meta = (await r.json()) as TokenMetadata;
@@ -143,7 +143,7 @@ export async function fetchTokenMetadataRemote(address: string): Promise<TokenMe
 /** Bulk prefetch all known token metadata into the cache. Called once at app boot. */
 export async function prefetchAllTokenMetadata(): Promise<void> {
   try {
-    const r = await fetch('/api/tokens/metadata');
+    const r = await fetch('/api/metadata');
     if (!r.ok) return;
     const all = (await r.json()) as Record<string, TokenMetadata>;
     for (const [addr, meta] of Object.entries(all)) {

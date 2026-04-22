@@ -4,7 +4,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  const pinataJwt = process.env.PINATA_JWT;
+  const pinataJwt = process.env.JWT || process.env.PINATA_JWT;
   if (!pinataJwt) {
     res.status(500).json({ error: 'PINATA_JWT not configured' });
     return;

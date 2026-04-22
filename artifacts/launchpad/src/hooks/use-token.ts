@@ -15,7 +15,7 @@ export function useToken(tokenAddress: `0x${string}`, curveAddress?: `0x${string
       { address: curveAddress,  abi: CURVE_V2_ABI,  functionName: 'forceClosed' },
       { address: tokenAddress,  abi: TOKEN_V2_ABI,  functionName: 'uniswapPair' },
     ],
-    query: { enabled: !!tokenAddress },
+    query: { enabled: !!tokenAddress, refetchInterval: 8_000 },
   });
 
   const [
@@ -40,13 +40,13 @@ export function useToken(tokenAddress: `0x${string}`, curveAddress?: `0x${string
 }
 
 export function useTokenBalance(tokenAddress: `0x${string}`, userAddress?: `0x${string}`) {
-  const { data } = useReadContracts({
+  const { data, refetch } = useReadContracts({
     contracts: [
       { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'balanceOf', args: userAddress ? [userAddress] : undefined },
     ],
-    query: { enabled: !!userAddress },
+    query: { enabled: !!userAddress, refetchInterval: 10_000 },
   });
-  return { data: data?.[0]?.result as bigint | undefined };
+  return { data: data?.[0]?.result as bigint | undefined, refetch };
 }
 
 export function useTokenPreviewBuy(curveAddress: `0x${string}` | undefined, ethAmount: bigint) {

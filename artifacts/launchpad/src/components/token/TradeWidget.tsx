@@ -24,9 +24,9 @@ const BUY_QUICK = ['0.01', '0.05', '0.1', '0.5'];
 export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const { isConnected, address: userAddress } = useAccount();
   const { connect } = useConnect();
-  const { data: ethBalance } = useBalance({ address: userAddress });
-  const { data: tokenBalance } = useTokenBalance(tokenAddress, userAddress);
-  const { graduated, symbol, forceClosed, uniswapPair } = useToken(tokenAddress, curveAddress);
+  const { data: ethBalance, refetch: refetchEthBal } = useBalance({ address: userAddress });
+  const { data: tokenBalance, refetch: refetchTokenBal } = useTokenBalance(tokenAddress, userAddress);
+  const { graduated, symbol, forceClosed, uniswapPair, refetch: refetchToken } = useToken(tokenAddress, curveAddress);
   const { applyMinOut, percent: slippagePercent } = useSlippage();
 
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
@@ -44,6 +44,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const { writeContractAsync, isPending, isConfirming, isConfirmed, hash } = useTokenTrade();
 
   const pendingToastRef = useRef<{ id: string | number; label: string; expectedHash: `0x${string}` | null } | null>(null);
+  const confirmedHashRef = useRef<`0x${string}` | null>(null);
 
   useEffect(() => {
     const p = pendingToastRef.current;
@@ -52,12 +53,22 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
 
   useEffect(() => {
     const p = pendingToastRef.current;
-    if (isConfirmed && hash && p && p.expectedHash === hash) {
+    if (isConfirmed && hash && p && p.expectedHash === hash && confirmedHashRef.current !== hash) {
+      confirmedHashRef.current = hash;
       txSuccessToast(p.id, hash, `${p.label} confirmed`);
       pendingToastRef.current = null;
-      refetchAllowance();
+      // Immediately refresh all balances and token state
+      void refetchAllowance();
+      void refetchTokenBal();
+      void refetchEthBal();
+      // Small delay then re-read chain state (new block may not be indexed instantly)
+      setTimeout(() => {
+        void refetchToken();
+        void refetchTokenBal();
+        void refetchEthBal();
+      }, 1500);
     }
-  }, [isConfirmed, hash, refetchAllowance]);
+  }, [isConfirmed, hash, refetchAllowance, refetchTokenBal, refetchEthBal, refetchToken]);
 
   const handleBuy = async () => {
     if (!isConnected) { connect({ connector: metaMask() }); return; }
