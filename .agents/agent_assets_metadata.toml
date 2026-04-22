@@ -210,6 +210,24 @@ uri = "file://attached_assets/generated_images/stackr-favicon-v6.png"
 type = "image"
 title = "chevron bars favicon v6"
 
+[[generated]]
+id = "6ZqGzouWunXRwQa9E_9Qc"
+uri = "file://attached_assets/generated_images/stackr-favicon-flame.png"
+type = "image"
+title = "flame bars favicon"
+
+[[generated]]
+id = "KvEhFp009om6xGqJu4uXZ"
+uri = "file://attached_assets/generated_images/stackr-favicon-stairs.png"
+type = "image"
+title = "ascending stairs favicon"
+
+[[generated]]
+id = "xNumPXf3PnkgyRcgOyy59"
+uri = "file://attached_assets/generated_images/stackr-favicon-hex.png"
+type = "image"
+title = "striped hexagon favicon"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
