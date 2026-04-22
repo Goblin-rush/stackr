@@ -461,7 +461,6 @@ export default function HomeFeedPage() {
                 Be First
               </button>
             </div>
-            <ActivityTicker />
             <FeaturedRow d={DEMO_ROWS[0]} />
             {DEMO_ROWS.slice(1).map((d) => (
               <Row key={d.symbol} d={d} />
