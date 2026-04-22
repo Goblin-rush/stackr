@@ -11,14 +11,14 @@ A fair-launch token protocol. Bonding curve → automatic graduation to a DEX wi
   (anyone)   (5 ETH target)    (auto, on-chain)  (LP burned forever)
 ```
 
-1. **Create** — Anyone deploys a token through the factory. Fixed 1B supply. **No premint to the creator.**
-2. **Bonding curve** — Buyers and sellers trade against the curve until it raises **5 ETH real** (a 3 ETH virtual reserve smooths the early curve so the first buyer doesn't get an absurd discount).
-3. **Graduation** — When the target hits, the contract automatically:
+1. **Create:** Anyone deploys a token through the factory. Fixed 1B supply. **No premint to the creator.**
+2. **Bonding curve:** Buyers and sellers trade against the curve until it raises **5 ETH real** (a 3 ETH virtual reserve smooths the early curve so the first buyer doesn't get an absurd discount).
+3. **Graduation:** When the target hits, the contract automatically:
    - Closes the curve
    - Pairs remaining tokens + raised ETH on a DEX
-   - **Burns the LP tokens** (sent to `0xdead`) — liquidity locked permanently
+   - **Burns the LP tokens** (sent to `0xdead`): liquidity locked permanently
    - Emits a `Graduated` event
-4. **DEX trading** — The token becomes a normal ERC-20. The curve is closed forever.
+4. **DEX trading:** The token becomes a normal ERC-20. The curve is closed forever.
 
 ---
 
@@ -46,7 +46,7 @@ To punish snipers and protect organic buyers, **sells** carry an extra tax based
 | < 24 hours           | +5%           |
 | ≥ 24 hours           | 0%            |
 
-The penalty is added on top of the standard 5%. The extra portion is routed to the holder rewards pool — so diamond hands are paid by paper hands.
+The penalty is added on top of the standard 5%. The extra portion is routed to the holder rewards pool: so diamond hands are paid by paper hands.
 
 ---
 
@@ -96,6 +96,6 @@ Price discovery is fully on-chain. No oracle, no admin price setting, no upgrade
 ## 7. Trust Model
 
 - All contracts non-upgradeable.
-- LP burn is unconditional and immediate at graduation — verifiable on-chain.
+- LP burn is unconditional and immediate at graduation: verifiable on-chain.
 - No admin function can pause trading, change tax, or seize tokens.
 - Treasury (1.5%) is the only privileged address and only receives ETH; it cannot touch user balances or the curve.

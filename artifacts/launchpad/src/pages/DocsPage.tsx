@@ -53,15 +53,15 @@ export default function DocsPage() {
             <li key={i} className="flex gap-3">
               <span className="font-mono text-[11px] font-bold text-primary mt-0.5">{String(i + 1).padStart(2, '0')}</span>
               <span>
-                <span className="font-bold uppercase tracking-wide text-foreground">{k}</span>{' '}
-                <span className="text-foreground/80">— {v}</span>
+                <span className="font-bold uppercase tracking-wide text-foreground">{k}:</span>{' '}
+                <span className="text-foreground/80">{v}</span>
               </span>
             </li>
           ))}
         </ol>
 
         {/* §2 Tax */}
-        <H2 n="02">Tax — 5% on every curve trade</H2>
+        <H2 n="02">Tax: 5% on every curve trade</H2>
         <P>Every buy and sell on the bonding curve takes a flat 5% ETH-side tax, split:</P>
         <div className="border-2 border-border">
           <table className="w-full font-mono text-[12px]">
@@ -93,7 +93,7 @@ export default function DocsPage() {
         <H2 n="03">Anti-Snipe Tiers</H2>
         <P>
           Sells carry an extra tax based on how long ago the wallet first bought. The penalty stacks on top of the
-          standard 5% and routes to the holder rewards pool — diamond hands paid by paper hands.
+          standard 5% and routes to the holder rewards pool: diamond hands paid by paper hands.
         </P>
         <div className="border-2 border-border">
           <table className="w-full font-mono text-[12px]">
@@ -130,7 +130,7 @@ export default function DocsPage() {
 
         {/* The unit */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.1 — The Unit: holdScore
+          4.1 The Unit: holdScore
         </h3>
         <P>
           Every wallet has a <Mono>holdScore</Mono> that grows continuously while it holds tokens:
@@ -140,13 +140,13 @@ export default function DocsPage() {
         </pre>
         <P>
           Updated every time the balance changes (buy, sell, transfer in, transfer out). Between events the score
-          accrues silently — no transaction, no gas. If you hold 1,000 tokens for 1 hour, you earn 3,600,000
+          accrues silently: no transaction, no gas. If you hold 1,000 tokens for 1 hour, you earn 3,600,000
           token-seconds. Hold 10,000 tokens for the same hour and you earn 36,000,000.
         </P>
 
         {/* The pool */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.2 — The Pool: cumulativeEthPerScore
+          4.2 The Pool: cumulativeEthPerScore
         </h3>
         <P>
           Instead of looping over every holder on every reward (impossible at scale), the contract maintains a single
@@ -165,7 +165,7 @@ export default function DocsPage() {
 
         {/* Where rewards come from */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.3 — Where the Reward ETH Comes From
+          4.3 Where the Reward ETH Comes From
         </h3>
         <div className="border-2 border-border mb-3">
           <table className="w-full font-mono text-[12px]">
@@ -198,7 +198,7 @@ export default function DocsPage() {
 
         {/* Selling */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.4 — What Selling Does to Your Score
+          4.4 What Selling Does to Your Score
         </h3>
         <P>
           When you sell, your accumulated score is reduced <span className="font-bold">proportionally</span> to the
@@ -209,13 +209,13 @@ export default function DocsPage() {
         </pre>
         <P>
           Sell half your bag, lose half your score. Sell everything, score goes to zero. Buying back later starts a
-          fresh accrual from that moment — there is no "loyalty restoration." This is the core anti-game: every exit
+          fresh accrual from that moment: there is no "loyalty restoration." This is the core anti-game: every exit
           permanently destroys the time you put in.
         </P>
 
         {/* Worked example */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.5 — Worked Example
+          4.5 Worked Example
         </h3>
         <P>Three wallets, one trading day:</P>
         <div className="border-2 border-border mb-3">
@@ -229,9 +229,9 @@ export default function DocsPage() {
             </thead>
             <tbody>
               {[
-                ['A — Diamond', '10,000 tokens, held 24h straight', '10,000 × 86,400 = 864,000,000'],
-                ['B — Mid', '10,000 tokens at hour 0, sold 50% at hour 12', '5,000 × 86,400 + 5,000 × 43,200 = 648,000,000'],
-                ['C — Sniper', '10,000 tokens, sold all at minute 4', '10,000 × 240 = 2,400,000'],
+                ['A: Diamond', '10,000 tokens, held 24h straight', '10,000 × 86,400 = 864,000,000'],
+                ['B: Mid', '10,000 tokens at hour 0, sold 50% at hour 12', '5,000 × 86,400 + 5,000 × 43,200 = 648,000,000'],
+                ['C: Sniper', '10,000 tokens, sold all at minute 4', '10,000 × 240 = 2,400,000'],
               ].map(([w, a, s], i) => (
                 <tr key={i} className="border-t border-border align-top">
                   <td className="px-3 py-2 font-bold">{w}</td>
@@ -257,9 +257,9 @@ export default function DocsPage() {
             </thead>
             <tbody>
               {[
-                ['A — Diamond', '57.05%', '0.5705 ETH'],
-                ['B — Mid', '42.79%', '0.4279 ETH'],
-                ['C — Sniper', '0.16%', '0.0016 ETH'],
+                ['A: Diamond', '57.05%', '0.5705 ETH'],
+                ['B: Mid', '42.79%', '0.4279 ETH'],
+                ['C: Sniper', '0.16%', '0.0016 ETH'],
               ].map(([w, s, e], i) => (
                 <tr key={i} className="border-t border-border">
                   <td className="px-3 py-2 font-bold">{w}</td>
@@ -277,19 +277,19 @@ export default function DocsPage() {
 
         {/* Claiming */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.6 — Claiming
+          4.6 Claiming
         </h3>
         <ul className="space-y-1.5 text-[14px] text-foreground/90 list-none pl-0 mb-3">
           {[
             ['claim()', 'pulls all your pending ETH in one tx. Non-reentrant. Resets pending to 0.'],
-            ['pendingRewards(addr)', 'view function — call from any UI to display unclaimed ETH.'],
+            ['pendingRewards(addr)', 'view function: call from any UI to display unclaimed ETH.'],
             ['Auto-settle', 'pending updates automatically on every transfer (in or out) before the balance changes. You never lose what you earned, even if you sell everything.'],
             ['No expiry', 'pending ETH never expires. Hold indefinitely, claim whenever.'],
           ].map(([k, v], i) => (
             <li key={i} className="flex gap-3">
               <span className="text-primary font-bold mt-0.5">→</span>
               <span>
-                <Mono>{k}</Mono> <span className="text-foreground/80">— {v}</span>
+                <Mono>{k}</Mono> <span className="text-foreground/80">{v}</span>
               </span>
             </li>
           ))}
@@ -297,7 +297,7 @@ export default function DocsPage() {
 
         {/* Excluded */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.7 — Addresses Excluded From Rewards
+          4.7 Addresses Excluded From Rewards
         </h3>
         <P>
           The following addresses do <span className="font-bold">not</span> accrue holdScore. Their balances are
@@ -314,7 +314,7 @@ export default function DocsPage() {
             <li key={i} className="flex gap-3">
               <span className="font-mono text-primary text-[11px] font-bold mt-1">·</span>
               <span>
-                <span className="font-bold">{k}</span> <span className="text-foreground/70">— {v}</span>
+                <span className="font-bold">{k}:</span> <span className="text-foreground/70">{v}</span>
               </span>
             </li>
           ))}
@@ -326,14 +326,14 @@ export default function DocsPage() {
 
         {/* Edge cases */}
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.8 — Edge Cases &amp; Guarantees
+          4.8 Edge Cases &amp; Guarantees
         </h3>
         <ul className="space-y-1.5 text-[14px] text-foreground/90 list-none pl-0">
           {[
             ['Zero holders', 'If a reward arrives when totalScore is 0 (e.g. only the curve holds tokens), the ETH sits in the contract and gets rolled into the next distribution. Nothing is lost.'],
             ['Transfers between wallets', 'Both sender and receiver have their pending settled before balances move. Your earned ETH cannot be stolen by a transfer.'],
             ['Post-graduation', 'The 5% tax on DEX trades flows back into the same reward pool (4/7 share). Holders keep earning forever, not just on the curve.'],
-            ['Re-entrancy', 'claim() is nonReentrant. ETH sent via low-level call after pending is zeroed — checks-effects-interactions.'],
+            ['Re-entrancy', 'claim() is nonReentrant. ETH sent via low-level call after pending is zeroed: checks-effects-interactions.'],
             ['Precision', 'cumulativeEthPerScore is scaled by 1e18 to avoid integer truncation. Dust losses are sub-wei.'],
           ].map(([k, v], i) => (
             <li key={i} className="flex gap-3">
@@ -349,7 +349,7 @@ export default function DocsPage() {
           <div className="font-mono text-[10px] uppercase tracking-widest opacity-70 mb-1">TL;DR</div>
           <div className="text-[14px] leading-relaxed">
             Hold longer + hold more = bigger share. Sell early = surcharge that pays everyone else. Claim ETH any time.
-            No expiry, no inflation, no rebase tricks — just the actual ETH paid in by traders.
+            No expiry, no inflation, no rebase tricks: just the actual ETH paid in by traders.
           </div>
         </div>
 
@@ -417,7 +417,7 @@ export default function DocsPage() {
         <ul className="space-y-1.5 text-[14px] text-foreground/90 list-none pl-0">
           {[
             'All contracts non-upgradeable.',
-            'LP burn is unconditional and immediate at graduation — verifiable on-chain.',
+            'LP burn is unconditional and immediate at graduation: verifiable on-chain.',
             'No admin function can pause trading, change tax, or seize tokens.',
             'Treasury receives ETH only; it cannot touch user balances or the curve.',
           ].map((t, i) => (
