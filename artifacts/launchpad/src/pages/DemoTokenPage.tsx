@@ -504,7 +504,15 @@ export default function DemoTokenPage() {
                   {t.topHolders.map((h, i) => (
                     <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono hover:bg-white/2 transition-colors">
                       <span className="text-muted-foreground/40 tabular-nums w-4 shrink-0">{i + 1}</span>
-                      <span className="flex-1 text-foreground/80 truncate">{h.addr}</span>
+                      <a
+                        href={`https://basescan.org/address/${h.addr}`}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="flex-1 text-foreground/80 truncate hover:text-primary transition-colors inline-flex items-center gap-1"
+                      >
+                        {h.addr}
+                        <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
+                      </a>
                       <span className="text-muted-foreground/50 tabular-nums shrink-0">{h.tokens}</span>
                       <span className="text-foreground font-semibold tabular-nums shrink-0 w-10 text-right">{h.pct.toFixed(1)}%</span>
                     </div>
