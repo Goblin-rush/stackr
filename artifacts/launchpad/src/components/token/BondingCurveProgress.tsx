@@ -35,6 +35,27 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
 
   const pct = Math.min(displayed, 100);
 
+  function barStyle(p: number): { gradient: string; glow: string } {
+    if (p >= 85) return {
+      gradient: 'linear-gradient(90deg, hsl(4 84% 46%) 0%, hsl(18 92% 64%) 100%)',
+      glow: `0 0 18px hsl(4 84% 58% / 0.55)`,
+    };
+    if (p >= 60) return {
+      gradient: 'linear-gradient(90deg, hsl(24 90% 46%) 0%, hsl(36 92% 60%) 100%)',
+      glow: `0 0 16px hsl(24 90% 55% / 0.45)`,
+    };
+    if (p >= 30) return {
+      gradient: 'linear-gradient(90deg, hsl(42 88% 42%) 0%, hsl(48 90% 56%) 100%)',
+      glow: `0 0 14px hsl(42 88% 50% / 0.40)`,
+    };
+    return {
+      gradient: 'linear-gradient(90deg, hsl(142 66% 36%) 0%, hsl(152 68% 48%) 100%)',
+      glow: `0 0 12px hsl(142 66% 44% / 0.38)`,
+    };
+  }
+
+  const { gradient, glow } = barStyle(pct);
+
   return (
     <div className="space-y-3">
       <div className="flex items-baseline justify-between">
@@ -50,8 +71,8 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
           className="absolute top-0 left-0 h-full rounded-full transition-none overflow-hidden"
           style={{
             width: `${pct}%`,
-            background: 'linear-gradient(90deg, hsl(4 84% 46%) 0%, hsl(4 84% 60%) 60%, hsl(18 92% 64%) 100%)',
-            boxShadow: pct > 2 ? '0 0 16px hsl(4 84% 58% / 0.50)' : 'none',
+            background: gradient,
+            boxShadow: pct > 2 ? glow : 'none',
           }}
         >
           {/* shimmer sweep */}

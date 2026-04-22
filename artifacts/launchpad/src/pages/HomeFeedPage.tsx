@@ -96,7 +96,27 @@ function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) 
   }, [pct]);
 
   const h = size === 'sm' ? 'h-2' : 'h-1.5';
-  const isHigh = pct >= 80;
+
+  function barStyle(p: number): { gradient: string; glow: string } {
+    if (p >= 85) return {
+      gradient: 'linear-gradient(90deg, hsl(4 84% 46%) 0%, hsl(18 92% 64%) 100%)',
+      glow: '0 0 14px hsl(4 84% 58% / 0.55)',
+    };
+    if (p >= 60) return {
+      gradient: 'linear-gradient(90deg, hsl(24 90% 46%) 0%, hsl(36 92% 60%) 100%)',
+      glow: '0 0 12px hsl(24 90% 55% / 0.45)',
+    };
+    if (p >= 30) return {
+      gradient: 'linear-gradient(90deg, hsl(42 88% 42%) 0%, hsl(48 90% 56%) 100%)',
+      glow: '0 0 10px hsl(42 88% 50% / 0.40)',
+    };
+    return {
+      gradient: 'linear-gradient(90deg, hsl(142 66% 36%) 0%, hsl(152 68% 48%) 100%)',
+      glow: '0 0 10px hsl(142 66% 44% / 0.38)',
+    };
+  }
+
+  const { gradient, glow } = barStyle(pct);
 
   return (
     <div className={`relative ${h} w-full bg-white/5 rounded-full overflow-hidden border border-white/6`}>
@@ -104,12 +124,8 @@ function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) 
         className="absolute top-0 left-0 h-full rounded-full overflow-hidden"
         style={{
           width: `${displayed}%`,
-          background: isHigh
-            ? 'linear-gradient(90deg, hsl(4 84% 50%) 0%, hsl(18 92% 64%) 100%)'
-            : 'linear-gradient(90deg, hsl(4 84% 44%) 0%, hsl(4 84% 60%) 100%)',
-          boxShadow: displayed > 3
-            ? `0 0 12px hsl(4 84% 58% / ${isHigh ? '0.55' : '0.28'})`
-            : 'none',
+          background: gradient,
+          boxShadow: displayed > 3 ? glow : 'none',
           transition: 'box-shadow 0.3s ease',
         }}
       >
