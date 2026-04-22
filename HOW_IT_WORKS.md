@@ -1,24 +1,24 @@
-# Aethpad v2 — How It Works
+# How It Works
 
-FIRE-inspired token launchpad on Base. Fair launch, bonding curve, auto-graduation to Uniswap V2 with burned LP. Built to fix what V1 broke.
+A fair-launch token protocol on Base. Bonding curve → automatic graduation to Uniswap V2 with permanently burned LP. Designed to neutralize the three things that ruin most launchpads: creator rugs, sniper extraction, and dead liquidity.
 
 ---
 
 ## 1. Token Lifecycle
 
 ```
-  CREATE  →  BONDING CURVE  →  GRADUATION  →  DEX (Uniswap V2)
-  (anyone)   (5 ETH target)    (auto, on-chain)  (LP burned)
+  CREATE  →  BONDING CURVE  →  GRADUATION  →  UNISWAP V2
+  (anyone)   (5 ETH target)    (auto, on-chain)  (LP burned forever)
 ```
 
-1. **Create** — Anyone deploys a token via `AethpadFactoryV2`. Fixed 1B supply, no premint to creator.
-2. **Bonding curve** — Buyers and sellers trade against the curve until it raises **5 ETH real** (3 ETH virtual reserve makes the early curve gentler).
+1. **Create** — Anyone deploys a token through the factory. Fixed 1B supply. **No premint to the creator.**
+2. **Bonding curve** — Buyers and sellers trade against the curve until it raises **5 ETH real** (a 3 ETH virtual reserve smooths the early curve so the first buyer doesn't get an absurd discount).
 3. **Graduation** — When the target hits, the contract automatically:
-   - Pulls liquidity off the curve
+   - Closes the curve
    - Pairs remaining tokens + raised ETH on Uniswap V2
-   - **Burns the LP tokens** (sent to `0xdead`) — liquidity locked forever
-   - Emits `Graduated(ethRaised)`
-4. **DEX trading** — Token is now a normal ERC-20. Curve closes.
+   - **Burns the LP tokens** (sent to `0xdead`) — liquidity locked permanently
+   - Emits a `Graduated` event
+4. **DEX trading** — The token becomes a normal ERC-20. The curve is closed forever.
 
 ---
 
@@ -26,20 +26,18 @@ FIRE-inspired token launchpad on Base. Fair launch, bonding curve, auto-graduati
 
 Every buy and sell on the bonding curve takes a flat **5%** ETH-side tax, split:
 
-| Bucket    | Share | Where it goes                              |
-|-----------|-------|--------------------------------------------|
-| Burn      | 1.5%  | Tokens bought from curve and sent to `0xdead` |
-| Holders   | 2.0%  | Pro-rata to time-weighted holders (see §4) |
-| Platform  | 1.5%  | Aethpad treasury                            |
-| Creator   | 0.0%  | **Zero.** No creator skim.                  |
-
-> Constants live in `artifacts/launchpad/src/lib/contracts.ts` (`V2_BURN_BPS`, `V2_REWARD_BPS`, `V2_PLATFORM_BPS`).
+| Bucket    | Share | Where it goes                                    |
+|-----------|-------|--------------------------------------------------|
+| Burn      | 1.5%  | Tokens bought from the curve and sent to `0xdead` |
+| Holders   | 2.0%  | Pro-rata to time-weighted holders (see §4)       |
+| Platform  | 1.5%  | Protocol treasury                                |
+| Creator   | 0.0%  | **Zero. No creator skim, ever.**                 |
 
 ---
 
 ## 3. Anti-Snipe Tiers
 
-To punish snipers and protect organic buyers, **sells** carry an extra tax based on how long ago you bought:
+To punish snipers and protect organic buyers, **sells** carry an extra tax based on how long ago the wallet first bought:
 
 | Time since first buy | Extra sell tax |
 |----------------------|---------------|
@@ -48,18 +46,18 @@ To punish snipers and protect organic buyers, **sells** carry an extra tax based
 | < 24 hours           | +5%           |
 | ≥ 24 hours           | 0%            |
 
-The extra tax is added to the standard 5%. The penalty portion is routed to the holder rewards pool, so diamond hands are paid by paper hands.
+The penalty is added on top of the standard 5%. The extra portion is routed to the holder rewards pool — so diamond hands are paid by paper hands.
 
 ---
 
 ## 4. Time-Weighted Holder Rewards
 
-Standard "% of supply" reward systems get gamed by snipers. We weight by **token-seconds held**:
+Standard "% of supply" reward systems get gamed by snipers who hold for one block. This protocol weights by **token-seconds held**:
 
 - Every holder accrues `balance × time_held` continuously.
 - The 2% holder share of every trade tax goes into a reward pool.
-- Pool is distributed pro-rata to accrued token-seconds.
-- Selling resets your weight on the sold portion.
+- The pool is distributed pro-rata to accrued token-seconds.
+- Selling resets the weight on the sold portion.
 
 Net effect: you earn more by holding longer with a larger position. Sniping and dumping earns you nothing.
 
@@ -73,69 +71,31 @@ Constant-product curve with virtual reserves:
 k = (VIRTUAL_ETH + raisedETH) × tokensRemaining
 ```
 
-- `VIRTUAL_ETH = 3 ETH` — softens the early curve so the first buyer doesn't get an absurd discount, and the last buyer doesn't pay a vertical price.
-- `TARGET_REAL_ETH = 5 ETH` — graduation trigger.
-- `TOTAL_SUPPLY = 1,000,000,000` — fixed.
+| Parameter        | Value           | Purpose                                      |
+|------------------|-----------------|----------------------------------------------|
+| `VIRTUAL_ETH`    | 3 ETH           | Softens early curve, prevents vertical price tail |
+| `TARGET_REAL_ETH`| 5 ETH           | Graduation trigger                           |
+| `TOTAL_SUPPLY`   | 1,000,000,000   | Fixed forever                                |
 
-Price discovery is fully on-chain. No oracle, no admin price setting.
-
----
-
-## 6. Contracts
-
-Located in `contracts/contracts/v2/`:
-
-| Contract                  | Role                                           |
-|---------------------------|------------------------------------------------|
-| `AethpadFactoryV2.sol`    | Deploys new tokens + curves. Single entry point. |
-| `AethpadTokenV2.sol`      | ERC-20 with reward accrual hooks.              |
-| `AethpadBondingCurveV2.sol` | Holds reserves, executes buy/sell, taxes, graduates. |
-| `AethpadDeployer.sol`     | Helper for atomic deploy + dev-buy.            |
-
-**Tests:** `contracts/test/aethpadV2.test.js` — 20 Hardhat tests, all passing.
-
-**Deploy:** Set `PRIVATE_KEY` env var, then `cd contracts && npx hardhat run scripts/deploy-v2.js --network base`. The deployed factory address must be set as `VITE_FACTORY_V2_ADDRESS` for the frontend to wire up.
+Price discovery is fully on-chain. No oracle, no admin price setting, no upgrade proxies on the curve.
 
 ---
 
-## 7. Frontend
+## 6. What This Fixes
 
-Monorepo: `pnpm` workspaces.
-
-| Artifact                   | Role                                |
-|----------------------------|-------------------------------------|
-| `artifacts/launchpad`      | Public web app (React + Vite + wagmi/Privy) |
-| `artifacts/api-server`     | Indexer / metadata API              |
-| `artifacts/mockup-sandbox` | Canvas component previews           |
-
-**Key routes:**
-- `/` — token feed (featured "Top Mover" + activity ticker + classified-style rows)
-- `/token/:address` — live token detail (curve progress, candle chart, trades, buy/sell)
-- `/demo/:symbol` — mock detail page used while V2 is unfunded
-- `/dashboard` — user holdings + pending rewards
-- `/new` — create a token
-
-**Design system:** Editorial Paper palette — cream `#F2EEE5`, vermillion `#D63A1F`, JetBrains Mono, zero radius, 2px hairlines. Forest green `#1f6b3e` only for buy semantics.
+| Failure mode in most launchpads | This protocol                          |
+|---------------------------------|----------------------------------------|
+| Creator tax (rugpull vector)    | **0% creator tax**                     |
+| LP held by deployer post-graduation | **LP burned to `0xdead`**          |
+| Snipers extract early, dump on retail | **20% / 10% / 5% tiered sell tax** |
+| Flat reward % gameable by 1-block holders | **Time-weighted token-seconds**  |
+| Manual / admin graduation       | **Automatic on-chain at 5 ETH**        |
 
 ---
 
-## 8. What's Different vs. V1
+## 7. Trust Model
 
-| Concern              | V1                          | V2                                  |
-|----------------------|-----------------------------|-------------------------------------|
-| Creator tax          | Yes (rugpull vector)        | **0%**                              |
-| LP after graduation  | Held by deployer            | **Burned to `0xdead`**              |
-| Sniper protection    | None                        | **Tiered sell tax (20/10/5%)**      |
-| Holder incentive     | Flat % of supply            | **Time-weighted token-seconds**     |
-| Graduation           | Manual / admin              | **Automatic on-chain at 5 ETH**     |
-| Visual identity      | Generic "degen" UI          | Editorial paper, brutalist          |
-
----
-
-## 9. Status
-
-- ✅ Contracts written, 20 tests passing
-- ✅ Frontend redesigned (Editorial Paper, hierarchy, activity)
-- ✅ Demo pages live for all 5 mock tokens
-- ⏳ Mainnet deploy pending `PRIVATE_KEY` env var
-- ⏳ Once factory deployed, set `VITE_FACTORY_V2_ADDRESS` and the demo data steps aside for real tokens
+- All contracts non-upgradeable.
+- LP burn is unconditional and immediate at graduation — verifiable on-chain.
+- No admin function can pause trading, change tax, or seize tokens.
+- Treasury (1.5%) is the only privileged address and only receives ETH; it cannot touch user balances or the curve.
