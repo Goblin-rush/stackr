@@ -71,6 +71,74 @@ interface RowDisplay {
   isDemo?: boolean;
 }
 
+const DEMO_ROWS: RowDisplay[] = [
+  {
+    href: '#',
+    symbol: 'STR',
+    name: 'Asteroid Shiba',
+    graduated: false,
+    priceLabel: '$0.0000142',
+    mcapLabel: '$24.3K',
+    raisedLabel: '1.84 / 3.5 ETH',
+    progress: 53,
+    ageLabel: '2h',
+    creatorLabel: '0x9f…21Ab',
+    isDemo: true,
+  },
+  {
+    href: '#',
+    symbol: 'BNK',
+    name: 'Bonkers',
+    graduated: true,
+    priceLabel: '$0.0001231',
+    mcapLabel: '$148K',
+    raisedLabel: '3.5 / 3.5 ETH',
+    progress: 100,
+    ageLabel: '6d',
+    creatorLabel: '0x33…be12',
+    isDemo: true,
+  },
+  {
+    href: '#',
+    symbol: 'PEPE',
+    name: 'Memetics Lab',
+    graduated: false,
+    priceLabel: '$0.00000091',
+    mcapLabel: '$3.1K',
+    raisedLabel: '0.42 / 3.5 ETH',
+    progress: 12,
+    ageLabel: '11m',
+    creatorLabel: '0xf2…00cc',
+    isDemo: true,
+  },
+  {
+    href: '#',
+    symbol: 'BASED',
+    name: 'Based God Coin',
+    graduated: false,
+    priceLabel: '$0.0000087',
+    mcapLabel: '$14.7K',
+    raisedLabel: '1.12 / 3.5 ETH',
+    progress: 32,
+    ageLabel: '4h',
+    creatorLabel: '0xab…77f1',
+    isDemo: true,
+  },
+  {
+    href: '#',
+    symbol: 'BLU',
+    name: 'Blue Chip Inu',
+    graduated: false,
+    priceLabel: '$0.000003',
+    mcapLabel: '$8.2K',
+    raisedLabel: '0.71 / 3.5 ETH',
+    progress: 20,
+    ageLabel: '38m',
+    creatorLabel: '0x7d…1144',
+    isDemo: true,
+  },
+];
+
 function ProgressBlocks({ pct }: { pct: number }) {
   const total = 16;
   const filled = Math.round((pct / 100) * total);
@@ -288,16 +356,22 @@ export default function HomeFeedPage() {
             ))}
           </div>
         ) : tokens.length === 0 && !query.trim() ? (
-          <div className="text-center py-20 border-b border-border">
-            <p className="text-sm font-bold text-foreground mb-2">No tokens yet.</p>
-            <p className="text-xs text-muted-foreground font-mono mb-5">Be first.</p>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-4 py-2.5 hover:bg-primary/85 transition-colors border-2 border-primary"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
-              Deploy
-            </button>
+          <div>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                Preview · mock data
+              </p>
+              <button
+                onClick={() => setIsCreateOpen(true)}
+                className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80"
+              >
+                <Plus className="h-3 w-3" strokeWidth={3} />
+                Be first
+              </button>
+            </div>
+            {DEMO_ROWS.map((d) => (
+              <Row key={d.symbol} d={d} />
+            ))}
           </div>
         ) : (
           <div className="text-center py-20 border-b border-border">
