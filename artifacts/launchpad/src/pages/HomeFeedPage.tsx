@@ -71,93 +71,85 @@ interface RowDisplay {
   isDemo?: boolean;
 }
 
+function ProgressBlocks({ pct }: { pct: number }) {
+  const total = 16;
+  const filled = Math.round((pct / 100) * total);
+  return (
+    <div className="flex gap-[2px] h-2.5">
+      {Array.from({ length: total }, (_, i) => (
+        <div
+          key={i}
+          className={`flex-1 border ${
+            i < filled ? 'bg-primary border-primary' : 'border-border bg-transparent'
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
 function Row({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
-      <div className="px-4 py-4 border-b border-border hover:bg-secondary/40 cursor-pointer transition-colors group">
-        {/* Mobile: stacked layout */}
-        <div className="md:hidden flex items-start gap-3">
-          <div className="w-9 h-9 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0 mt-0.5">
-            <span className="text-[10px] font-bold text-muted-foreground">
-              {d.symbol.slice(0, 2).toUpperCase()}
+      <div className="relative bg-card border-2 border-border mb-3 cursor-pointer group hover:border-primary transition-colors">
+        {/* vermillion side stripe */}
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+
+        {/* HEADER: ticker stamp + name + graduated chip */}
+        <div className="flex items-stretch border-b-2 border-border">
+          <div className="border-r-2 border-border px-3 md:px-4 py-2.5 pl-4 md:pl-5 flex items-center min-w-[80px] md:min-w-[100px]">
+            <span className="text-base md:text-xl font-black tracking-tighter leading-none text-foreground">
+              ${d.symbol.toUpperCase()}
             </span>
           </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-baseline justify-between gap-3">
-              <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
-                {d.name}
-              </p>
-              <p className="text-sm font-mono tabular-nums text-foreground shrink-0">{d.mcapLabel}</p>
-            </div>
-            <div className="flex items-center justify-between gap-3 mt-1.5">
-              <p className="text-[11px] text-muted-foreground font-mono truncate">
-                ${d.symbol}
-                {d.graduated && <span className="ml-2 text-emerald-400">· DEX</span>}
-                {d.isDemo && <span className="ml-2 italic">· demo</span>}
-              </p>
-              <p className="text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
-                {d.ageLabel}
-              </p>
-            </div>
-            {d.creatorLabel && (
-              <p className="text-[10px] text-muted-foreground/70 font-mono mt-1 truncate">
-                by {d.creatorLabel}
-              </p>
-            )}
-            <div className="flex items-center gap-2.5 mt-3">
-              <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
-              </div>
-              <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-9 text-right">
-                {d.progress.toFixed(0)}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Desktop: table grid */}
-        <div className="hidden md:grid grid-cols-12 items-center gap-4">
-          <div className="col-span-3 flex items-center gap-3 min-w-0">
-            <div className="w-8 h-8 rounded-full bg-secondary border border-border flex items-center justify-center shrink-0">
-              <span className="text-[10px] font-bold text-muted-foreground">
-                {d.symbol.slice(0, 2).toUpperCase()}
-              </span>
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors leading-tight">
-                {d.name}
-              </p>
-              <p className="text-[11px] text-muted-foreground font-mono leading-tight mt-0.5 truncate">
-                ${d.symbol}
-                {d.graduated && <span className="ml-1.5 text-emerald-400">· DEX</span>}
-                {d.creatorLabel && (
-                  <span className="ml-1.5 opacity-60">· by {d.creatorLabel}</span>
-                )}
-              </p>
-            </div>
-          </div>
-          <div className="col-span-2 text-right">
-            <p className="text-xs font-mono tabular-nums text-foreground">{d.priceLabel}</p>
-          </div>
-          <div className="col-span-2 text-right">
-            <p className="text-xs font-mono tabular-nums text-foreground">{d.mcapLabel}</p>
-          </div>
-          <div className="col-span-3">
-            <div className="flex items-center gap-2">
-              <div className="flex-1 h-1 bg-secondary rounded-full overflow-hidden">
-                <div className="h-full bg-primary" style={{ width: `${d.progress}%` }} />
-              </div>
-              <span className="text-[10px] font-mono tabular-nums text-muted-foreground w-10 text-right">
-                {d.progress.toFixed(0)}%
-              </span>
-            </div>
-            <p className="text-[10px] font-mono text-muted-foreground mt-0.5">{d.raisedLabel}</p>
-          </div>
-          <div className="col-span-2 text-right">
-            <p className="text-xs font-mono text-muted-foreground tabular-nums">
-              {d.isDemo ? <span className="italic">demo</span> : d.ageLabel}
+          <div className="flex-1 px-3 py-2 flex flex-col justify-center min-w-0">
+            <p className="text-sm font-bold text-foreground truncate leading-tight">
+              {d.name}
+            </p>
+            <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
+              {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel} ago
+              {d.isDemo && ' · demo'}
             </p>
           </div>
+          {d.graduated && (
+            <div className="self-center mr-3 border-2 border-primary text-primary px-1.5 py-0.5 text-[9px] font-black tracking-widest leading-none">
+              ON DEX
+            </div>
+          )}
+        </div>
+
+        {/* DATA ROW: price · mcap · raised */}
+        <div className="grid grid-cols-3 border-b-2 border-border">
+          {[
+            { label: 'PRICE', value: d.priceLabel },
+            { label: 'MCAP', value: d.mcapLabel },
+            { label: 'RAISED', value: d.raisedLabel.replace(' ETH', '') + ' ETH' },
+          ].map((cell, i) => (
+            <div
+              key={cell.label}
+              className={`px-3 py-2 ${i < 2 ? 'border-r-2 border-border' : ''}`}
+            >
+              <div className="text-[8.5px] font-black tracking-widest text-muted-foreground mb-0.5">
+                {cell.label}
+              </div>
+              <div className="text-xs font-bold tabular-nums text-foreground truncate">
+                {cell.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* PROGRESS */}
+        <div className="px-3 py-2.5">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-[8.5px] font-black tracking-widest text-muted-foreground">
+              CURVE → DEX
+            </span>
+            <span className="text-[11px] font-black tabular-nums text-foreground">
+              {d.progress.toFixed(0)}%
+            </span>
+          </div>
+          <ProgressBlocks pct={d.progress} />
         </div>
       </div>
     </Link>
@@ -282,24 +274,15 @@ export default function HomeFeedPage() {
           </div>
         </div>
 
-        {/* Table header (desktop only) */}
-        <div className="hidden md:grid grid-cols-12 gap-3 px-3 py-2.5 border-y-2 border-border bg-card text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-          <div className="col-span-3">Token</div>
-          <div className="col-span-2 text-right">Price</div>
-          <div className="col-span-2 text-right">Mcap</div>
-          <div className="col-span-3">Progress</div>
-          <div className="col-span-2 text-right">Age</div>
-        </div>
-
         {/* Rows */}
         {isLoading ? (
-          <div className="divide-y divide-border">
-            {[...Array(8)].map((_, i) => (
-              <div key={i} className="h-12 bg-card/30 animate-pulse" />
+          <div className="space-y-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-card border-2 border-border animate-pulse" />
             ))}
           </div>
         ) : filtered.length > 0 ? (
-          <div className="border-b border-border">
+          <div>
             {filtered.map((token) => (
               <TokenRow key={token.address} token={token} ethPrice={ethPrice} />
             ))}

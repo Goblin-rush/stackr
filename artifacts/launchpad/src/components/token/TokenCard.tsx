@@ -45,8 +45,8 @@ export function TokenCard({ address }: TokenCardProps) {
             <div className="flex items-center justify-between gap-2">
               <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">{name}</p>
               {graduated && (
-                <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded shrink-0">
-                  DEX
+                <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 border-2 border-primary text-primary shrink-0">
+                  ON DEX
                 </span>
               )}
             </div>

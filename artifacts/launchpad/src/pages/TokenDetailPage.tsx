@@ -122,13 +122,13 @@ export default function TokenDetailPage() {
                     <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground break-words">{name}</h1>
                     <span className="text-lg md:text-xl text-primary font-mono uppercase bg-primary/10 px-2 py-1 border border-primary/20">${symbol}</span>
                     {graduated ? (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded uppercase tracking-wider flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                        Graduated
+                      <span className="text-[10px] font-black px-1.5 py-0.5 border-2 border-primary text-primary uppercase tracking-widest flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
+                        On DEX
                       </span>
                     ) : (
-                      <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 bg-amber-400 rounded-full animate-pulse" />
+                      <span className="text-[10px] font-black px-1.5 py-0.5 border-2 border-foreground text-foreground uppercase tracking-widest flex items-center gap-1">
+                        <span className="h-1.5 w-1.5 bg-foreground rounded-full animate-pulse" />
                         Bonding
                       </span>
                     )}
@@ -148,7 +148,7 @@ export default function TokenDetailPage() {
                         {address.slice(0, 6)}…{address.slice(-4)}
                       </span>
                       {copiedAddr ? (
-                        <span className="text-[10px] text-emerald-400">copied</span>
+                        <span className="text-[10px] text-primary font-bold">copied</span>
                       ) : (
                         <Copy className="h-3 w-3 shrink-0" />
                       )}
@@ -228,7 +228,7 @@ export default function TokenDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">24h Change</p>
-                  <p className={`font-mono text-lg tabular-nums ${change24h >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  <p className={`font-mono text-lg tabular-nums font-bold ${change24h >= 0 ? 'text-foreground' : 'text-primary'}`}>
                     {live.trades.length > 1 ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%` : '–'}
                   </p>
                 </div>
@@ -300,7 +300,7 @@ export default function TokenDetailPage() {
                       </button>
                     ))}
                     <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
-                      <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+                      <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
                       ON-CHAIN
                     </div>
                   </div>
@@ -318,7 +318,7 @@ export default function TokenDetailPage() {
                     </p>
                   )}
                   {live.loadError && (
-                    <p className="text-[11px] text-red-400 font-mono mt-2 text-center">
+                    <p className="text-[11px] text-primary font-mono mt-2 text-center">
                       {live.loadError}
                     </p>
                   )}

@@ -329,7 +329,7 @@ export default function DashboardPage() {
       </div>
 
       {error && (
-        <div className="border border-red-500/30 bg-red-500/5 text-red-400 text-sm font-mono p-3 rounded mb-4">
+        <div className="border-2 border-primary bg-primary/5 text-primary text-sm font-mono p-3 mb-4">
           {error}
         </div>
       )}
@@ -369,7 +369,7 @@ export default function DashboardPage() {
                       <div className="font-bold text-sm truncate hover:text-primary transition-colors">
                         ${h.symbol}
                         {h.graduated && (
-                          <span className="ml-1.5 text-[9px] font-mono uppercase tracking-wider text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1 py-0.5 rounded">
+                          <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-primary border-2 border-primary px-1 py-0.5">
                             grad
                           </span>
                         )}

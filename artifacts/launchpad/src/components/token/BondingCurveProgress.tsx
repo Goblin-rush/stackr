@@ -30,14 +30,14 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
       <div className="flex justify-between">
         <span className="text-xs text-muted-foreground font-mono">{progress.toFixed(2)}% filled</span>
         {graduated ? (
-          <span className="text-xs text-emerald-400 font-medium">Graduated to DEX ✓</span>
+          <span className="text-xs text-primary font-bold">Graduated to DEX ✓</span>
         ) : (
           <span className="text-xs text-muted-foreground">target: {target} ETH</span>
         )}
       </div>
 
       {graduated && (
-        <div className="bg-emerald-500/8 border border-emerald-500/20 p-3 rounded text-xs text-emerald-400">
+        <div className="bg-primary/5 border-2 border-primary p-3 text-xs text-primary font-mono">
           Liquidity migrated to DEX. LP tokens burned.
         </div>
       )}

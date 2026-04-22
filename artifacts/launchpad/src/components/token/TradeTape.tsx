@@ -70,7 +70,7 @@ export function TradeTape({ trades, symbol }: Props) {
   return (
     <div className="border-b border-border/50">
       <div className="px-3 py-1.5 flex items-center gap-2 border-b border-border/30 bg-muted/20">
-        <span className="h-1.5 w-1.5 bg-emerald-400 rounded-full animate-pulse" />
+        <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
         <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
           Tape · last {recent.length}
         </span>
@@ -83,17 +83,17 @@ export function TradeTape({ trades, symbol }: Props) {
             <div
               key={`${t.txHash}-${t.id}`}
               className={`px-3 py-1.5 grid grid-cols-12 items-center gap-2 text-[11px] font-mono tabular-nums transition-colors ${
-                flash ? (isBuy ? 'bg-emerald-500/10' : 'bg-red-500/10') : 'hover:bg-muted/20'
+                flash ? (isBuy ? 'bg-foreground/[0.06]' : 'bg-primary/[0.08]') : 'hover:bg-muted/20'
               }`}
             >
               {/* Type */}
               <div className="col-span-2 flex items-center gap-1">
                 {isBuy ? (
-                  <ArrowUpRight className="h-3 w-3 text-emerald-400 shrink-0" />
+                  <ArrowUpRight className="h-3 w-3 text-foreground shrink-0" />
                 ) : (
-                  <ArrowDownRight className="h-3 w-3 text-red-400 shrink-0" />
+                  <ArrowDownRight className="h-3 w-3 text-primary shrink-0" />
                 )}
-                <span className={`uppercase font-bold ${isBuy ? 'text-emerald-400' : 'text-red-400'}`}>
+                <span className={`uppercase font-black tracking-widest ${isBuy ? 'text-foreground' : 'text-primary'}`}>
                   {t.type}
                 </span>
               </div>

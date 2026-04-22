@@ -32,8 +32,8 @@ function TradeRow({ trade, isFresh }: { trade: LiveTrade; isFresh: boolean }) {
       className={`border-b border-border/30 transition-colors ${
         isFresh
           ? trade.type === 'buy'
-            ? 'bg-emerald-500/8 animate-[fade_2.5s_ease-out]'
-            : 'bg-red-500/8 animate-[fade_2.5s_ease-out]'
+            ? 'bg-foreground/[0.04] animate-[fade_2.5s_ease-out]'
+            : 'bg-primary/[0.06] animate-[fade_2.5s_ease-out]'
           : 'hover:bg-muted/20'
       }`}
     >
@@ -41,8 +41,8 @@ function TradeRow({ trade, isFresh }: { trade: LiveTrade; isFresh: boolean }) {
         <span
           className={
             trade.type === 'buy'
-              ? 'text-emerald-400 font-semibold uppercase'
-              : 'text-red-400 font-semibold uppercase'
+              ? 'text-foreground font-black uppercase tracking-widest'
+              : 'text-primary font-black uppercase tracking-widest'
           }
         >
           {trade.type}

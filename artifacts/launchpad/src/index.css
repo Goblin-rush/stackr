@@ -50,46 +50,46 @@
 }
 
 /*
-  Aethpad v2 — BRUTALIST trading terminal.
-  Pure black background. Electric lime accent. Zero radius. Heavy mono.
-  Deliberately different from v1 to signal "fresh chain, fresh contracts."
+  Aethpad v2 — PAPER / EDITORIAL.
+  Warm off-white background. Ink text. Single vermillion accent.
+  Print/zine vibe. Deliberately not a "crypto template."
 */
 :root {
-  --background: 0 0% 4%;
-  --foreground: 60 8% 96%;
+  --background: 40 23% 92%;
+  --foreground: 60 7% 6%;
 
-  --card: 0 0% 7%;
-  --card-foreground: 60 8% 96%;
-  --card-border: 0 0% 18%;
+  --card: 40 25% 89%;
+  --card-foreground: 60 7% 6%;
+  --card-border: 60 5% 12%;
 
-  --popover: 0 0% 7%;
-  --popover-foreground: 60 8% 96%;
-  --popover-border: 0 0% 18%;
+  --popover: 40 25% 95%;
+  --popover-foreground: 60 7% 6%;
+  --popover-border: 60 5% 12%;
 
-  /* Electric lime — Aethpad v2 brand color */
-  --primary: 72 100% 55%;
-  --primary-foreground: 0 0% 4%;
-  --primary-border: 72 100% 55%;
+  /* Vermillion — Aethpad v2 brand */
+  --primary: 9 75% 48%;
+  --primary-foreground: 40 25% 95%;
+  --primary-border: 9 75% 48%;
 
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 60 8% 96%;
-  --secondary-border: 0 0% 18%;
+  --secondary: 40 18% 86%;
+  --secondary-foreground: 60 7% 6%;
+  --secondary-border: 60 5% 18%;
 
-  --muted: 0 0% 9%;
-  --muted-foreground: 0 0% 55%;
-  --muted-border: 0 0% 18%;
+  --muted: 40 15% 87%;
+  --muted-foreground: 40 6% 33%;
+  --muted-border: 60 5% 18%;
 
-  --accent: 72 100% 55%;
-  --accent-foreground: 0 0% 4%;
-  --accent-border: 72 100% 55%;
+  --accent: 9 75% 48%;
+  --accent-foreground: 40 25% 95%;
+  --accent-border: 9 75% 48%;
 
-  --destructive: 6 90% 58%;
-  --destructive-foreground: 0 0% 98%;
-  --destructive-border: 6 90% 58%;
+  --destructive: 9 75% 40%;
+  --destructive-foreground: 40 25% 95%;
+  --destructive-border: 9 75% 40%;
 
-  --border: 0 0% 16%;
-  --input: 0 0% 10%;
-  --ring: 72 100% 55%;
+  --border: 60 5% 12%;
+  --input: 40 18% 84%;
+  --ring: 9 75% 48%;
 
   --radius: 0px;
   --app-font-sans: "JetBrains Mono", "Inter", monospace;
@@ -97,27 +97,27 @@
 }
 
 .dark {
-  --background: 0 0% 4%;
-  --foreground: 60 8% 96%;
-  --card: 0 0% 7%;
-  --card-foreground: 60 8% 96%;
-  --card-border: 0 0% 18%;
-  --popover: 0 0% 7%;
-  --popover-foreground: 60 8% 96%;
-  --popover-border: 0 0% 18%;
-  --primary: 72 100% 55%;
-  --primary-foreground: 0 0% 4%;
-  --secondary: 0 0% 10%;
-  --secondary-foreground: 60 8% 96%;
-  --muted: 0 0% 9%;
-  --muted-foreground: 0 0% 55%;
-  --accent: 72 100% 55%;
-  --accent-foreground: 0 0% 4%;
-  --destructive: 6 90% 58%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 0 0% 16%;
-  --input: 0 0% 10%;
-  --ring: 72 100% 55%;
+  --background: 40 23% 92%;
+  --foreground: 60 7% 6%;
+  --card: 40 25% 89%;
+  --card-foreground: 60 7% 6%;
+  --card-border: 60 5% 12%;
+  --popover: 40 25% 95%;
+  --popover-foreground: 60 7% 6%;
+  --popover-border: 60 5% 12%;
+  --primary: 9 75% 48%;
+  --primary-foreground: 40 25% 95%;
+  --secondary: 40 18% 86%;
+  --secondary-foreground: 60 7% 6%;
+  --muted: 40 15% 87%;
+  --muted-foreground: 40 6% 33%;
+  --accent: 9 75% 48%;
+  --accent-foreground: 40 25% 95%;
+  --destructive: 9 75% 40%;
+  --destructive-foreground: 40 25% 95%;
+  --border: 60 5% 12%;
+  --input: 40 18% 84%;
+  --ring: 9 75% 48%;
 }
 
 @layer base {
