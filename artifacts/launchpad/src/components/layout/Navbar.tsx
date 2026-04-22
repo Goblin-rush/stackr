@@ -2,7 +2,7 @@ import { Link } from 'wouter';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAccount } from 'wagmi';
-import { Plus, Menu, Rocket, X, LayoutDashboard, BookOpen, Wallet, LogOut, HelpCircle, Shield } from 'lucide-react';
+import { Plus, Menu, X, Wallet, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useEthPrice } from '@/hooks/use-eth-price';
 
@@ -12,6 +12,13 @@ interface NavbarProps {
 
 const X_URL = 'https://x.com/stackr?s=21';
 
+export function XIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
+      <path d="M18.244 2H21l-6.52 7.45L22 22h-6.81l-4.78-6.27L4.8 22H2l7-8L2 2h6.92l4.32 5.74L18.244 2Zm-1.19 18h1.86L7.07 4h-2L17.054 20Z" />
+    </svg>
+  );
+}
 
 export function Navbar({ onCreate }: NavbarProps) {
   const { ready, authenticated, login, logout, user } = usePrivy();
@@ -137,7 +144,6 @@ export function Navbar({ onCreate }: NavbarProps) {
                   disabled={!ready}
                   className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
                 >
-                  <Wallet className="h-3.5 w-3.5" />
                   Connect Wallet
                 </button>
               )}
@@ -146,18 +152,17 @@ export function Navbar({ onCreate }: NavbarProps) {
             {/* Nav links */}
             <nav className="flex-1 px-2 py-3 space-y-0.5">
               {[
-                { href: '/', icon: <Rocket className="h-4 w-4" />, label: 'Feed' },
-                { href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Profile' },
-                { href: '/docs', icon: <BookOpen className="h-4 w-4" />, label: 'Docs' },
-                { href: '/faq', icon: <HelpCircle className="h-4 w-4" />, label: 'FAQ' },
-                { href: '/disclaimer', icon: <Shield className="h-4 w-4" />, label: 'Disclaimer' },
+                { href: '/', label: 'Feed' },
+                { href: '/dashboard', label: 'Profile' },
+                { href: '/docs', label: 'Docs' },
+                { href: '/faq', label: 'FAQ' },
+                { href: '/disclaimer', label: 'Disclaimer' },
               ].map((item) => (
                 <Link key={item.href} href={item.href}>
                   <div
                     onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"
+                    className="flex items-center px-3 py-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"
                   >
-                    {item.icon}
                     {item.label}
                   </div>
                 </Link>
@@ -177,7 +182,8 @@ export function Navbar({ onCreate }: NavbarProps) {
 
             {/* Footer */}
             <div className="border-t border-white/8 px-5 py-3 flex items-center justify-between shrink-0">
-              <a href={X_URL} target="_blank" rel="noreferrer noopener" className="text-[11px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+              <a href={X_URL} target="_blank" rel="noreferrer noopener" className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                <XIcon className="h-3 w-3" />
                 @stackr
               </a>
               {ethPrice && (
