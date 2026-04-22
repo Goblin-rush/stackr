@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useEffect, useMemo, useState } from 'react';
+import { useAccount, usePublicClient } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { Link } from 'wouter';
 import { formatEther, formatUnits } from 'viem';
@@ -11,8 +11,7 @@ import {
   TOKEN_V2_ABI,
   CURVE_V2_ABI,
 } from '@/lib/contracts';
-import { Wallet, Sparkles, PieChart, Coins, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
-import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
+import { Wallet, PieChart, Coins, RefreshCw, ExternalLink, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Holding {
@@ -23,15 +22,20 @@ interface Holding {
   balance: bigint;
   holdScore: bigint;
   totalLiveScore: bigint;
-  pendingRewards: bigint;
+  totalDistributed: bigint;   // totalRewardsDistributed for the token
   graduated: boolean;
-  realEthRaised: bigint;
   curvePriceEth: bigint;
 }
 
 function poolSharePct(h: Holding): number {
   if (h.totalLiveScore === 0n) return 0;
   return (Number(h.holdScore) / Number(h.totalLiveScore)) * 100;
+}
+
+/** User's estimated ETH received = pool share % × total distributed */
+function estEthReceived(h: Holding): number {
+  const share = poolSharePct(h) / 100;
+  return Number(formatEther(h.totalDistributed)) * share;
 }
 
 function formatCompact(n: number): string {
@@ -50,25 +54,6 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const claimingRef = useRef<`0x${string}` | null>(null);
-
-  const { writeContractAsync, data: claimHash } = useWriteContract();
-  const { isLoading: isClaimConfirming, isSuccess: isClaimSuccess } = useWaitForTransactionReceipt({ hash: claimHash });
-  const claimToastId = useRef<string | number | null>(null);
-
-  useEffect(() => {
-    if (!claimHash || !claimToastId.current) return;
-    txSubmittedToast(claimToastId.current, claimHash, 'Claiming rewards');
-  }, [claimHash]);
-
-  useEffect(() => {
-    if (isClaimSuccess && claimHash && claimToastId.current) {
-      txSuccessToast(claimToastId.current, claimHash, 'Rewards claimed!');
-      claimToastId.current = null;
-      claimingRef.current = null;
-      setRefreshKey((k) => k + 1);
-    }
-  }, [isClaimSuccess, claimHash]);
 
   useEffect(() => {
     if (!isConnected || !address || !client || !FACTORY_V2_ADDRESS) {
@@ -117,7 +102,7 @@ export default function DashboardPage() {
           if (balR.status !== 'success' || recR.status !== 'success') continue;
           const balance = balR.result as bigint;
           if (balance === 0n) continue;
-          const rec = recR.result as { creator: `0x${string}`; curve: `0x${string}`; createdAt: bigint; metadataURI: string };
+          const rec = recR.result as { curve: `0x${string}` };
           candidates.push({ token: tokens[i], curve: rec.curve, balance });
         }
 
@@ -126,12 +111,14 @@ export default function DashboardPage() {
           return;
         }
 
+        // 8 calls per token: name, symbol, holdScore, totalHoldScoreLive,
+        //                    totalRewardsDistributed, graduated, (unused), currentPrice
         const detailCalls = candidates.flatMap((c) => [
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'name' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'symbol' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'holdScore' as const, args: [address] },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalHoldScoreLive' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'pendingRewards' as const, args: [address] },
+          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalRewardsDistributed' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'graduated' as const },
           { address: c.curve, abi: CURVE_V2_ABI, functionName: 'realEthRaised' as const },
           { address: c.curve, abi: CURVE_V2_ABI, functionName: 'currentPrice' as const },
@@ -152,16 +139,17 @@ export default function DashboardPage() {
             symbol: get<string>(1, '???'),
             holdScore: get<bigint>(2, 0n),
             totalLiveScore: get<bigint>(3, 0n),
-            pendingRewards: get<bigint>(4, 0n),
+            totalDistributed: get<bigint>(4, 0n),
             graduated: get<boolean>(5, false),
-            realEthRaised: get<bigint>(6, 0n),
             curvePriceEth: get<bigint>(7, 0n),
           };
         });
 
+        // Sort: most valuable holdings first
         list.sort((a, b) => {
-          if (b.pendingRewards !== a.pendingRewards) return b.pendingRewards > a.pendingRewards ? 1 : -1;
-          return b.balance > a.balance ? 1 : -1;
+          const va = Number(formatEther((a.balance * a.curvePriceEth) / 10n ** 18n));
+          const vb = Number(formatEther((b.balance * b.curvePriceEth) / 10n ** 18n));
+          return vb - va;
         });
 
         if (!cancelled) { setHoldings(list); setLoading(false); }
@@ -178,37 +166,24 @@ export default function DashboardPage() {
 
   const totals = useMemo(() => {
     if (!holdings) return null;
-    let pendingEth = 0n;
     let portfolioEth = 0n;
-    let totalShareWeighted = 0;
+    let totalDistributed = 0n;
+    let estReceived = 0;
     for (const h of holdings) {
-      pendingEth += h.pendingRewards;
       portfolioEth += (h.balance * h.curvePriceEth) / 10n ** 18n;
-      totalShareWeighted += poolSharePct(h);
+      totalDistributed += h.totalDistributed;
+      estReceived += estEthReceived(h);
     }
-    return { pendingEth, portfolioEth, totalShareWeighted, count: holdings.length };
+    return { portfolioEth, totalDistributed, estReceived, count: holdings.length };
   }, [holdings]);
-
-  const handleClaim = async (token: `0x${string}`) => {
-    if (claimingRef.current) return;
-    claimingRef.current = token;
-    claimToastId.current = txPendingToast('Claiming rewards…');
-    try {
-      await writeContractAsync({ address: token, abi: TOKEN_V2_ABI, functionName: 'claim' });
-    } catch (e) {
-      txErrorToast(claimToastId.current ?? undefined, e);
-      claimToastId.current = null;
-      claimingRef.current = null;
-    }
-  };
 
   if (!FACTORY_V2_ADDRESS) {
     return (
       <Shell loading={false} onRefresh={() => {}}>
         <EmptyState
-          icon={<Sparkles className="h-8 w-8 text-muted-foreground" />}
+          icon={<TrendingUp className="h-8 w-8 text-muted-foreground" />}
           title="Dashboard not yet active"
-          body="Contracts not deployed yet. Once live, your holdings, pool share, and ETH rewards will appear here."
+          body="Contracts not deployed yet. Once live, your holdings and reward stats will appear here."
         />
       </Shell>
     );
@@ -223,7 +198,7 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-lg font-bold mb-2">Connect your wallet</h2>
           <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
-            See your token holdings, reward pool share, and claimable ETH.
+            See your token holdings and reward pool share.
           </p>
           <button
             onClick={() => login()}
@@ -255,26 +230,32 @@ export default function DashboardPage() {
         />
         <SummaryCard
           icon={<PieChart className="h-3.5 w-3.5" />}
-          label="Avg Pool Weight"
-          value={loading ? null : `${totals ? totals.totalShareWeighted.toFixed(2) : '0.00'}%`}
-          sub="across all holdings"
-        />
-        <SummaryCard
-          icon={<Sparkles className="h-3.5 w-3.5 text-primary" />}
-          label="Total Claimable"
+          label="Total Distributed"
           value={
             loading
               ? null
-              : totals && totals.pendingEth > 0n
-                ? `${Number(formatEther(totals.pendingEth)).toFixed(6)} ETH`
+              : totals && totals.totalDistributed > 0n
+                ? `${Number(formatEther(totals.totalDistributed)).toFixed(4)} ETH`
+                : '—'
+          }
+          sub="across your tokens"
+        />
+        <SummaryCard
+          icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
+          label="Est. Received"
+          value={
+            loading
+              ? null
+              : totals && totals.estReceived > 0
+                ? `${totals.estReceived.toFixed(6)} ETH`
                 : '—'
           }
           sub={
-            ethPrice && totals && totals.pendingEth > 0n
-              ? `≈ $${(Number(formatEther(totals.pendingEth)) * ethPrice).toFixed(2)}`
-              : 'no pending rewards'
+            ethPrice && totals && totals.estReceived > 0
+              ? `≈ $${(totals.estReceived * ethPrice).toFixed(2)}`
+              : 'based on your pool share'
           }
-          highlight={!!totals && totals.pendingEth > 0n}
+          highlight={!!totals && totals.estReceived > 0}
         />
       </div>
 
@@ -302,7 +283,7 @@ export default function DashboardPage() {
         <EmptyState
           icon={<Coins className="h-8 w-8 text-muted-foreground" />}
           title="No holdings yet"
-          body="Buy a token on the Launchpad. Once you hold a balance, your pool share and ETH rewards will appear here."
+          body="Buy a token on the Launchpad. Your holdings and reward pool share will appear here."
         />
       )}
 
@@ -312,35 +293,27 @@ export default function DashboardPage() {
             const share = poolSharePct(h);
             const valEth = Number(formatEther((h.balance * h.curvePriceEth) / 10n ** 18n));
             const balFormatted = formatCompact(Number(formatUnits(h.balance, 18)));
-            const pendingEth = Number(formatEther(h.pendingRewards));
-            const hasPending = h.pendingRewards > 0n;
-            const isClaiming = claimingRef.current === h.token && (isClaimConfirming || !!claimHash);
-            const isOtherClaiming = !!claimingRef.current && claimingRef.current !== h.token;
+            const distributed = Number(formatEther(h.totalDistributed));
+            const estRec = estEthReceived(h);
 
             return (
               <div
                 key={h.token}
-                className={`rounded-xl border bg-card overflow-hidden transition-colors ${
-                  hasPending ? 'border-primary/30 hover:border-primary/50' : 'border-border/60 hover:border-border'
-                }`}
+                className="rounded-xl border border-border/60 bg-card overflow-hidden hover:border-border transition-colors"
               >
                 {/* Token header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                   <Link href={`/token/${h.token}`}>
-                    <div className="flex items-center gap-2.5 cursor-pointer group">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-bold group-hover:text-primary transition-colors">
-                            ${h.symbol}
-                          </span>
-                          {h.graduated && (
-                            <span className="text-[9px] font-black uppercase tracking-widest text-primary border border-primary/50 bg-primary/10 px-1.5 py-0.5 rounded">
-                              DEX
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-[11px] text-muted-foreground font-mono">{h.name}</span>
-                      </div>
+                    <div className="flex items-center gap-2 cursor-pointer group">
+                      <span className="text-sm font-bold group-hover:text-primary transition-colors">
+                        ${h.symbol}
+                      </span>
+                      {h.graduated && (
+                        <span className="text-[9px] font-black uppercase tracking-widest text-primary border border-primary/50 bg-primary/10 px-1.5 py-0.5 rounded">
+                          DEX
+                        </span>
+                      )}
+                      <span className="text-[11px] text-muted-foreground font-mono">{h.name}</span>
                     </div>
                   </Link>
                   <a
@@ -353,41 +326,21 @@ export default function DashboardPage() {
                   </a>
                 </div>
 
-                {/* Stats + Claim */}
-                <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
-                  {/* Stats grid */}
-                  <div className="flex-1 grid grid-cols-3 divide-x divide-border/40">
-                    <StatCell label="Balance" value={`${balFormatted} ${h.symbol}`} />
-                    <StatCell label="Value" value={`${valEth.toFixed(5)} ETH`} />
-                    <StatCell label="Pool share" value={`${share.toFixed(2)}%`} />
-                  </div>
-
-                  {/* Claimable + button */}
-                  <div className="flex items-center justify-between sm:justify-end gap-4 px-4 py-3 sm:min-w-[200px]">
-                    <div>
-                      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
-                        Claimable
-                      </div>
-                      <div className={`text-sm font-bold tabular-nums ${hasPending ? 'text-primary' : 'text-muted-foreground/50'}`}>
-                        {hasPending ? `${pendingEth.toFixed(6)} ETH` : '—'}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleClaim(h.token)}
-                      disabled={!hasPending || isClaiming || isOtherClaiming}
-                      className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg transition-all ${
-                        hasPending && !isClaiming && !isOtherClaiming
-                          ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20'
-                          : 'bg-muted/40 text-muted-foreground/50 cursor-not-allowed'
-                      }`}
-                    >
-                      {isClaiming ? (
-                        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Claiming…</>
-                      ) : (
-                        <><Sparkles className="h-3.5 w-3.5" /> Claim</>
-                      )}
-                    </button>
-                  </div>
+                {/* Stats grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+                  <StatCell label="Balance" value={`${balFormatted} ${h.symbol}`} />
+                  <StatCell label="Value" value={`${valEth.toFixed(5)} ETH`} />
+                  <StatCell
+                    label="Pool Share"
+                    value={`${share.toFixed(2)}%`}
+                    sub="of reward pool"
+                  />
+                  <StatCell
+                    label="Est. Received"
+                    value={estRec > 0 ? `${estRec.toFixed(6)} ETH` : '—'}
+                    sub={distributed > 0 ? `of ${distributed.toFixed(4)} total` : 'no rewards yet'}
+                    highlight={estRec > 0}
+                  />
                 </div>
               </div>
             );
@@ -396,9 +349,8 @@ export default function DashboardPage() {
       )}
 
       <p className="text-[11px] font-mono text-muted-foreground/50 mt-8 leading-relaxed max-w-2xl">
-        Pool share = time-weighted holdScore ÷ total holdScore across all holders.
-        Every trade deposits 2% ETH into the reward pool. Longer you hold without selling, the larger your share.
-        No staking required — accrues automatically.
+        Rewards are distributed automatically on every trade — no claiming needed. Your share of each
+        distribution = your holdScore ÷ total holdScore. HoldScore grows while you hold and resets on sell.
       </p>
     </Shell>
   );
@@ -470,11 +422,24 @@ function SummaryCard({
   );
 }
 
-function StatCell({ label, value }: { label: string; value: string }) {
+function StatCell({
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  label: string;
+  value: string;
+  sub?: string;
+  highlight?: boolean;
+}) {
   return (
     <div className="px-4 py-3">
       <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 mb-0.5">{label}</div>
-      <div className="text-[13px] font-semibold tabular-nums text-foreground/90 truncate">{value}</div>
+      <div className={`text-[13px] font-semibold tabular-nums truncate ${highlight ? 'text-primary' : 'text-foreground/90'}`}>
+        {value}
+      </div>
+      {sub && <div className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">{sub}</div>}
     </div>
   );
 }
