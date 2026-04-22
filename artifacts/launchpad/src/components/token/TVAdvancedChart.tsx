@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-const VIRTUAL_ETH = 1.5;
+const VIRTUAL_ETH = 3.0; // V2 virtual ETH reserve
 const VIRTUAL_TOKENS = 1_073_000_000;
 const K = VIRTUAL_ETH * VIRTUAL_TOKENS;
 
