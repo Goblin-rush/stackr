@@ -7,6 +7,7 @@ export interface LiveTrade {
   price: number;
   timestamp: number;
   txHash: string;
+  isDevBuy?: boolean;
 }
 
 export interface LiveHolder {

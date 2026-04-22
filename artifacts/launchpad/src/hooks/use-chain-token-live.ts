@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
-import { CURVE_V2_ABI, V2_TARGET_REAL_ETH, V2_VIRTUAL_ETH as V2_VIRTUAL_ETH_BI } from '@/lib/contracts';
+import { CURVE_V2_ABI, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, V2_TARGET_REAL_ETH, V2_VIRTUAL_ETH as V2_VIRTUAL_ETH_BI } from '@/lib/contracts';
 import type { LiveTrade, LiveHolder } from '@/types/live';
 
 const TARGET_ETH = Number(formatEther(V2_TARGET_REAL_ETH)); // 5 ETH — read from contracts.ts
@@ -22,6 +22,10 @@ const transferEvent = parseAbiItem(
 // V2 Graduated has different args — emitted by CURVE
 const graduatedEvent = parseAbiItem(
   'event Graduated(uint256 ethToLp, uint256 tokensToLp, address indexed pair)'
+);
+// Emitted by FACTORY when a token is deployed (includes dev buy info)
+const tokenDeployedEvent = parseAbiItem(
+  'event TokenDeployed(address indexed token, address indexed curve, address indexed creator, string name, string symbol, string metadataURI, uint256 devBuyEth, uint256 devBuyTokens)'
 );
 
 export interface ChainLiveState {
@@ -94,21 +98,25 @@ export function useChainTokenLive(
   const blockTimeCacheRef = useRef<Map<bigint, number>>(new Map());
   const seenTradeRef = useRef<Set<string>>(new Set());
   const seenTransferRef = useRef<Set<string>>(new Set());
+  const creatorRef = useRef<string | null>(null);
 
   const recomputeHolders = useCallback((): LiveHolder[] => {
     const totalScaled = BigInt(TOTAL_SUPPLY) * 10n ** 18n;
     const list: LiveHolder[] = [];
     const lowerCurve = curveAddress?.toLowerCase();
+    const lowerCreator = creatorRef.current?.toLowerCase();
     for (const [addr, bal] of balancesRef.current.entries()) {
       if (bal <= 0n) continue;
-      const isCurve = lowerCurve && addr.toLowerCase() === lowerCurve;
+      const lowerAddr = addr.toLowerCase();
+      const isCurve = lowerCurve && lowerAddr === lowerCurve;
+      const isCreator = lowerCreator && lowerAddr === lowerCreator;
       const amount = Number(formatEther(bal));
       const percent = totalScaled === 0n ? 0 : Number((bal * 10000n) / totalScaled) / 100;
       list.push({
         address: addr,
         amount,
         percent,
-        label: isCurve ? 'Bonding Curve' : undefined,
+        label: isCurve ? 'Bonding Curve' : isCreator ? 'Dev' : undefined,
       });
     }
     list.sort((a, b) => b.percent - a.percent);
@@ -309,7 +317,7 @@ export function useChainTokenLive(
         const tip = await client.getBlockNumber();
         const fromBlock = tip > LOOKBACK_BLOCKS ? tip - LOOKBACK_BLOCKS : 0n;
 
-        const [buyLogs, sellLogs, transferLogs, gradLogs, contractState] = await Promise.all([
+        const [buyLogs, sellLogs, transferLogs, gradLogs, contractState, deployLogs] = await Promise.all([
           client.getLogs({ address: curveAddress, event: buyEvent, fromBlock, toBlock: tip }),
           client.getLogs({ address: curveAddress, event: sellEvent, fromBlock, toBlock: tip }),
           client.getLogs({ address: tokenAddress, event: transferEvent, fromBlock, toBlock: tip }),
@@ -322,6 +330,16 @@ export function useChainTokenLive(
             ],
             allowFailure: true,
           }),
+          // TokenDeployed is queried from block 0 to capture the creation event regardless of age
+          FACTORY_V2_ADDRESS
+            ? client.getLogs({
+                address: FACTORY_V2_ADDRESS,
+                event: tokenDeployedEvent,
+                args: { token: tokenAddress as `0x${string}` },
+                fromBlock: 0n,
+                toBlock: tip,
+              }).catch(() => [] as any[])
+            : Promise.resolve([] as any[]),
         ]);
 
         if (cancelled) return;
@@ -366,6 +384,31 @@ export function useChainTokenLive(
           return a.logIndex - b.logIndex;
         });
 
+        // Process TokenDeployed event — extract creator + dev buy
+        let deployCreator: string | null = null;
+        let devBuyTrade: LiveTrade | null = null;
+        if (deployLogs.length > 0) {
+          const dl = (deployLogs as any[])[0];
+          deployCreator = (dl.args.creator as string).toLowerCase();
+          creatorRef.current = deployCreator;
+          const devBuyEth = dl.args.devBuyEth as bigint;
+          const devBuyTokens = dl.args.devBuyTokens as bigint;
+          if (devBuyTokens > 0n && devBuyEth > 0n) {
+            const deployTs = await getBlockTimestamp(dl.blockNumber);
+            devBuyTrade = {
+              id: tradeIdRef.current++,
+              type: 'buy',
+              account: dl.args.creator as string,
+              ethAmount: Number(formatEther(devBuyEth)),
+              tokenAmount: Number(formatEther(devBuyTokens)),
+              price: priceFromTrade(devBuyEth, devBuyTokens),
+              timestamp: deployTs,
+              txHash: dl.transactionHash,
+              isDevBuy: true,
+            };
+          }
+        }
+
         const uniqueBlocks = Array.from(new Set(raw.map((r) => r.blockNumber)));
         await Promise.all(uniqueBlocks.map((b) => getBlockTimestamp(b)));
 
@@ -387,6 +430,9 @@ export function useChainTokenLive(
           });
         }
         trades.reverse();
+
+        // Append dev buy as the oldest trade (goes at the end after reverse)
+        if (devBuyTrade) trades.push(devBuyTrade);
 
         for (const l of transferLogs as any[]) {
           const key = `${l.transactionHash}:${l.logIndex}`;
@@ -428,7 +474,7 @@ export function useChainTokenLive(
           lastTrade: newest ?? null,
           realEthRaised,
           currentPrice,
-          creator: null,
+          creator: deployCreator as `0x${string}` | null,
           graduated,
           volume24hEth: stats.volume24hEth,
           priceChange24hPct: stats.priceChange24hPct,

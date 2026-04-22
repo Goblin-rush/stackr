@@ -87,7 +87,7 @@ export function TradeTape({ trades, symbol }: Props) {
               }`}
             >
               {/* Type */}
-              <div className="col-span-2 flex items-center gap-1">
+              <div className="col-span-2 flex items-center gap-1 flex-wrap">
                 {isBuy ? (
                   <ArrowUpRight className="h-3 w-3 text-foreground shrink-0" />
                 ) : (
@@ -96,6 +96,11 @@ export function TradeTape({ trades, symbol }: Props) {
                 <span className={`uppercase font-black tracking-widest ${isBuy ? 'text-foreground' : 'text-primary'}`}>
                   {t.type}
                 </span>
+                {t.isDevBuy && (
+                  <span className="text-[8px] font-black uppercase tracking-widest text-amber-400 border border-amber-400/40 bg-amber-400/10 px-1 py-0.5 rounded leading-none">
+                    Dev
+                  </span>
+                )}
               </div>
               {/* ETH amount */}
               <div className="col-span-3 text-right">
@@ -110,7 +115,7 @@ export function TradeTape({ trades, symbol }: Props) {
               {/* Address */}
               <div className="col-span-4 sm:col-span-3 text-right">
                 <a
-                  href={`https://etherscan.io/address/${t.account}`}
+                  href={`https://basescan.org/address/${t.account}`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-muted-foreground hover:text-primary transition-colors inline-flex items-center gap-1"
@@ -122,7 +127,7 @@ export function TradeTape({ trades, symbol }: Props) {
               {/* Time + tx link */}
               <div className="col-span-3 sm:col-span-1 text-right text-muted-foreground">
                 <a
-                  href={`https://etherscan.io/tx/${t.txHash}`}
+                  href={`https://basescan.org/tx/${t.txHash}`}
                   target="_blank"
                   rel="noreferrer"
                   className="inline-flex items-center gap-0.5 hover:text-primary transition-colors"
