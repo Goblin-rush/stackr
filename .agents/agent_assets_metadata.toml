@@ -144,6 +144,24 @@ uri = "file://attached_assets/generated_images/stackr-favicon-diamond.png"
 type = "image"
 title = "stackr diamond favicon"
 
+[[generated]]
+id = "PBfjHkBeIqSK9IxXXREDx"
+uri = "file://attached_assets/generated_images/stackr-og-meme-v2.png"
+type = "image"
+title = "stackr og meme v2"
+
+[[generated]]
+id = "K5hz5Jivo_1dntI3mDg1o"
+uri = "file://attached_assets/generated_images/stackr-og-zen.png"
+type = "image"
+title = "stackr zen holder banner"
+
+[[generated]]
+id = "R0j7bx6QOiXGuozlannC_"
+uri = "file://attached_assets/generated_images/stackr-og-diamond-poster.png"
+type = "image"
+title = "stackr diamond poster banner"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
