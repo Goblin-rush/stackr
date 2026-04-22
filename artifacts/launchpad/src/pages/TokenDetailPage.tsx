@@ -7,7 +7,6 @@ import { useEthPrice } from '@/hooks/use-eth-price';
 import { useChainTokenLive } from '@/hooks/use-chain-token-live';
 import { TradeWidget } from '@/components/token/TradeWidget';
 import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
-import { TradeTape } from '@/components/token/TradeTape';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI, V2_TARGET_REAL_ETH } from '@/lib/contracts';
@@ -318,6 +317,7 @@ export default function TokenDetailPage() {
                 height={440}
                 ethPrice={ethPrice ?? 3000}
                 currentMcUsd={mcUsd}
+                lastTrade={live.lastTrade ? { price: live.lastTrade.price, ethAmount: live.lastTrade.ethAmount, timestamp: live.lastTrade.timestamp } : null}
               />
             </div>
 
@@ -365,11 +365,6 @@ export default function TokenDetailPage() {
           <div className="lg:col-span-4 space-y-4">
             <TradeWidget tokenAddress={address} curveAddress={curveAddress} />
 
-            {live.trades.length > 0 && (
-              <div className="rounded-xl border border-border/60 bg-muted/10 overflow-hidden">
-                <TradeTape trades={live.trades} symbol={symbol || 'TOKEN'} />
-              </div>
-            )}
           </div>
 
         </div>
