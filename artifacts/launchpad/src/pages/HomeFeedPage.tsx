@@ -73,7 +73,7 @@ interface RowDisplay {
 
 const DEMO_ROWS: RowDisplay[] = [
   {
-    href: '#',
+    href: '/demo/STR',
     symbol: 'STR',
     name: 'Asteroid Shiba',
     graduated: false,
@@ -86,7 +86,7 @@ const DEMO_ROWS: RowDisplay[] = [
     isDemo: true,
   },
   {
-    href: '#',
+    href: '/demo/BNK',
     symbol: 'BNK',
     name: 'Bonkers',
     graduated: true,
@@ -99,7 +99,7 @@ const DEMO_ROWS: RowDisplay[] = [
     isDemo: true,
   },
   {
-    href: '#',
+    href: '/demo/PEPE',
     symbol: 'PEPE',
     name: 'Memetics Lab',
     graduated: false,
@@ -112,7 +112,7 @@ const DEMO_ROWS: RowDisplay[] = [
     isDemo: true,
   },
   {
-    href: '#',
+    href: '/demo/BASED',
     symbol: 'BASED',
     name: 'Based God Coin',
     graduated: false,
@@ -125,7 +125,7 @@ const DEMO_ROWS: RowDisplay[] = [
     isDemo: true,
   },
   {
-    href: '#',
+    href: '/demo/BLU',
     symbol: 'BLU',
     name: 'Blue Chip Inu',
     graduated: false,

@@ -12,6 +12,7 @@ import HomeFeedPage from "@/pages/HomeFeedPage";
 import TokenDetailPage from "@/pages/TokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
 import DashboardPage from "@/pages/DashboardPage";
+import DemoTokenPage from "@/pages/DemoTokenPage";
 
 const queryClient = new QueryClient();
 
@@ -23,6 +24,7 @@ function Router() {
       <Route path="/" component={HomeFeedPage} />
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
+      <Route path="/demo/:symbol" component={DemoTokenPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>
