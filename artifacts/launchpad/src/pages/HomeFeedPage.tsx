@@ -197,12 +197,12 @@ function FeaturedRow({ d }: { d: RowDisplay }) {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5">
-          {/* Big ticker */}
+          {/* Big name */}
           <div className="md:col-span-2 border-b md:border-b-0 md:border-r border-border/60 px-5 py-5 flex flex-col justify-center">
-            <div className="text-5xl md:text-6xl font-black tracking-tighter leading-none text-gradient">
-              ${d.symbol}
+            <div className="text-2xl md:text-3xl font-black tracking-tight leading-tight text-gradient">
+              {d.name}
             </div>
-            <div className="text-sm font-semibold text-foreground/90 mt-2">{d.name}</div>
+            <div className="text-sm font-mono text-muted-foreground/60 mt-1">{d.symbol}</div>
             <div className="text-[11px] text-muted-foreground font-mono mt-1">
               {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel}
             </div>
