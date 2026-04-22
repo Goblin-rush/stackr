@@ -2,7 +2,7 @@ import { useParams, Link } from 'wouter';
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft, ArrowUpRight, ArrowDownRight } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send } from 'lucide-react';
 
 interface DemoToken {
   symbol: string;
@@ -20,6 +20,9 @@ interface DemoToken {
   change24h: number;
   trades: { type: 'buy' | 'sell'; eth: string; tokens: string; addr: string; ago: string }[];
   topHolders: { addr: string; pct: number; tokens: string }[];
+  twitter?: string;
+  telegram?: string;
+  website?: string;
 }
 
 const DEMO_TOKENS: Record<string, DemoToken> = {
@@ -52,6 +55,9 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
       { addr: '0xd0aa…ee31', pct: 1.9, tokens: '19.0M' },
       { addr: '0xee81…ff10', pct: 1.4, tokens: '14.0M' },
     ],
+    twitter: 'asteroidshiba',
+    telegram: 'asteroidshiba',
+    website: 'https://asteroidshiba.xyz',
   },
   BNK: {
     symbol: 'BNK',
@@ -77,6 +83,8 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
       { addr: '0x88ab…9131', pct: 4.4, tokens: '44.0M' },
       { addr: '0x1234…7b01', pct: 3.1, tokens: '31.0M' },
     ],
+    twitter: 'bonkerscoin',
+    telegram: 'bonkerscoin_tg',
   },
   PEPE: {
     symbol: 'PEPE',
@@ -100,6 +108,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
       { addr: '0xaa11…0101', pct: 8.1, tokens: '81.0M' },
       { addr: '0xbb22…0202', pct: 5.2, tokens: '52.0M' },
     ],
+    twitter: 'memeticslab',
   },
   BASED: {
     symbol: 'BASED',
@@ -123,6 +132,9 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
       { addr: '0x1aff…ff01', pct: 5.1, tokens: '51.0M' },
       { addr: '0x2bee…ee02', pct: 3.8, tokens: '38.0M' },
     ],
+    twitter: 'basedgodcoin',
+    telegram: 'basedgodcoin',
+    website: 'https://basedgod.xyz',
   },
   BLU: {
     symbol: 'BLU',
@@ -144,6 +156,8 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     topHolders: [
       { addr: '0xcc11…1100', pct: 4.2, tokens: '42.0M' },
     ],
+    twitter: 'bluechipinu',
+    telegram: 'bluechipinu',
   },
 };
 
@@ -287,6 +301,45 @@ export default function DemoTokenPage() {
                 ABOUT
               </div>
               <p className="text-sm text-foreground leading-relaxed">{t.description}</p>
+              {(t.twitter || t.telegram || t.website) && (
+                <div className="flex items-center gap-2 mt-3 flex-wrap">
+                  {t.twitter && (
+                    <a
+                      href={`https://x.com/${t.twitter}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded border border-border/60 bg-secondary/40 hover:bg-secondary hover:border-primary/50 hover:text-primary transition-colors"
+                    >
+                      <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                      </svg>
+                      <span>@{t.twitter}</span>
+                    </a>
+                  )}
+                  {t.telegram && (
+                    <a
+                      href={`https://t.me/${t.telegram}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded border border-border/60 bg-secondary/40 hover:bg-secondary hover:border-primary/50 hover:text-primary transition-colors"
+                    >
+                      <Send className="h-3 w-3 shrink-0" />
+                      <span>@{t.telegram}</span>
+                    </a>
+                  )}
+                  {t.website && (
+                    <a
+                      href={t.website}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1.5 rounded border border-border/60 bg-secondary/40 hover:bg-secondary hover:border-primary/50 hover:text-primary transition-colors"
+                    >
+                      <Globe className="h-3 w-3 shrink-0" />
+                      <span>{t.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Chart placeholder */}
