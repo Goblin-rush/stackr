@@ -126,13 +126,13 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
       setTimeout(() => {
         onResolved({
           name: symbolName,
-          full_name: symbolName,
-          description: seed,
+          full_name: `AETHPAD:${symbolName}`,
+          description: symbolName,
           type: 'crypto',
           session: '24x7',
           timezone: 'Etc/UTC',
-          exchange: '',
-          listed_exchange: '',
+          exchange: 'AETHPAD',
+          listed_exchange: 'AETHPAD',
           minmov: 1,
           pricescale: 100000000,
           has_intraday: true,
