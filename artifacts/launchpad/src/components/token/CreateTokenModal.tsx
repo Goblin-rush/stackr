@@ -43,6 +43,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   const deployToastId = useRef<string | number | null>(null);
   const [imageUri, setImageUri] = useState<string | null>(null);
+  const imageUriRef = useRef<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -56,6 +57,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     try {
       const r = await uploadImage(file);
       setImageUri(r.url);
+      imageUriRef.current = r.url;
       toast.success('Image pinned', { id: tid, description: r.cid.slice(0, 12) + '…' });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
@@ -69,6 +71,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   const clearImage = () => {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImageUri(null);
+    imageUriRef.current = null;
     setImagePreview(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
@@ -77,6 +80,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     if (!open) {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
       setImageUri(null);
+      imageUriRef.current = null;
       setImagePreview(null);
       setImageUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
@@ -131,7 +135,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
         website: vals.website || undefined,
         twitter: vals.twitter || undefined,
         telegram: vals.telegram || undefined,
-        image: imageUri || undefined,
+        image: imageUriRef.current || undefined,
       });
       setStep('done');
     },
@@ -139,6 +143,11 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   async function onSubmit(data: FormValues) {
     if (!FACTORY_V2_ADDRESS) { toast.error('Factory contract not configured.'); return; }
+    if (!imageUri) {
+      toast.error('Token image is required', { description: 'Upload a PNG, JPG, GIF or WEBP before launching.' });
+      fileInputRef.current?.click();
+      return;
+    }
     setStep('deploying');
     const id = txPendingToast(`Deploying ${data.symbol.toUpperCase()}`);
     deployToastId.current = id;
@@ -197,7 +206,11 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isLoading || imageUploading}
-                className="relative w-16 h-16 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/40 bg-white/3 flex items-center justify-center overflow-hidden shrink-0 transition-all group"
+                className={`relative w-16 h-16 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden shrink-0 transition-all group ${
+                  imagePreview
+                    ? 'border-primary/40 bg-white/3'
+                    : 'border-destructive/50 hover:border-destructive/80 bg-destructive/5 hover:bg-destructive/8'
+                }`}
               >
                 {imagePreview ? (
                   <>
@@ -209,14 +222,26 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
                     )}
                   </>
                 ) : (
-                  <Upload className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" />
+                  <Upload className="h-4 w-4 text-destructive/60 group-hover:text-destructive transition-colors" />
                 )}
               </button>
               <div className="flex-1 min-w-0">
-                <p className="text-[12px] font-semibold text-foreground mb-0.5">Token Image</p>
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  <p className="text-[12px] font-semibold text-foreground">Token Image</p>
+                  {!imageUri && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 border border-destructive/20 rounded px-1.5 py-0.5">
+                      Required
+                    </span>
+                  )}
+                  {imageUri && (
+                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded px-1.5 py-0.5">
+                      ✓ Pinned
+                    </span>
+                  )}
+                </div>
                 <p className="text-[10px] text-muted-foreground font-mono">
                   {imageUri
-                    ? `Pinned · ipfs://${imageUri.replace('ipfs://', '').slice(0, 16)}…`
+                    ? `ipfs://${imageUri.replace('ipfs://', '').slice(0, 16)}…`
                     : 'PNG · JPG · GIF · WEBP · max 5MB'}
                 </p>
                 {imageUri && (
@@ -224,7 +249,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
                     type="button"
                     onClick={clearImage}
                     disabled={isLoading}
-                    className="mt-1 text-[10px] text-muted-foreground hover:text-primary font-mono transition-colors"
+                    className="mt-1 text-[10px] text-muted-foreground hover:text-destructive font-mono transition-colors"
                   >
                     Remove
                   </button>
@@ -343,12 +368,14 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
             <button
               type="submit"
-              disabled={isLoading || !FACTORY_V2_ADDRESS}
+              disabled={isLoading || imageUploading || !FACTORY_V2_ADDRESS || !imageUri}
               className="w-full py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed enabled:bg-primary enabled:text-primary-foreground enabled:hover:bg-primary/90 enabled:glow-primary flex items-center justify-center gap-2"
             >
               {isLoading
                 ? <><Loader2 className="h-4 w-4 animate-spin" />{btnLabel()}</>
+                : imageUploading ? <><Loader2 className="h-4 w-4 animate-spin" />Uploading image…</>
                 : !FACTORY_V2_ADDRESS ? 'Not configured'
+                : !imageUri ? 'Upload an image to continue'
                 : <><Rocket className="h-4 w-4" />Launch Token</>
               }
             </button>
