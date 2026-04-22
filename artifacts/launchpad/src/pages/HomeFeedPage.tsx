@@ -383,13 +383,7 @@ export default function HomeFeedPage() {
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
 
         {/* Page header */}
-        <div className="flex items-end justify-between mb-6">
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-1">Base Network</p>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-none">
-              Token Feed
-            </h1>
-          </div>
+        <div className="flex items-center justify-end mb-6">
           <button
             onClick={() => setIsCreateOpen(true)}
             className="inline-flex items-center gap-2 text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary"
