@@ -162,6 +162,24 @@ uri = "file://attached_assets/generated_images/stackr-og-diamond-poster.png"
 type = "image"
 title = "stackr diamond poster banner"
 
+[[generated]]
+id = "HPEVQQlEa_ZDajAewdFnK"
+uri = "file://attached_assets/generated_images/stackr-og-brand.png"
+type = "image"
+title = "stackr brand og banner"
+
+[[generated]]
+id = "J7xV3QrccwutZCdyS0dPH"
+uri = "file://attached_assets/generated_images/stackr-favicon-s.png"
+type = "image"
+title = "S monogram favicon"
+
+[[generated]]
+id = "wCDpe4eP3_rhs08d9WaIA"
+uri = "file://attached_assets/generated_images/stackr-favicon-stacks.png"
+type = "image"
+title = "stacked bars favicon"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
