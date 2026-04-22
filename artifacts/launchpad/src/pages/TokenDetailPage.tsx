@@ -10,7 +10,7 @@ import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { TradeTape } from '@/components/token/TradeTape';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
-import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI } from '@/lib/contracts';
+import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI, V2_TARGET_REAL_ETH } from '@/lib/contracts';
 import { ArrowLeft, Copy, Check, ExternalLink, Globe, Send } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -75,7 +75,7 @@ export default function TokenDetailPage() {
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
   const [copiedCA, setCopiedCA] = useState(false);
 
-  const { data: record } = useReadContract({
+  const { data: record, isLoading: isRecordLoading } = useReadContract({
     address: FACTORY_V2_ADDRESS ?? undefined,
     abi: FACTORY_V2_ABI,
     functionName: 'getRecord',
@@ -102,7 +102,13 @@ export default function TokenDetailPage() {
   const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
   const change24h = live.priceChange24hPct;
-  const pct = progress ? progress / 100 : Math.min((realEthRaised / 5) * 100, 100);
+  const TARGET_ETH_NUM = Number(formatEther(V2_TARGET_REAL_ETH)); // 5.0
+  const realEthRaisedNum = realEthRaised
+    ? Number(formatEther(realEthRaised))
+    : live.realEthRaised > 0 ? live.realEthRaised : 0;
+  const pct = progress
+    ? Number(progress) / 100
+    : Math.min((realEthRaisedNum / TARGET_ETH_NUM) * 100, 100);
 
   const imgUrl = ipfsToHttp(meta?.image);
   const avatarSrc = imgUrl || (symbol ? genAvatarUri(symbol) : '');
@@ -111,9 +117,8 @@ export default function TokenDetailPage() {
   const tg = normalizeTelegram(meta?.telegram);
 
   const holderCount = live.holders.length || 0;
-  const TARGET_ETH = 5;
 
-  if (isLoading && !name) {
+  if ((isLoading || isRecordLoading) && !name) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -260,7 +265,7 @@ export default function TokenDetailPage() {
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">Bonding curve</span>
                     <span className="text-[11px] font-semibold tabular-nums text-foreground/80">
-                      {pct.toFixed(0)}% · {realEthRaised.toFixed(2)} / {TARGET_ETH} ETH
+                      {pct.toFixed(0)}% · {realEthRaisedNum.toFixed(2)} / {TARGET_ETH_NUM} ETH
                     </span>
                   </div>
                   <ProgressBar pct={pct} />
@@ -307,7 +312,7 @@ export default function TokenDetailPage() {
             <div className="rounded-xl border border-border/60 overflow-hidden">
               <TVAdvancedChart
                 seed={address}
-                baseEthRaised={realEthRaised}
+                baseEthRaised={realEthRaisedNum}
                 graduated={graduated}
                 symbol={`${symbol || 'TOKEN'}/ETH`}
                 height={440}
