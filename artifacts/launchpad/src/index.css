@@ -51,76 +51,76 @@
 
 /*
   Aethpad v2 — DARK PREMIUM.
-  Deep obsidian background. Amber fire accent. Clean hierarchy.
+  Deep obsidian. Electric violet accent. Clean and fast.
 */
 :root {
-  --background: 224 16% 6%;
-  --foreground: 210 20% 96%;
+  --background: 228 20% 5%;
+  --foreground: 210 18% 95%;
 
-  --card: 224 14% 10%;
-  --card-foreground: 210 20% 96%;
-  --card-border: 224 12% 16%;
+  --card: 228 18% 9%;
+  --card-foreground: 210 18% 95%;
+  --card-border: 228 14% 16%;
 
-  --popover: 224 14% 12%;
-  --popover-foreground: 210 20% 96%;
-  --popover-border: 224 12% 18%;
+  --popover: 228 18% 11%;
+  --popover-foreground: 210 18% 95%;
+  --popover-border: 228 14% 18%;
 
-  /* Amber fire — brand accent */
-  --primary: 28 96% 56%;
-  --primary-foreground: 224 16% 6%;
-  --primary-border: 28 96% 56%;
+  /* Electric blue — Aethpad brand */
+  --primary: 212 100% 58%;
+  --primary-foreground: 228 20% 5%;
+  --primary-border: 212 100% 58%;
 
-  --secondary: 224 12% 14%;
-  --secondary-foreground: 210 15% 75%;
-  --secondary-border: 224 12% 22%;
+  --secondary: 228 16% 13%;
+  --secondary-foreground: 210 12% 72%;
+  --secondary-border: 228 14% 22%;
 
-  --muted: 224 12% 13%;
-  --muted-foreground: 215 12% 47%;
-  --muted-border: 224 12% 20%;
+  --muted: 228 16% 12%;
+  --muted-foreground: 220 10% 44%;
+  --muted-border: 228 14% 20%;
 
-  --accent: 28 96% 56%;
-  --accent-foreground: 224 16% 6%;
-  --accent-border: 28 96% 56%;
+  --accent: 212 100% 58%;
+  --accent-foreground: 228 20% 5%;
+  --accent-border: 212 100% 58%;
 
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 210 20% 96%;
-  --destructive-border: 0 72% 51%;
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 210 18% 95%;
+  --destructive-border: 0 72% 55%;
 
-  --border: 224 12% 16%;
-  --input: 224 12% 14%;
-  --ring: 28 96% 56%;
+  --border: 228 14% 16%;
+  --input: 228 16% 13%;
+  --ring: 212 100% 58%;
 
   --radius: 6px;
   --app-font-sans: "Inter", "JetBrains Mono", sans-serif;
   --app-font-mono: "JetBrains Mono", monospace;
 
   /* Glow colors */
-  --glow-primary: hsl(28 96% 56% / 0.18);
+  --glow-primary: hsl(212 100% 58% / 0.20);
   --glow-green: hsl(142 71% 45% / 0.18);
 }
 
 .dark {
-  --background: 224 16% 6%;
-  --foreground: 210 20% 96%;
-  --card: 224 14% 10%;
-  --card-foreground: 210 20% 96%;
-  --card-border: 224 12% 16%;
-  --popover: 224 14% 12%;
-  --popover-foreground: 210 20% 96%;
-  --popover-border: 224 12% 18%;
-  --primary: 28 96% 56%;
-  --primary-foreground: 224 16% 6%;
-  --secondary: 224 12% 14%;
-  --secondary-foreground: 210 15% 75%;
-  --muted: 224 12% 13%;
-  --muted-foreground: 215 12% 47%;
-  --accent: 28 96% 56%;
-  --accent-foreground: 224 16% 6%;
-  --destructive: 0 72% 51%;
-  --destructive-foreground: 210 20% 96%;
-  --border: 224 12% 16%;
-  --input: 224 12% 14%;
-  --ring: 28 96% 56%;
+  --background: 228 20% 5%;
+  --foreground: 210 18% 95%;
+  --card: 228 18% 9%;
+  --card-foreground: 210 18% 95%;
+  --card-border: 228 14% 16%;
+  --popover: 228 18% 11%;
+  --popover-foreground: 210 18% 95%;
+  --popover-border: 228 14% 18%;
+  --primary: 212 100% 58%;
+  --primary-foreground: 228 20% 5%;
+  --secondary: 228 16% 13%;
+  --secondary-foreground: 210 12% 72%;
+  --muted: 228 16% 12%;
+  --muted-foreground: 220 10% 44%;
+  --accent: 212 100% 58%;
+  --accent-foreground: 228 20% 5%;
+  --destructive: 0 72% 55%;
+  --destructive-foreground: 210 18% 95%;
+  --border: 228 14% 16%;
+  --input: 228 16% 13%;
+  --ring: 212 100% 58%;
 }
 
 @layer base {
@@ -149,37 +149,19 @@
   animation-play-state: paused;
 }
 
-/* ─── Progress bar fill animation ────────── */
-@keyframes fill-bar {
-  from { width: 0%; }
-}
-
 /* ─── Shimmer sweep on progress bar ──────── */
 @keyframes shimmer {
   0%   { transform: translateX(-100%); }
   100% { transform: translateX(400%); }
 }
-.progress-shimmer::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255,255,255,0.22) 50%,
-    transparent 100%
-  );
-  width: 30%;
-  animation: shimmer 2.4s ease-in-out infinite;
-}
 
 /* ─── Pulsing glow dot ────────────────────── */
 @keyframes pulse-dot {
-  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--glow-primary); }
-  50%       { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
 }
 .dot-live {
-  animation: pulse-dot 1.8s ease-in-out infinite;
+  animation: pulse-dot 2s ease-in-out infinite;
 }
 
 /* ─── Card hover lift ─────────────────────── */
@@ -188,28 +170,28 @@
 }
 .card-hover:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
 }
 
-/* ─── Glow border on primary ─────────────── */
+/* ─── Primary glow border ────────────────── */
 .glow-primary {
-  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3),
-              0 0 16px hsl(var(--primary) / 0.12);
+  box-shadow: 0 0 0 1px hsl(212 100% 58% / 0.3),
+              0 0 20px hsl(212 100% 58% / 0.14);
 }
 
-/* ─── Number count-up helper ─────────────── */
+/* ─── Gradient text ──────────────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(212 100% 60%) 0%, hsl(195 100% 65%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Fade in ────────────────────────────── */
 @keyframes fade-in-up {
   from { opacity: 0; transform: translateY(6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 .fade-in-up {
   animation: fade-in-up 0.35s ease-out both;
-}
-
-/* ─── Gradient text utility ──────────────── */
-.text-gradient {
-  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38 100% 70%) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }

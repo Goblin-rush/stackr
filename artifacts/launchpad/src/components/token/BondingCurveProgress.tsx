@@ -50,8 +50,8 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
           className="absolute top-0 left-0 h-full rounded-full transition-none overflow-hidden"
           style={{
             width: `${pct}%`,
-            background: 'linear-gradient(90deg, hsl(28 96% 42%) 0%, hsl(28 96% 60%) 60%, hsl(38 100% 70%) 100%)',
-            boxShadow: pct > 2 ? '0 0 12px hsl(28 96% 56% / 0.5)' : 'none',
+            background: 'linear-gradient(90deg, hsl(212 100% 48%) 0%, hsl(212 100% 60%) 60%, hsl(195 100% 65%) 100%)',
+            boxShadow: pct > 2 ? '0 0 14px hsl(212 100% 58% / 0.45)' : 'none',
           }}
         >
           {/* shimmer sweep */}
