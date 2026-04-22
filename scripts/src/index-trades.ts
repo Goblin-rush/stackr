@@ -21,13 +21,13 @@ const { Pool } = pg;
 
 const RPC_URL = process.env.BASE_RPC_URL || 'https://mainnet.base.org';
 const FACTORY_ADDRESS = (process.env.FACTORY_V2_ADDRESS || '') as Address;
-const DATABASE_URL = process.env.DATABASE_URL || '';
+const DATABASE_URL = process.env.NEON_DATABASE_URL || process.env.DATABASE_URL || '';
 
 if (!FACTORY_ADDRESS) throw new Error('FACTORY_V2_ADDRESS is required');
 if (!DATABASE_URL) throw new Error('DATABASE_URL is required');
 
 const publicClient = createPublicClient({ chain: base, transport: http(RPC_URL) });
-const pool = new Pool({ connectionString: DATABASE_URL });
+const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 const CURSOR_ID = 'trades_v2';
 const STEP = 50_000n;
