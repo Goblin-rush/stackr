@@ -19,6 +19,19 @@ import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
 
+function timeAgo(ts: number | null): string {
+  if (!ts) return '–';
+  const diff = Date.now() - ts;
+  if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`;
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
+}
+
+function shortAddr(a: string): string {
+  return `${a.slice(0, 6)}…${a.slice(-4)}`;
+}
+
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
   const [tab, setTab] = useState('chart');
@@ -144,6 +157,28 @@ export default function TokenDetailPage() {
                         </span>
                       )}
                     </div>
+                    {((record as any)?.creator || (record as any)?.createdAt) && (
+                      <p className="text-[11px] text-muted-foreground font-mono mt-2">
+                        {(record as any)?.creator && (
+                          <>
+                            by{' '}
+                            <a
+                              href={`https://basescan.org/address/${(record as any).creator}`}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="hover:text-primary transition-colors"
+                            >
+                              {shortAddr((record as any).creator)}
+                            </a>
+                            {' '}·{' '}
+                          </>
+                        )}
+                        {(record as any)?.createdAt
+                          ? timeAgo(Number((record as any).createdAt) * 1000)
+                          : ''}
+                      </p>
+                    )}
+
                     <div className="flex items-center gap-2 mt-3 text-xs font-mono text-muted-foreground">
                       <span className="opacity-60">Token</span>
                       <button
