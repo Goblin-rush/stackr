@@ -68,7 +68,7 @@ export function Navbar({ onCreate }: NavbarProps) {
           <div className="hidden md:flex items-center gap-0.5 ml-3">
             {[
               { href: '/', label: 'Feed' },
-              { href: '/dashboard', label: 'Dashboard' },
+              { href: '/dashboard', label: 'Profile' },
               { href: '/docs', label: 'Docs' },
             ].map((item) => (
               <Link key={item.href} href={item.href}>
@@ -136,7 +136,7 @@ export function Navbar({ onCreate }: NavbarProps) {
             <nav className="flex-1 py-3 px-2">
               {[
                 { href: '/', icon: <Rocket className="h-3.5 w-3.5" />, label: 'Feed' },
-                { href: '/dashboard', icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: 'My Dashboard' },
+                { href: '/dashboard', icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: 'Profile' },
               ].map((item) => (
                 <Link key={item.href} href={item.href}>
                   <div
