@@ -227,6 +227,9 @@ export default function DemoTokenPage() {
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
+  const [tradePage, setTradePage] = useState(0);
+  const [holderPage, setHolderPage] = useState(0);
+  const PAGE_SIZE = 10;
   const DEMO_TOKEN_BALANCE = 985_420;
   const [copied, setCopied] = useState(false);
 
@@ -448,58 +451,82 @@ export default function DemoTokenPage() {
                 ))}
               </div>
 
-              {infoTab === 'trades' ? (
-                <div>
-                  {t.trades.map((tr, i) => (
-                    <div key={i} className="grid grid-cols-12 items-center gap-2 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono tabular-nums hover:bg-white/2 transition-colors">
-                      <div className="col-span-2 flex items-center gap-1.5">
-                        {tr.type === 'buy'
-                          ? <ArrowUpRight className="h-3 w-3 text-emerald-400" strokeWidth={2.5} />
-                          : <ArrowDownRight className="h-3 w-3 text-primary" strokeWidth={2.5} />}
-                        <span className={`font-semibold text-[10px] uppercase tracking-wider ${tr.type === 'buy' ? 'text-emerald-400' : 'text-primary'}`}>
-                          {tr.type}
-                        </span>
+              {infoTab === 'trades' ? (() => {
+                const totalTradePages = Math.max(1, Math.ceil(t.trades.length / PAGE_SIZE));
+                const pageTrades = t.trades.slice(tradePage * PAGE_SIZE, (tradePage + 1) * PAGE_SIZE);
+                return (
+                  <div>
+                    {pageTrades.map((tr, i) => (
+                      <div key={i} className="grid grid-cols-12 items-center gap-2 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono tabular-nums hover:bg-white/2 transition-colors">
+                        <div className="col-span-2 flex items-center gap-1.5">
+                          {tr.type === 'buy'
+                            ? <ArrowUpRight className="h-3 w-3 text-emerald-400" strokeWidth={2.5} />
+                            : <ArrowDownRight className="h-3 w-3 text-primary" strokeWidth={2.5} />}
+                          <span className={`font-semibold text-[10px] uppercase tracking-wider ${tr.type === 'buy' ? 'text-emerald-400' : 'text-primary'}`}>
+                            {tr.type}
+                          </span>
+                        </div>
+                        <div className="col-span-3 text-right">
+                          <span className="text-foreground/90">{tr.eth}</span>
+                          <span className="text-muted-foreground/50 ml-1 text-[10px]">ETH</span>
+                        </div>
+                        <div className="col-span-3 text-right text-foreground/70">{tr.tokens}</div>
+                        <div className="col-span-2 text-right">
+                          <a href={`https://basescan.org/address/${tr.addr}`} target="_blank" rel="noreferrer noopener"
+                            className="inline-flex items-center gap-1 text-muted-foreground/50 hover:text-primary transition-colors">
+                            {tr.addr}<ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                          </a>
+                        </div>
+                        <div className="col-span-2 text-right text-muted-foreground/40">{tr.ago}</div>
                       </div>
-                      <div className="col-span-3 text-right">
-                        <span className="text-foreground/90">{tr.eth}</span>
-                        <span className="text-muted-foreground/50 ml-1 text-[10px]">ETH</span>
+                    ))}
+                    {totalTradePages > 1 && (
+                      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/40">
+                        <button onClick={() => setTradePage((p) => Math.max(0, p - 1))} disabled={tradePage === 0}
+                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          ← Prev
+                        </button>
+                        <span className="text-[11px] font-mono text-muted-foreground/60">{tradePage + 1} / {totalTradePages}</span>
+                        <button onClick={() => setTradePage((p) => Math.min(totalTradePages - 1, p + 1))} disabled={tradePage === totalTradePages - 1}
+                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          Next →
+                        </button>
                       </div>
-                      <div className="col-span-3 text-right text-foreground/70">{tr.tokens}</div>
-                      <div className="col-span-2 text-right">
-                        <a
-                          href={`https://basescan.org/address/${tr.addr}`}
-                          target="_blank"
-                          rel="noreferrer noopener"
-                          className="inline-flex items-center gap-1 text-muted-foreground/50 hover:text-primary transition-colors"
-                        >
-                          {tr.addr}
-                          <ExternalLink className="h-2.5 w-2.5 shrink-0" />
+                    )}
+                  </div>
+                );
+              })() : (() => {
+                const totalHolderPages = Math.max(1, Math.ceil(t.topHolders.length / PAGE_SIZE));
+                const pageHolders = t.topHolders.slice(holderPage * PAGE_SIZE, (holderPage + 1) * PAGE_SIZE);
+                return (
+                  <div>
+                    {pageHolders.map((h, i) => (
+                      <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono hover:bg-white/2 transition-colors">
+                        <span className="text-muted-foreground/40 tabular-nums w-4 shrink-0">{holderPage * PAGE_SIZE + i + 1}</span>
+                        <a href={`https://basescan.org/address/${h.addr}`} target="_blank" rel="noreferrer noopener"
+                          className="flex-1 text-foreground/80 truncate hover:text-primary transition-colors inline-flex items-center gap-1">
+                          {h.addr}<ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
                         </a>
+                        <span className="text-muted-foreground/50 tabular-nums shrink-0">{h.tokens}</span>
+                        <span className="text-foreground font-semibold tabular-nums shrink-0 w-10 text-right">{h.pct.toFixed(1)}%</span>
                       </div>
-                      <div className="col-span-2 text-right text-muted-foreground/40">{tr.ago}</div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div>
-                  {t.topHolders.map((h, i) => (
-                    <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono hover:bg-white/2 transition-colors">
-                      <span className="text-muted-foreground/40 tabular-nums w-4 shrink-0">{i + 1}</span>
-                      <a
-                        href={`https://basescan.org/address/${h.addr}`}
-                        target="_blank"
-                        rel="noreferrer noopener"
-                        className="flex-1 text-foreground/80 truncate hover:text-primary transition-colors inline-flex items-center gap-1"
-                      >
-                        {h.addr}
-                        <ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
-                      </a>
-                      <span className="text-muted-foreground/50 tabular-nums shrink-0">{h.tokens}</span>
-                      <span className="text-foreground font-semibold tabular-nums shrink-0 w-10 text-right">{h.pct.toFixed(1)}%</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    ))}
+                    {totalHolderPages > 1 && (
+                      <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/40">
+                        <button onClick={() => setHolderPage((p) => Math.max(0, p - 1))} disabled={holderPage === 0}
+                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          ← Prev
+                        </button>
+                        <span className="text-[11px] font-mono text-muted-foreground/60">{holderPage + 1} / {totalHolderPages}</span>
+                        <button onClick={() => setHolderPage((p) => Math.min(totalHolderPages - 1, p + 1))} disabled={holderPage === totalHolderPages - 1}
+                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
+                          Next →
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
 
