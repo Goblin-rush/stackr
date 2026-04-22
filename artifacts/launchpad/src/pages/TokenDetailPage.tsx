@@ -114,6 +114,10 @@ export default function TokenDetailPage() {
     ? Number(progress) / 100
     : Math.min((realEthRaisedNum / TARGET_ETH_NUM) * 100, 100);
 
+  const initialDevBuyEth = (record as any)?.initialDevBuyEth
+    ? Number(formatEther((record as any).initialDevBuyEth as bigint))
+    : 0;
+
   const creator = (record as any)?.creator as string | undefined;
   const isCreator = !!(walletAddress && creator && walletAddress.toLowerCase() === creator.toLowerCase());
 
@@ -364,6 +368,7 @@ export default function TokenDetailPage() {
                 height={440}
                 ethPrice={ethPrice ?? 3000}
                 currentMcUsd={mcUsd}
+                initialDevBuyEth={initialDevBuyEth}
                 lastTrade={live.lastTrade ? { price: live.lastTrade.price, ethAmount: live.lastTrade.ethAmount, timestamp: live.lastTrade.timestamp } : null}
               />
             </div>
