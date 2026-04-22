@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { parseEther } from 'viem';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -10,9 +9,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useCreateToken } from '@/hooks/use-launchpad';
 import { useLocation } from 'wouter';
-import { useWatchContractEvent, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { FACTORY_ABI, FACTORY_ADDRESS, BONDING_CURVE_ABI } from '@/lib/contracts';
-import { saveTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
+import { useWatchContractEvent } from 'wagmi';
+import { FACTORY_V2_ADDRESS, FACTORY_V2_ABI } from '@/lib/contracts';
+import { saveTokenMetadata } from '@/lib/token-metadata';
 import { Loader2, Upload, X } from 'lucide-react';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 import { toast } from 'sonner';
@@ -35,7 +34,7 @@ interface CreateTokenModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-type Step = 'idle' | 'deploying' | 'confirming-deploy' | 'buying' | 'confirming-buy' | 'done';
+type Step = 'idle' | 'deploying' | 'confirming' | 'done';
 
 export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) {
   const [, setLocation] = useLocation();
@@ -43,13 +42,9 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   const [step, setStep] = useState<Step>('idle');
   const [newTokenAddress, setNewTokenAddress] = useState<`0x${string}` | null>(null);
 
-  const { writeContractAsync: buyWrite, data: buyHash } = useWriteContract();
-  const { isLoading: isBuyConfirming, isSuccess: isBuySuccess } = useWaitForTransactionReceipt({ hash: buyHash });
-
   const deployToastId = useRef<string | number | null>(null);
-  const buyToastId = useRef<string | number | null>(null);
 
-  const [imageUri, setImageUri] = useState<string | null>(null); // ipfs://CID
+  const [imageUri, setImageUri] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,7 +75,6 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
-  // Reset everything when the modal closes
   useEffect(() => {
     if (!open) {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -92,7 +86,6 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
-  // Revoke any leftover blob URL on unmount
   useEffect(() => {
     return () => {
       if (imagePreview) URL.revokeObjectURL(imagePreview);
@@ -105,30 +98,12 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     defaultValues: { name: '', symbol: '', description: '', website: '', twitter: '', telegram: '', initialBuy: '' },
   });
 
-  // When deploy hash arrives, swap pending toast → submitted with etherscan link
+  // Swap pending → submitted toast when tx hash arrives
   useEffect(() => {
     if (deployHash && deployToastId.current) {
       txSubmittedToast(deployToastId.current, deployHash, 'Deploying token');
     }
   }, [deployHash]);
-
-  // When buy hash arrives, swap pending toast → submitted
-  useEffect(() => {
-    if (buyHash && buyToastId.current) {
-      txSubmittedToast(buyToastId.current, buyHash, 'Initial buy');
-    }
-  }, [buyHash]);
-
-  // Navigate after buy confirms
-  useEffect(() => {
-    if (isBuySuccess && step === 'confirming-buy' && newTokenAddress) {
-      if (buyToastId.current && buyHash) {
-        txSuccessToast(buyToastId.current, buyHash, 'Initial buy confirmed');
-        buyToastId.current = null;
-      }
-      setStep('done');
-    }
-  }, [isBuySuccess, step, newTokenAddress, buyHash]);
 
   // Navigate on done
   useEffect(() => {
@@ -138,25 +113,24 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
       form.reset();
       setStep('idle');
       setNewTokenAddress(null);
-      setLocation(`/token/${addr}`);
+      setTimeout(() => setLocation(`/token/${addr}`), 80);
     }
   }, [step, newTokenAddress]);
 
+  // V2: watch TokenDeployed event on factory — single tx handles both deploy + dev buy
   useWatchContractEvent({
-    address: FACTORY_ADDRESS,
-    abi: FACTORY_ABI,
-    eventName: 'TokenCreated',
-    enabled: step === 'confirming-deploy',
+    address: FACTORY_V2_ADDRESS ?? undefined,
+    abi: FACTORY_V2_ABI,
+    eventName: 'TokenDeployed',
+    enabled: !!FACTORY_V2_ADDRESS && step === 'confirming',
     onLogs: async (logs) => {
       const log = logs[0];
-      if (!log?.args.token) return;
-
+      if (!log?.args?.token) return;
       const tokenAddr = log.args.token as `0x${string}`;
       setNewTokenAddress(tokenAddr);
 
-      // Finalize the deploy toast as success
       if (deployToastId.current && deployHash) {
-        txSuccessToast(deployToastId.current, deployHash, `${log.args.symbol || 'Token'} deployed`);
+        txSuccessToast(deployToastId.current, deployHash, `${(log.args.symbol as string) || 'Token'} deployed!`);
         deployToastId.current = null;
       }
 
@@ -169,38 +143,24 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
         image: imageUri || undefined,
       });
 
-      const buyAmt = parseFloat(vals.initialBuy || '0');
-      if (buyAmt > 0) {
-        setStep('buying');
-        const id = txPendingToast(`Buying initial ${buyAmt} ETH`);
-        buyToastId.current = id;
-        try {
-          await buyWrite({
-            address: tokenAddr,
-            abi: BONDING_CURVE_ABI,
-            functionName: 'buy',
-            args: [0n],
-            value: parseEther(String(buyAmt)),
-          });
-          setStep('confirming-buy');
-        } catch (err) {
-          txErrorToast(id, err);
-          buyToastId.current = null;
-          setStep('done');
-        }
-      } else {
-        setStep('done');
-      }
+      setStep('done');
     },
   });
 
   async function onSubmit(data: FormValues) {
+    if (!FACTORY_V2_ADDRESS) {
+      toast.error('Factory contract not configured.');
+      return;
+    }
     setStep('deploying');
     const id = txPendingToast(`Deploying ${data.symbol.toUpperCase()}`);
     deployToastId.current = id;
+    // Build metadataURI: use IPFS image URI if available, else empty string
+    const metadataURI = imageUri || '';
     try {
-      await createToken(data.name, data.symbol.toUpperCase());
-      setStep('confirming-deploy');
+      // V2: createToken handles deploy + optional dev buy in a single transaction
+      await createToken(data.name, data.symbol.toUpperCase(), metadataURI, data.initialBuy);
+      setStep('confirming');
     } catch (err) {
       txErrorToast(id, err);
       deployToastId.current = null;
@@ -213,9 +173,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   const stepLabel = () => {
     if (step === 'deploying') return 'Confirm in wallet...';
-    if (step === 'confirming-deploy') return 'Deploying contract...';
-    if (step === 'buying') return 'Confirm initial buy...';
-    if (step === 'confirming-buy') return 'Buying tokens...';
+    if (step === 'confirming') return 'Deploying + buying...';
     return 'Deploy Contract';
   };
 
@@ -225,7 +183,8 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
         <DialogHeader>
           <DialogTitle className="text-xl font-bold tracking-tight">Initialize Token</DialogTitle>
           <DialogDescription className="text-muted-foreground">
-            Deploy a new bonding curve token to Ethereum mainnet.
+            Deploy a new bonding curve token to Base mainnet.
+            {initialBuyVal > 0 && ' Dev buy is included in the same transaction.'}
           </DialogDescription>
         </DialogHeader>
 
@@ -375,7 +334,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
               <FormField control={form.control} name="initialBuy" render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Initial Dev Buy (optional)
+                    Dev Buy (optional) — included in deploy tx
                   </FormLabel>
                   <FormControl>
                     <div className="relative">
@@ -397,10 +356,18 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
             </div>
 
             {initialBuyVal > 0 && (
-              <div className="bg-secondary/50 p-3 rounded-md border border-border/50 text-xs font-mono text-primary">
+              <div className="bg-primary/10 p-3 rounded border border-primary/20 text-xs font-mono text-primary space-y-1">
                 <div className="flex justify-between">
-                  <span>Initial Buy</span>
-                  <span>{initialBuyVal.toFixed(4)} ETH + gas</span>
+                  <span>Dev Buy (5% tax)</span>
+                  <span>{initialBuyVal.toFixed(4)} ETH</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Platform fee (1.5%)</span>
+                  <span>{(initialBuyVal * 0.015).toFixed(4)} ETH</span>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <span>Burn (1.5%)</span>
+                  <span>{(initialBuyVal * 0.015).toFixed(4)} ETH</span>
                 </div>
               </div>
             )}
@@ -409,9 +376,10 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
               <p className="text-sm text-destructive break-words">{error.message || 'An error occurred'}</p>
             )}
 
-            <Button type="submit" className="w-full font-bold tracking-wide" disabled={isLoading}>
+            <Button type="submit" className="w-full font-bold tracking-wide" disabled={isLoading || !FACTORY_V2_ADDRESS}>
               {isLoading
                 ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{stepLabel()}</>
+                : !FACTORY_V2_ADDRESS ? 'Factory not configured'
                 : 'Deploy Contract'
               }
             </Button>

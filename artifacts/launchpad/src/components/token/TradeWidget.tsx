@@ -6,22 +6,23 @@ import { useAccount, useBalance, useConnect } from 'wagmi';
 import { metaMask } from 'wagmi/connectors';
 import { parseEther, formatEther, formatUnits, parseUnits } from 'viem';
 import { useToken, useTokenBalance, useTokenPreviewBuy, useTokenPreviewSell, useTokenTrade } from '@/hooks/use-token';
-import { BONDING_CURVE_ABI } from '@/lib/contracts';
+import { TOKEN_V2_ABI, CURVE_V2_ABI } from '@/lib/contracts';
 import { Loader2 } from 'lucide-react';
 import { useSlippage } from '@/hooks/use-slippage';
 import { SlippageSettings } from '@/components/token/SlippageSettings';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 
 interface TradeWidgetProps {
-  address: `0x${string}`;
+  tokenAddress: `0x${string}`;
+  curveAddress?: `0x${string}`;
 }
 
-export function TradeWidget({ address }: TradeWidgetProps) {
+export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const { isConnected, address: userAddress } = useAccount();
   const { connect } = useConnect();
   const { data: ethBalance } = useBalance({ address: userAddress });
-  const { data: tokenBalance } = useTokenBalance(address, userAddress);
-  const { graduated, symbol } = useToken(address);
+  const { data: tokenBalance } = useTokenBalance(tokenAddress, userAddress);
+  const { graduated, symbol } = useToken(tokenAddress, curveAddress);
   const { applyMinOut, percent: slippagePercent } = useSlippage();
 
   const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
@@ -31,16 +32,13 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   const buyAmountWei = buyAmount && !isNaN(Number(buyAmount)) ? parseEther(buyAmount as `${number}`) : 0n;
   const sellAmountWei = sellAmount && !isNaN(Number(sellAmount)) ? parseUnits(sellAmount, 18) : 0n;
 
-  const { data: previewTokensOut } = useTokenPreviewBuy(address, buyAmountWei);
-  const { data: previewEthOut } = useTokenPreviewSell(address, sellAmountWei);
+  const { data: previewTokensOut } = useTokenPreviewBuy(curveAddress, buyAmountWei);
+  const { data: previewEthOut } = useTokenPreviewSell(curveAddress, sellAmountWei);
 
   const { writeContractAsync, isPending, isConfirming, isConfirmed, hash } = useTokenTrade();
 
-  // Track the toast id and the EXACT hash we want to finalize on (the final tx of the flow).
-  // For buy: that's the buy hash. For sell: that's the sell hash (NOT the approve hash).
   const pendingToastRef = useRef<{ id: string | number; label: string; expectedHash: `0x${string}` | null } | null>(null);
 
-  // When `hash` matches the expected final hash, swap pending → submitted with etherscan link.
   useEffect(() => {
     const p = pendingToastRef.current;
     if (hash && p && p.expectedHash === hash) {
@@ -48,7 +46,6 @@ export function TradeWidget({ address }: TradeWidgetProps) {
     }
   }, [hash]);
 
-  // When the receipt of the expected hash confirms, finalize the toast as success.
   useEffect(() => {
     const p = pendingToastRef.current;
     if (isConfirmed && hash && p && p.expectedHash === hash) {
@@ -58,69 +55,56 @@ export function TradeWidget({ address }: TradeWidgetProps) {
   }, [isConfirmed, hash]);
 
   const handleBuy = async () => {
-    if (!isConnected) {
-      connect({ connector: metaMask() });
-      return;
-    }
-    if (!buyAmountWei) return;
+    if (!isConnected) { connect({ connector: metaMask() }); return; }
+    if (!buyAmountWei || !curveAddress) return;
     const id = txPendingToast(`Buying ${symbol || 'tokens'}`);
     pendingToastRef.current = { id, label: `Bought ${symbol || 'tokens'}`, expectedHash: null };
     try {
       const minTokensOut = previewTokensOut ? applyMinOut(previewTokensOut) : 0n;
       const txHash = await writeContractAsync({
-        address,
-        abi: BONDING_CURVE_ABI,
+        address: curveAddress,
+        abi: CURVE_V2_ABI,
         functionName: 'buy',
         args: [minTokensOut],
         value: buyAmountWei,
       });
-      // Mark which hash to finalize on (buy is single-tx).
       if (pendingToastRef.current) pendingToastRef.current.expectedHash = txHash;
       setBuyAmount('');
     } catch (error) {
-      console.error('Buy failed', error);
       txErrorToast(id, error);
       pendingToastRef.current = null;
     }
   };
 
   const handleSell = async () => {
-    if (!isConnected) {
-      connect({ connector: metaMask() });
-      return;
-    }
-    if (!sellAmountWei) return;
+    if (!isConnected) { connect({ connector: metaMask() }); return; }
+    if (!sellAmountWei || !curveAddress) return;
     const id = txPendingToast(`Selling ${symbol || 'tokens'}`);
     pendingToastRef.current = { id, label: `Sold ${symbol || 'tokens'}`, expectedHash: null };
     try {
       const minEthOut = previewEthOut ? applyMinOut(previewEthOut) : 0n;
-
-      // Approve happens silently (no toast swap — expectedHash stays null until sell submitted).
+      // Approve TOKEN contract to allow CURVE to spend tokens
       await writeContractAsync({
-        address,
-        abi: BONDING_CURVE_ABI,
+        address: tokenAddress,
+        abi: TOKEN_V2_ABI,
         functionName: 'approve',
-        args: [address, sellAmountWei],
+        args: [curveAddress, sellAmountWei],
       });
       const sellHash = await writeContractAsync({
-        address,
-        abi: BONDING_CURVE_ABI,
+        address: curveAddress,
+        abi: CURVE_V2_ABI,
         functionName: 'sell',
         args: [sellAmountWei, minEthOut],
       });
-      // Now lock the toast onto the sell hash for final confirmation.
       if (pendingToastRef.current) pendingToastRef.current.expectedHash = sellHash;
-
       setSellAmount('');
     } catch (error) {
-      console.error('Sell failed', error);
       txErrorToast(id, error);
       pendingToastRef.current = null;
     }
   };
 
   const isLoading = isPending || isConfirming;
-
   const minTokensOut = previewTokensOut ? applyMinOut(previewTokensOut) : 0n;
   const minEthOut = previewEthOut ? applyMinOut(previewEthOut) : 0n;
 
@@ -135,7 +119,7 @@ export function TradeWidget({ address }: TradeWidgetProps) {
           <TabsTrigger value="buy" className="rounded-none data-[state=active]:bg-card data-[state=active]:text-primary font-mono uppercase tracking-widest text-xs">Buy</TabsTrigger>
           <TabsTrigger value="sell" className="rounded-none data-[state=active]:bg-card data-[state=active]:text-destructive font-mono uppercase tracking-widest text-xs">Sell</TabsTrigger>
         </TabsList>
-        
+
         <div className="p-4">
           <TabsContent value="buy" className="mt-0 space-y-4">
             <div className="space-y-2">
@@ -144,9 +128,9 @@ export function TradeWidget({ address }: TradeWidgetProps) {
                 <span>Balance: {ethBalance ? Number(formatEther(ethBalance.value)).toFixed(4) : '0'} ETH</span>
               </div>
               <div className="relative">
-                <Input 
-                  type="number" 
-                  placeholder="0.0" 
+                <Input
+                  type="number"
+                  placeholder="0.0"
                   className="font-mono text-lg bg-muted/30 border-border/50 h-12"
                   value={buyAmount}
                   onChange={(e) => setBuyAmount(e.target.value)}
@@ -170,13 +154,17 @@ export function TradeWidget({ address }: TradeWidgetProps) {
                     {minTokensOut ? Number(formatUnits(minTokensOut, 18)).toLocaleString() : '0'} {symbol}
                   </span>
                 </div>
+                <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
+                  <span>5% tax (burn+rewards+platform)</span>
+                  <span>{(Number(buyAmount) * 0.05).toFixed(4)} ETH</span>
+                </div>
               </div>
             )}
 
-            <Button 
-              className="w-full h-12 font-bold tracking-wider text-primary-foreground" 
+            <Button
+              className="w-full h-12 font-bold tracking-wider text-primary-foreground"
               onClick={handleBuy}
-              disabled={isLoading || (isConnected && !buyAmountWei)}
+              disabled={isLoading || (isConnected && (!buyAmountWei || !curveAddress))}
             >
               {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : !isConnected ? 'CONNECT WALLET TO BUY' : 'PLACE BUY ORDER'}
             </Button>
@@ -189,18 +177,18 @@ export function TradeWidget({ address }: TradeWidgetProps) {
                 <span>Balance: {tokenBalance ? Number(formatUnits(tokenBalance, 18)).toLocaleString() : '0'}</span>
               </div>
               <div className="relative">
-                <Input 
-                  type="number" 
-                  placeholder="0.0" 
+                <Input
+                  type="number"
+                  placeholder="0.0"
                   className="font-mono text-lg bg-muted/30 border-border/50 h-12"
                   value={sellAmount}
                   onChange={(e) => setSellAmount(e.target.value)}
                   disabled={isLoading || graduated}
                 />
                 <div className="absolute right-2 top-2 flex items-center gap-2">
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     className="h-8 text-xs font-mono px-2"
                     onClick={() => tokenBalance && setSellAmount(formatUnits(tokenBalance, 18))}
                     disabled={isLoading || graduated || !tokenBalance}
@@ -214,24 +202,29 @@ export function TradeWidget({ address }: TradeWidgetProps) {
 
             {graduated ? (
               <div className="bg-primary/10 border border-primary/20 text-primary p-3 rounded text-sm text-center">
-                Token has graduated. Trading moved to DEX.
+                Token graduated — trading moved to DEX.
               </div>
             ) : (
               <>
                 {sellAmountWei > 0n && (
-                  <div className="bg-muted/30 p-3 rounded border border-border/30 flex justify-between items-center">
-                    <span className="text-xs text-muted-foreground">You receive (est.)</span>
-                    <span className="font-mono text-foreground font-bold">
-                      {previewEthOut ? Number(formatEther(previewEthOut)).toFixed(6) : '0'} ETH
-                    </span>
+                  <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs text-muted-foreground">You receive (est.)</span>
+                      <span className="font-mono text-foreground font-bold">
+                        {previewEthOut ? Number(formatEther(previewEthOut)).toFixed(6) : '0'} ETH
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
+                      <span>Min received ({slippagePercent}% slip)</span>
+                      <span className="text-foreground">{minEthOut ? Number(formatEther(minEthOut)).toFixed(6) : '0'} ETH</span>
+                    </div>
                   </div>
                 )}
-
-                <Button 
+                <Button
                   variant="destructive"
-                  className="w-full h-12 font-bold tracking-wider" 
+                  className="w-full h-12 font-bold tracking-wider"
                   onClick={handleSell}
-                  disabled={isLoading || (isConnected && !sellAmountWei) || graduated}
+                  disabled={isLoading || (isConnected && (!sellAmountWei || !curveAddress)) || graduated}
                 >
                   {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : !isConnected ? 'CONNECT WALLET TO SELL' : 'PLACE SELL ORDER'}
                 </Button>

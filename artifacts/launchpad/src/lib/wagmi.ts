@@ -1,15 +1,15 @@
 import { http, fallback } from 'wagmi';
-import { mainnet } from 'wagmi/chains';
+import { base } from 'wagmi/chains';
 import { createConfig } from '@privy-io/wagmi';
 
-const ALCHEMY_URL = import.meta.env.VITE_ALCHEMY_RPC_URL as string | undefined;
+const BASE_RPC_URL = import.meta.env.VITE_BASE_RPC_URL as string | undefined;
 
 export const config = createConfig({
-  chains: [mainnet],
+  chains: [base],
   transports: {
-    [mainnet.id]: ALCHEMY_URL
-      ? fallback([http(ALCHEMY_URL), http('https://ethereum.publicnode.com')])
-      : http('https://ethereum.publicnode.com'),
+    [base.id]: BASE_RPC_URL
+      ? fallback([http(BASE_RPC_URL), http('https://mainnet.base.org')])
+      : http('https://mainnet.base.org'),
   },
 });
 

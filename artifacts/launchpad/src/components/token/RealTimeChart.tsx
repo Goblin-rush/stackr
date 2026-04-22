@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import {
   createChart,
   ColorType,
@@ -8,6 +8,7 @@ import {
   type CandlestickData,
   type HistogramData,
   type UTCTimestamp,
+  type MouseEventParams,
 } from 'lightweight-charts';
 import type { LiveTrade } from '@/types/live';
 import type { Timeframe } from '@/components/token/PriceChart';
@@ -21,12 +22,13 @@ const TIMEFRAME_SECONDS: Record<Timeframe, number> = {
 };
 
 interface RealTimeChartProps {
-  trades: LiveTrade[]; // newest-first
+  trades: LiveTrade[];
   lastTrade: LiveTrade | null;
   timeframe: Timeframe;
-  snapshotKey: string | number; // changes when initial backfill completes or token changes
+  snapshotKey: string | number;
   height?: number;
-  baselinePrice?: number; // current price to draw a horizontal line when no trades yet
+  baselinePrice?: number;
+  symbol?: string;
 }
 
 interface BucketAgg {
@@ -39,11 +41,32 @@ interface BucketAgg {
   net: number;
 }
 
+interface OHLCVLegend {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+  color: 'up' | 'down' | 'flat';
+}
+
+function formatPrice(p: number): string {
+  if (!Number.isFinite(p) || p === 0) return '0.00000000';
+  if (p < 0.000001) return p.toExponential(4);
+  if (p < 0.001) return p.toFixed(8);
+  if (p < 1) return p.toFixed(6);
+  return p.toFixed(4);
+}
+
+function formatVol(v: number): string {
+  if (v >= 1000) return `${(v / 1000).toFixed(2)}K`;
+  return v.toFixed(4);
+}
+
 function buildCandles(trades: LiveTrade[], timeframe: Timeframe) {
   if (trades.length === 0) return { candles: [] as CandlestickData<UTCTimestamp>[], volumes: [] as HistogramData<UTCTimestamp>[] };
   const intervalSec = TIMEFRAME_SECONDS[timeframe];
   const sorted = [...trades].sort((a, b) => a.timestamp - b.timestamp);
-
   const buckets = new Map<number, BucketAgg>();
 
   for (const t of sorted) {
@@ -55,12 +78,8 @@ function buildCandles(trades: LiveTrade[], timeframe: Timeframe) {
     if (!existing) {
       buckets.set(bucketSec, {
         time: bucketSec as UTCTimestamp,
-        open: t.price,
-        high: t.price,
-        low: t.price,
-        close: t.price,
-        volume: t.ethAmount,
-        net: signed,
+        open: t.price, high: t.price, low: t.price, close: t.price,
+        volume: t.ethAmount, net: signed,
       });
     } else {
       existing.high = Math.max(existing.high, t.price);
@@ -72,24 +91,36 @@ function buildCandles(trades: LiveTrade[], timeframe: Timeframe) {
   }
 
   const ordered = Array.from(buckets.values()).sort((a, b) => Number(a.time) - Number(b.time));
-
   const candles: CandlestickData<UTCTimestamp>[] = ordered.map((b) => ({
-    time: b.time,
-    open: b.open,
-    high: b.high,
-    low: b.low,
-    close: b.close,
+    time: b.time, open: b.open, high: b.high, low: b.low, close: b.close,
   }));
   const volumes: HistogramData<UTCTimestamp>[] = ordered.map((b) => ({
     time: b.time,
     value: b.volume,
-    color: b.net >= 0 ? 'rgba(34, 197, 94, 0.45)' : 'rgba(239, 68, 68, 0.45)',
+    color: b.net >= 0 ? 'rgba(34, 197, 94, 0.50)' : 'rgba(220, 38, 38, 0.50)',
   }));
-
   return { candles, volumes };
 }
 
-export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, height = 380, baselinePrice }: RealTimeChartProps) {
+// ─── Chart colours (TradingView-style dark theme) ───────────────────────────
+const UP_COLOR = '#22c55e';
+const DOWN_COLOR = '#dc2626';
+const UP_COLOR_DIM = 'rgba(34, 197, 94, 0.08)';
+const DOWN_COLOR_DIM = 'rgba(220, 38, 38, 0.08)';
+const GRID_COLOR = 'rgba(255,255,255,0.04)';
+const BORDER_COLOR = 'rgba(255,255,255,0.07)';
+const LABEL_BG = '#0f0f12';
+const TEXT_COLOR = '#6b7280';
+
+export function RealTimeChart({
+  trades,
+  lastTrade,
+  timeframe,
+  snapshotKey,
+  height = 380,
+  baselinePrice,
+  symbol = 'TOKEN',
+}: RealTimeChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -102,49 +133,74 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
     volume: HistogramData<UTCTimestamp>;
     net: number;
   } | null>(null);
+  const lastCandleRef = useRef<BucketAgg | null>(null);
 
-  // Always keep latest trades reference (for seed when timeframe changes)
+  const [legend, setLegend] = useState<OHLCVLegend | null>(null);
+
   tradesRef.current = trades;
 
-  // Create chart once, rebuild on timeframe change only (chart instance is stable)
+  const updateLegendFromCandle = useCallback((c: CandlestickData<UTCTimestamp>, vol: number) => {
+    setLegend({
+      open: c.open,
+      high: c.high,
+      low: c.low,
+      close: c.close,
+      volume: vol,
+      color: c.close >= c.open ? 'up' : 'down',
+    });
+  }, []);
+
+  // Create chart — stable per timeframe change
   useEffect(() => {
     if (!containerRef.current) return;
 
     const chart = createChart(containerRef.current, {
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
-        textColor: '#9ca3af',
-        fontFamily: 'ui-monospace, SFMono-Regular, monospace',
+        textColor: TEXT_COLOR,
+        fontFamily: "'JetBrains Mono', ui-monospace, SFMono-Regular, monospace",
         fontSize: 11,
       },
       grid: {
-        vertLines: { color: 'rgba(255,255,255,0.04)' },
-        horzLines: { color: 'rgba(255,255,255,0.04)' },
+        vertLines: { color: GRID_COLOR },
+        horzLines: { color: GRID_COLOR },
       },
       rightPriceScale: {
-        borderColor: 'rgba(255,255,255,0.08)',
-        scaleMargins: { top: 0.08, bottom: 0.28 },
+        borderColor: BORDER_COLOR,
+        scaleMargins: { top: 0.06, bottom: 0.26 },
       },
       timeScale: {
-        borderColor: 'rgba(255,255,255,0.08)',
+        borderColor: BORDER_COLOR,
         timeVisible: true,
         secondsVisible: false,
+        fixLeftEdge: false,
+        fixRightEdge: false,
       },
       crosshair: {
         mode: CrosshairMode.Normal,
-        vertLine: { color: 'rgba(255,255,255,0.2)', width: 1, style: 3, labelBackgroundColor: '#1f2937' },
-        horzLine: { color: 'rgba(255,255,255,0.2)', width: 1, style: 3, labelBackgroundColor: '#1f2937' },
+        vertLine: {
+          color: 'rgba(255,255,255,0.18)',
+          width: 1,
+          style: 3,
+          labelBackgroundColor: LABEL_BG,
+        },
+        horzLine: {
+          color: 'rgba(255,255,255,0.18)',
+          width: 1,
+          style: 3,
+          labelBackgroundColor: LABEL_BG,
+        },
       },
       autoSize: true,
     });
 
     const candleSeries = chart.addCandlestickSeries({
-      upColor: '#22c55e',
-      downColor: '#ef4444',
-      borderUpColor: '#22c55e',
-      borderDownColor: '#ef4444',
-      wickUpColor: '#22c55e',
-      wickDownColor: '#ef4444',
+      upColor: UP_COLOR,
+      downColor: DOWN_COLOR,
+      borderUpColor: UP_COLOR,
+      borderDownColor: DOWN_COLOR,
+      wickUpColor: UP_COLOR,
+      wickDownColor: DOWN_COLOR,
       priceFormat: { type: 'price', precision: 8, minMove: 0.00000001 },
     });
 
@@ -158,7 +214,6 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
     candleSeriesRef.current = candleSeries;
     volumeSeriesRef.current = volumeSeries;
 
-    // Seed with whatever trades we currently have
     const { candles, volumes } = buildCandles(tradesRef.current, timeframe);
     candleSeries.setData(candles);
     volumeSeries.setData(volumes);
@@ -171,16 +226,39 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
       : null;
     lastSeenIdRef.current = null;
 
+    if (lastCandle) {
+      updateLegendFromCandle(lastCandle, (lastVol?.value as number) || 0);
+    }
+
+    // Crosshair move → update OHLCV legend
+    chart.subscribeCrosshairMove((param: MouseEventParams<UTCTimestamp>) => {
+      if (!param.time || param.seriesData.size === 0) {
+        // Crosshair left chart: show last candle
+        const last = liveBucketRef.current?.candle;
+        if (last) {
+          updateLegendFromCandle(last, (liveBucketRef.current?.volume.value as number) || 0);
+        }
+        return;
+      }
+      const cd = param.seriesData.get(candleSeries) as CandlestickData<UTCTimestamp> | undefined;
+      const vd = param.seriesData.get(volumeSeries) as HistogramData<UTCTimestamp> | undefined;
+      if (cd) {
+        updateLegendFromCandle(cd, (vd?.value as number) || 0);
+      }
+    });
+
     return () => {
       chart.remove();
       chartRef.current = null;
       candleSeriesRef.current = null;
       volumeSeriesRef.current = null;
       liveBucketRef.current = null;
+      lastCandleRef.current = null;
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeframe]);
 
-  // When the trade SET changes (initial backfill arrives or timeframe-needs-refresh), seed full data
+  // Re-seed on snapshot key change (backfill complete / token switch)
   useEffect(() => {
     if (!candleSeriesRef.current || !volumeSeriesRef.current || !chartRef.current) return;
     const { candles, volumes } = buildCandles(trades, timeframe);
@@ -193,16 +271,15 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
       ? { candle: { ...lastCandle }, volume: { ...lastVol }, net: 0 }
       : null;
     lastSeenIdRef.current = lastTrade?.id ?? null;
-    // Only re-seed when explicit snapshotKey changes (initial backfill complete or token switch),
-    // or when timeframe changes (handled by chart-creation effect).
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    if (lastCandle) updateLegendFromCandle(lastCandle, (lastVol?.value as number) || 0);
+    else setLegend(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshotKey, timeframe]);
 
-  // Draw / remove a horizontal "current bonding-curve price" line when there are no trades yet.
+  // Baseline price line when no trades
   useEffect(() => {
     const series = candleSeriesRef.current;
     if (!series) return;
-
     if (baselineLineRef.current) {
       series.removePriceLine(baselineLineRef.current);
       baselineLineRef.current = null;
@@ -211,7 +288,7 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
       baselineLineRef.current = series.createPriceLine({
         price: baselinePrice,
         color: '#4ADE80',
-        lineWidth: 2,
+        lineWidth: 1,
         lineStyle: 2,
         axisLabelVisible: true,
         title: 'curve',
@@ -219,14 +296,12 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
     }
   }, [trades.length, baselinePrice, snapshotKey, timeframe]);
 
-  // Incremental live updates: process every trade newer than lastSeenId, in chronological order.
-  // This handles bursts where multiple trades arrive in a single onLogs call but React batches renders.
+  // Incremental live updates
   useEffect(() => {
     if (!candleSeriesRef.current || !volumeSeriesRef.current) return;
     if (trades.length === 0) return;
 
     const lastSeen = lastSeenIdRef.current;
-    // trades are newest-first; collect all unseen, then iterate oldest-first
     const unseen: LiveTrade[] = [];
     for (const t of trades) {
       if (lastSeen !== null && t.id <= lastSeen) break;
@@ -255,7 +330,7 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
         const newVol: HistogramData<UTCTimestamp> = {
           time: bucketTime,
           value: trade.ethAmount,
-          color: signed >= 0 ? 'rgba(34, 197, 94, 0.45)' : 'rgba(239, 68, 68, 0.45)',
+          color: signed >= 0 ? 'rgba(34, 197, 94, 0.50)' : 'rgba(220, 38, 38, 0.50)',
         };
         liveBucketRef.current = { candle: newCandle, volume: newVol, net: signed };
       } else {
@@ -264,23 +339,88 @@ export function RealTimeChart({ trades, lastTrade, timeframe, snapshotKey, heigh
         live.candle.close = trade.price;
         live.volume.value = (live.volume.value as number) + trade.ethAmount;
         live.net += signed;
-        live.volume.color = live.net >= 0 ? 'rgba(34, 197, 94, 0.45)' : 'rgba(239, 68, 68, 0.45)';
+        live.volume.color = live.net >= 0 ? 'rgba(34, 197, 94, 0.50)' : 'rgba(220, 38, 38, 0.50)';
       }
       candleSeriesRef.current.update(liveBucketRef.current!.candle);
       volumeSeriesRef.current.update(liveBucketRef.current!.volume);
     }
-    lastSeenIdRef.current = unseen[unseen.length - 1].id;
-    // Suppress lastTrade dep warning — we read it transitively through trades.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const newest = unseen[unseen.length - 1];
+    lastSeenIdRef.current = newest.id;
+    if (liveBucketRef.current) {
+      updateLegendFromCandle(
+        liveBucketRef.current.candle,
+        (liveBucketRef.current.volume.value as number) || 0
+      );
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trades, timeframe]);
 
+  const legendColor = legend
+    ? legend.color === 'up'
+      ? UP_COLOR
+      : legend.color === 'down'
+      ? DOWN_COLOR
+      : '#9ca3af'
+    : '#9ca3af';
+
   return (
-    <div className="relative">
+    <div className="relative select-none">
+      {/* OHLCV Legend Overlay — TradingView style top-left */}
+      <div
+        className="absolute top-0 left-0 z-10 pointer-events-none px-2 pt-1.5 pb-1"
+        style={{ minWidth: 220 }}
+      >
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <span className="text-[11px] font-black font-mono tracking-wider" style={{ color: '#e5e7eb' }}>
+            {symbol}/ETH
+          </span>
+          <span className="text-[9px] font-mono text-muted-foreground uppercase tracking-widest bg-muted/30 px-1 py-0.5 rounded">
+            Base
+          </span>
+        </div>
+        {legend ? (
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-[10px] font-mono">
+              <span className="text-muted-foreground/60">O </span>
+              <span style={{ color: legendColor }}>{formatPrice(legend.open)}</span>
+            </span>
+            <span className="text-[10px] font-mono">
+              <span className="text-muted-foreground/60">H </span>
+              <span style={{ color: UP_COLOR }}>{formatPrice(legend.high)}</span>
+            </span>
+            <span className="text-[10px] font-mono">
+              <span className="text-muted-foreground/60">L </span>
+              <span style={{ color: DOWN_COLOR }}>{formatPrice(legend.low)}</span>
+            </span>
+            <span className="text-[10px] font-mono">
+              <span className="text-muted-foreground/60">C </span>
+              <span style={{ color: legendColor, fontWeight: 700 }}>{formatPrice(legend.close)}</span>
+            </span>
+            <span className="text-[10px] font-mono">
+              <span className="text-muted-foreground/60">V </span>
+              <span className="text-foreground/70">{formatVol(legend.volume)} ETH</span>
+            </span>
+            {legend.open > 0 && (
+              <span
+                className="text-[10px] font-mono font-bold"
+                style={{ color: legendColor }}
+              >
+                {legend.close >= legend.open ? '+' : ''}
+                {(((legend.close - legend.open) / legend.open) * 100).toFixed(2)}%
+              </span>
+            )}
+          </div>
+        ) : (
+          <p className="text-[10px] text-muted-foreground/50 font-mono">No trades yet</p>
+        )}
+      </div>
+
       <div ref={containerRef} style={{ height: `${height}px`, width: '100%' }} />
+
       {trades.length === 0 && (
-        <div className="absolute inset-x-0 top-3 flex items-center justify-center pointer-events-none">
-          <p className="text-[10px] font-mono text-muted-foreground bg-background/60 px-2 py-1 rounded">
-            No trades yet — showing current bonding-curve price.
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
+          <p className="text-[11px] font-mono text-muted-foreground/50 bg-background/40 px-3 py-1.5 rounded border border-border/20">
+            No trades yet — showing bonding curve start price
           </p>
         </div>
       )}

@@ -213,7 +213,7 @@ function AdminTokenRow({ address }: { address: `0x${string}` }) {
             )}
           </div>
           <a
-            href={`https://etherscan.io/address/${address}`}
+            href={`https://basescan.org/address/${address}`}
             target="_blank"
             rel="noreferrer"
             className="text-xs font-mono text-muted-foreground hover:text-foreground mt-1 inline-flex items-center gap-1"
@@ -285,7 +285,7 @@ function AdminTokenRow({ address }: { address: `0x${string}` }) {
         <p className="mt-2 text-[11px] text-emerald-400 font-mono">
           ✓ Withdraw successful.{' '}
           <a
-            href={`https://etherscan.io/tx/${txHash}`}
+            href={`https://basescan.org/tx/${txHash}`}
             target="_blank"
             rel="noreferrer"
             className="underline"

@@ -52,13 +52,13 @@ export default function DashboardPage() {
   const claimToastId = useRef<string | number | null>(null);
 
   useEffect(() => {
-    if (!claimHash) return;
-    claimToastId.current = txSubmittedToast(claimHash);
+    if (!claimHash || !claimToastId.current) return;
+    txSubmittedToast(claimToastId.current, claimHash, 'Claiming rewards');
   }, [claimHash]);
 
   useEffect(() => {
     if (isClaimSuccess && claimHash && claimToastId.current) {
-      txSuccessToast(claimHash, claimToastId.current);
+      txSuccessToast(claimToastId.current, claimHash, 'Rewards claimed!');
       claimToastId.current = null;
       claimingRef.current = null;
       setRefreshKey((k) => k + 1);
@@ -70,6 +70,7 @@ export default function DashboardPage() {
       setHoldings(null);
       return;
     }
+    const factory = FACTORY_V2_ADDRESS;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -77,7 +78,7 @@ export default function DashboardPage() {
     (async () => {
       try {
         const total = (await client.readContract({
-          address: FACTORY_V2_ADDRESS,
+          address: factory,
           abi: FACTORY_V2_ABI,
           functionName: 'allTokensLength',
         })) as bigint;
@@ -88,7 +89,7 @@ export default function DashboardPage() {
         }
 
         const tokenCalls = Array.from({ length: Number(total) }, (_, i) => ({
-          address: FACTORY_V2_ADDRESS,
+          address: factory,
           abi: FACTORY_V2_ABI,
           functionName: 'allTokens' as const,
           args: [BigInt(i)],
@@ -100,7 +101,7 @@ export default function DashboardPage() {
 
         const balCalls = tokens.flatMap((t) => [
           { address: t, abi: TOKEN_V2_ABI, functionName: 'balanceOf' as const, args: [address] },
-          { address: FACTORY_V2_ADDRESS, abi: FACTORY_V2_ABI, functionName: 'getRecord' as const, args: [t] },
+          { address: factory, abi: FACTORY_V2_ABI, functionName: 'getRecord' as const, args: [t] },
         ]);
         const balResults = await client.multicall({ contracts: balCalls, allowFailure: true });
 
@@ -189,11 +190,11 @@ export default function DashboardPage() {
   const handleClaim = async (token: `0x${string}`) => {
     if (claimingRef.current) return;
     claimingRef.current = token;
-    claimToastId.current = txPendingToast();
+    claimToastId.current = txPendingToast('Claiming rewards…');
     try {
       await writeContractAsync({ address: token, abi: TOKEN_V2_ABI, functionName: 'claim' });
     } catch (e) {
-      txErrorToast(e, claimToastId.current);
+      txErrorToast(claimToastId.current ?? undefined, e);
       claimToastId.current = null;
       claimingRef.current = null;
     }

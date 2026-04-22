@@ -1,23 +1,28 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
-import { BONDING_CURVE_ABI } from '@/lib/contracts';
+import { CURVE_V2_ABI } from '@/lib/contracts';
 import type { LiveTrade, LiveHolder } from '@/types/live';
 
-const TARGET_ETH = 3.5;
+const TARGET_ETH = 5.0;
 const TOTAL_SUPPLY = 1_000_000_000;
-const VIRTUAL_ETH = 1.5;
+const VIRTUAL_ETH = 3.0;
 
+// V2 event signatures — emitted by the CURVE contract
 const buyEvent = parseAbiItem(
-  'event Buy(address indexed buyer, uint256 ethIn, uint256 tokensOut, uint256 progress)'
+  'event Buy(address indexed buyer, uint256 ethIn, uint256 ethForCurve, uint256 tokensOut, uint256 progressBps)'
 );
 const sellEvent = parseAbiItem(
-  'event Sell(address indexed seller, uint256 tokensIn, uint256 ethOut, uint256 progress)'
+  'event Sell(address indexed seller, uint256 tokensIn, uint256 ethOutGross, uint256 ethToUser, uint256 progressBps)'
 );
+// Transfer is emitted by the TOKEN contract
 const transferEvent = parseAbiItem(
   'event Transfer(address indexed from, address indexed to, uint256 value)'
 );
-const graduatedEvent = parseAbiItem('event Graduated(uint256 ethRaised)');
+// V2 Graduated has different args — emitted by CURVE
+const graduatedEvent = parseAbiItem(
+  'event Graduated(uint256 ethToLp, uint256 tokensToLp, address indexed pair)'
+);
 
 export interface ChainLiveState {
   trades: LiveTrade[];
@@ -31,12 +36,12 @@ export interface ChainLiveState {
   priceChange24hPct: number;
   isInitialLoading: boolean;
   loadError: string | null;
-  snapshotKey: number; // bumped once when initial backfill completes (used to reseed chart)
+  snapshotKey: number;
 }
 
-const LOOKBACK_BLOCKS = 9_000n; // publicnode free RPC limit is ~10k blocks per getLogs
+const LOOKBACK_BLOCKS = 9_000n;
 const HOLDER_TOP = 50;
-const TRADE_KEEP = 5000; // generous cap so 24h window stays accurate for bursty tokens
+const TRADE_KEEP = 5000;
 const ZERO = '0x0000000000000000000000000000000000000000';
 
 function priceFromTrade(ethAmount: bigint, tokenAmount: bigint): number {
@@ -60,7 +65,14 @@ function compute24h(trades: LiveTrade[]) {
   return { volume24hEth, priceChange24hPct };
 }
 
-export function useChainTokenLive(address: `0x${string}` | undefined): ChainLiveState {
+/**
+ * tokenAddress = ERC20 token contract (for Transfer events and holder tracking)
+ * curveAddress = bonding curve contract (for Buy/Sell/Graduated events and state reads)
+ */
+export function useChainTokenLive(
+  tokenAddress: `0x${string}` | undefined,
+  curveAddress: `0x${string}` | undefined
+): ChainLiveState {
   const client = usePublicClient();
   const [state, setState] = useState<ChainLiveState>({
     trades: [],
@@ -80,16 +92,16 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
   const balancesRef = useRef<Map<string, bigint>>(new Map());
   const tradeIdRef = useRef(1);
   const blockTimeCacheRef = useRef<Map<bigint, number>>(new Map());
-  const seenTradeRef = useRef<Set<string>>(new Set()); // dedupe by txHash:logIndex
+  const seenTradeRef = useRef<Set<string>>(new Set());
   const seenTransferRef = useRef<Set<string>>(new Set());
 
   const recomputeHolders = useCallback((): LiveHolder[] => {
     const totalScaled = BigInt(TOTAL_SUPPLY) * 10n ** 18n;
     const list: LiveHolder[] = [];
-    const lowerAddr = address?.toLowerCase();
+    const lowerCurve = curveAddress?.toLowerCase();
     for (const [addr, bal] of balancesRef.current.entries()) {
       if (bal <= 0n) continue;
-      const isCurve = lowerAddr && addr.toLowerCase() === lowerAddr;
+      const isCurve = lowerCurve && addr.toLowerCase() === lowerCurve;
       const amount = Number(formatEther(bal));
       const percent = totalScaled === 0n ? 0 : Number((bal * 10000n) / totalScaled) / 100;
       list.push({
@@ -101,7 +113,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
     }
     list.sort((a, b) => b.percent - a.percent);
     return list.slice(0, HOLDER_TOP);
-  }, [address]);
+  }, [curveAddress]);
 
   const getBlockTimestamp = useCallback(
     async (blockNumber: bigint): Promise<number> => {
@@ -121,20 +133,18 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
   );
 
   useEffect(() => {
-    if (!client || !address) return;
+    if (!client || !tokenAddress || !curveAddress) return;
     let cancelled = false;
     let unwatchBuy: (() => void) | undefined;
     let unwatchSell: (() => void) | undefined;
     let unwatchTransfer: (() => void) | undefined;
     let unwatchGraduated: (() => void) | undefined;
 
-    // Reset per-address state
     balancesRef.current = new Map();
     tradeIdRef.current = 1;
     seenTradeRef.current = new Set();
     seenTransferRef.current = new Set();
 
-    // Buffers for events that arrive while backfill is still running
     const earlyTradeBuffer: Array<{
       type: 'buy' | 'sell';
       account: string;
@@ -155,15 +165,14 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
     let earlyGraduated = false;
     let backfillDone = false;
 
-    const handleTrade = async (
-      type: 'buy' | 'sell',
-      l: any
-    ) => {
+    const handleTrade = async (type: 'buy' | 'sell', l: any) => {
       const key = `${l.transactionHash}:${l.logIndex}`;
       if (seenTradeRef.current.has(key)) return;
       seenTradeRef.current.add(key);
       const ts = await getBlockTimestamp(l.blockNumber);
-      const ethAmt = type === 'buy' ? l.args.ethIn : l.args.ethOut;
+      // V2: Buy uses ethForCurve (post-tax curve ETH) for price; Sell uses ethOutGross
+      const ethAmt = type === 'buy' ? l.args.ethIn : l.args.ethToUser;
+      const ethForPrice = type === 'buy' ? l.args.ethForCurve : l.args.ethOutGross;
       const tokAmt = type === 'buy' ? l.args.tokensOut : l.args.tokensIn;
       const trade: LiveTrade = {
         id: tradeIdRef.current++,
@@ -171,14 +180,15 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
         account: type === 'buy' ? l.args.buyer : l.args.seller,
         ethAmount: Number(formatEther(ethAmt)),
         tokenAmount: Number(formatEther(tokAmt)),
-        price: priceFromTrade(ethAmt, tokAmt),
+        price: priceFromTrade(ethForPrice, tokAmt),
         timestamp: ts,
         txHash: l.transactionHash,
       };
       setState((s) => {
         const newTrades = [trade, ...s.trades].slice(0, TRADE_KEEP);
         const stats = compute24h(newTrades);
-        const ethDelta = type === 'buy' ? trade.ethAmount : -trade.ethAmount;
+        const ethForCurve = type === 'buy' ? (l.args.ethForCurve as bigint) : (l.args.ethOutGross as bigint);
+        const ethDelta = type === 'buy' ? Number(formatEther(ethForCurve)) : -Number(formatEther(ethForCurve));
         return {
           ...s,
           trades: newTrades,
@@ -212,10 +222,9 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
       try {
         setState((s) => ({ ...s, isInitialLoading: true, loadError: null }));
 
-        // 1) Start watchers FIRST so we don't miss any event between backfill snapshot and live.
-        //    Buffer them until backfill completes, then drain (dedupe ensures no double-count).
+        // Start watchers FIRST to avoid missing events during backfill
         unwatchBuy = client.watchEvent({
-          address,
+          address: curveAddress,
           event: buyEvent,
           onLogs: (logs: Log[]) => {
             if (cancelled) return;
@@ -238,7 +247,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
         });
 
         unwatchSell = client.watchEvent({
-          address,
+          address: curveAddress,
           event: sellEvent,
           onLogs: (logs: Log[]) => {
             if (cancelled) return;
@@ -247,7 +256,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
                 earlyTradeBuffer.push({
                   type: 'sell',
                   account: l.args.seller,
-                  ethAmount: l.args.ethOut,
+                  ethAmount: l.args.ethToUser,
                   tokenAmount: l.args.tokensIn,
                   blockNumber: l.blockNumber,
                   logIndex: l.logIndex,
@@ -261,7 +270,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
         });
 
         unwatchTransfer = client.watchEvent({
-          address,
+          address: tokenAddress,
           event: transferEvent,
           onLogs: (logs: Log[]) => {
             if (cancelled) return;
@@ -284,33 +293,29 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
         });
 
         unwatchGraduated = client.watchEvent({
-          address,
+          address: curveAddress,
           event: graduatedEvent,
           onLogs: () => {
             if (cancelled) return;
-            if (!backfillDone) {
-              earlyGraduated = true;
-              return;
-            }
+            if (!backfillDone) { earlyGraduated = true; return; }
             setState((s) => ({ ...s, graduated: true }));
           },
         });
 
-        // 2) Backfill in parallel
+        // Backfill
         const tip = await client.getBlockNumber();
         const fromBlock = tip > LOOKBACK_BLOCKS ? tip - LOOKBACK_BLOCKS : 0n;
 
         const [buyLogs, sellLogs, transferLogs, gradLogs, contractState] = await Promise.all([
-          client.getLogs({ address, event: buyEvent, fromBlock, toBlock: tip }),
-          client.getLogs({ address, event: sellEvent, fromBlock, toBlock: tip }),
-          client.getLogs({ address, event: transferEvent, fromBlock, toBlock: tip }),
-          client.getLogs({ address, event: graduatedEvent, fromBlock, toBlock: tip }),
+          client.getLogs({ address: curveAddress, event: buyEvent, fromBlock, toBlock: tip }),
+          client.getLogs({ address: curveAddress, event: sellEvent, fromBlock, toBlock: tip }),
+          client.getLogs({ address: tokenAddress, event: transferEvent, fromBlock, toBlock: tip }),
+          client.getLogs({ address: curveAddress, event: graduatedEvent, fromBlock, toBlock: tip }),
           client.multicall({
             contracts: [
-              { address, abi: BONDING_CURVE_ABI, functionName: 'realEthRaised' },
-              { address, abi: BONDING_CURVE_ABI, functionName: 'currentPrice' },
-              { address, abi: BONDING_CURVE_ABI, functionName: 'graduated' },
-              { address, abi: BONDING_CURVE_ABI, functionName: 'owner' },
+              { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'realEthRaised' },
+              { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'currentPrice' },
+              { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'graduated' },
             ],
             allowFailure: true,
           }),
@@ -318,11 +323,11 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
 
         if (cancelled) return;
 
-        // Build trades chronologically + dedupe via seenTradeRef
         type RawTrade = {
           type: 'buy' | 'sell';
           account: string;
           ethAmount: bigint;
+          ethForPrice: bigint;
           tokenAmount: bigint;
           blockNumber: bigint;
           logIndex: number;
@@ -334,6 +339,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
             type: 'buy',
             account: l.args.buyer,
             ethAmount: l.args.ethIn,
+            ethForPrice: l.args.ethForCurve,
             tokenAmount: l.args.tokensOut,
             blockNumber: l.blockNumber,
             logIndex: l.logIndex,
@@ -344,7 +350,8 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           raw.push({
             type: 'sell',
             account: l.args.seller,
-            ethAmount: l.args.ethOut,
+            ethAmount: l.args.ethToUser,
+            ethForPrice: l.args.ethOutGross,
             tokenAmount: l.args.tokensIn,
             blockNumber: l.blockNumber,
             logIndex: l.logIndex,
@@ -356,7 +363,6 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           return a.logIndex - b.logIndex;
         });
 
-        // Resolve timestamps
         const uniqueBlocks = Array.from(new Set(raw.map((r) => r.blockNumber)));
         await Promise.all(uniqueBlocks.map((b) => getBlockTimestamp(b)));
 
@@ -372,14 +378,13 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
             account: r.account,
             ethAmount: Number(formatEther(r.ethAmount)),
             tokenAmount: Number(formatEther(r.tokenAmount)),
-            price: priceFromTrade(r.ethAmount, r.tokenAmount),
+            price: priceFromTrade(r.ethForPrice, r.tokenAmount),
             timestamp: ts,
             txHash: r.txHash,
           });
         }
-        trades.reverse(); // newest first
+        trades.reverse();
 
-        // Build balances from Transfer events (with dedupe)
         for (const l of transferLogs as any[]) {
           const key = `${l.transactionHash}:${l.logIndex}`;
           if (seenTransferRef.current.has(key)) continue;
@@ -412,10 +417,6 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           contractState[2]?.status === 'success'
             ? !!contractState[2].result
             : gradLogs.length > 0 || earlyGraduated;
-        const creator =
-          contractState[3]?.status === 'success'
-            ? (contractState[3].result as `0x${string}`)
-            : null;
 
         setState((s) => ({
           ...s,
@@ -424,7 +425,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           lastTrade: newest ?? null,
           realEthRaised,
           currentPrice,
-          creator,
+          creator: null,
           graduated,
           volume24hEth: stats.volume24hEth,
           priceChange24hPct: stats.priceChange24hPct,
@@ -433,14 +434,13 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           snapshotKey: s.snapshotKey + 1,
         }));
 
-        // 3) Drain any buffered events that came in during backfill (dedupe handles overlap)
         backfillDone = true;
         for (const e of earlyTradeBuffer) {
           await handleTrade(e.type, {
             args:
               e.type === 'buy'
-                ? { buyer: e.account, ethIn: e.ethAmount, tokensOut: e.tokenAmount }
-                : { seller: e.account, tokensIn: e.tokenAmount, ethOut: e.ethAmount },
+                ? { buyer: e.account, ethIn: e.ethAmount, ethForCurve: e.ethAmount, tokensOut: e.tokenAmount }
+                : { seller: e.account, tokensIn: e.tokenAmount, ethOutGross: e.ethAmount, ethToUser: e.ethAmount },
             blockNumber: e.blockNumber,
             logIndex: e.logIndex,
             transactionHash: e.txHash,
@@ -456,12 +456,8 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
           });
           transferDrained = true;
         }
-        if (transferDrained) {
-          setState((s) => ({ ...s, holders: recomputeHolders() }));
-        }
-        if (earlyGraduated) {
-          setState((s) => ({ ...s, graduated: true }));
-        }
+        if (transferDrained) setState((s) => ({ ...s, holders: recomputeHolders() }));
+        if (earlyGraduated) setState((s) => ({ ...s, graduated: true }));
       } catch (err: any) {
         if (cancelled) return;
         backfillDone = true;
@@ -480,7 +476,7 @@ export function useChainTokenLive(address: `0x${string}` | undefined): ChainLive
       unwatchTransfer?.();
       unwatchGraduated?.();
     };
-  }, [address, client, getBlockTimestamp, recomputeHolders]);
+  }, [tokenAddress, curveAddress, client, getBlockTimestamp, recomputeHolders]);
 
   return state;
 }

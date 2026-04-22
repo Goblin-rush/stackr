@@ -1,18 +1,18 @@
-import { useReadContract, useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { BONDING_CURVE_ABI } from '@/lib/contracts';
-import { formatUnits } from 'viem';
+import { useReadContracts, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { TOKEN_V2_ABI, CURVE_V2_ABI } from '@/lib/contracts';
 
-export function useToken(address: `0x${string}`) {
+export function useToken(tokenAddress: `0x${string}`, curveAddress?: `0x${string}`) {
   const { data, refetch, isLoading } = useReadContracts({
     contracts: [
-      { address, abi: BONDING_CURVE_ABI, functionName: 'name' },
-      { address, abi: BONDING_CURVE_ABI, functionName: 'symbol' },
-      { address, abi: BONDING_CURVE_ABI, functionName: 'totalSupply' },
-      { address, abi: BONDING_CURVE_ABI, functionName: 'realEthRaised' },
-      { address, abi: BONDING_CURVE_ABI, functionName: 'graduated' },
-      { address, abi: BONDING_CURVE_ABI, functionName: 'getProgress' },
-      { address, abi: BONDING_CURVE_ABI, functionName: 'currentPrice' },
-    ]
+      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'name' },
+      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'symbol' },
+      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'totalSupply' },
+      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'realEthRaised' },
+      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'graduated' },
+      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'getProgress' },
+      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'currentPrice' },
+    ],
+    query: { enabled: !!tokenAddress },
   });
 
   const [
@@ -29,44 +29,38 @@ export function useToken(address: `0x${string}`) {
     progress: progressRes?.result as bigint | undefined,
     currentPrice: currentPriceRes?.result as bigint | undefined,
     isLoading,
-    refetch
+    refetch,
   };
 }
 
 export function useTokenBalance(tokenAddress: `0x${string}`, userAddress?: `0x${string}`) {
-  return useReadContract({
-    address: tokenAddress,
-    abi: BONDING_CURVE_ABI,
-    functionName: 'balanceOf',
-    args: userAddress ? [userAddress] : undefined,
-    query: {
-      enabled: !!userAddress
-    }
+  const { data } = useReadContracts({
+    contracts: [
+      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'balanceOf', args: userAddress ? [userAddress] : undefined },
+    ],
+    query: { enabled: !!userAddress },
   });
+  return { data: data?.[0]?.result as bigint | undefined };
 }
 
-export function useTokenPreviewBuy(address: `0x${string}`, ethAmount: bigint) {
-  return useReadContract({
-    address,
-    abi: BONDING_CURVE_ABI,
-    functionName: 'getBuyAmount',
-    args: [ethAmount],
-    query: {
-      enabled: ethAmount > 0n
-    }
+export function useTokenPreviewBuy(curveAddress: `0x${string}` | undefined, ethAmount: bigint) {
+  const { data } = useReadContracts({
+    contracts: [
+      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'getBuyAmount', args: [ethAmount] },
+    ],
+    query: { enabled: !!curveAddress && ethAmount > 0n },
   });
+  return { data: data?.[0]?.result as bigint | undefined };
 }
 
-export function useTokenPreviewSell(address: `0x${string}`, tokenAmount: bigint) {
-  return useReadContract({
-    address,
-    abi: BONDING_CURVE_ABI,
-    functionName: 'getSellAmount',
-    args: [tokenAmount],
-    query: {
-      enabled: tokenAmount > 0n
-    }
+export function useTokenPreviewSell(curveAddress: `0x${string}` | undefined, tokenAmount: bigint) {
+  const { data } = useReadContracts({
+    contracts: [
+      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'getSellAmount', args: [tokenAmount] },
+    ],
+    query: { enabled: !!curveAddress && tokenAmount > 0n },
   });
+  return { data: data?.[0]?.result as bigint | undefined };
 }
 
 export function useTokenTrade() {
@@ -82,6 +76,6 @@ export function useTokenTrade() {
     isConfirming,
     isConfirmed,
     error,
-    hash
+    hash,
   };
 }

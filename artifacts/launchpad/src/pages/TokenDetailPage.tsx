@@ -1,6 +1,6 @@
 import { useParams } from 'wouter';
 import { useState, useEffect } from 'react';
-import { useWatchContractEvent } from 'wagmi';
+import { useReadContract, useWatchContractEvent } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { useToken } from '@/hooks/use-token';
@@ -14,7 +14,7 @@ import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import { type Timeframe } from '@/components/token/PriceChart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { TOTAL_SUPPLY, BONDING_CURVE_ABI } from '@/lib/contracts';
+import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI } from '@/lib/contracts';
 import { Copy, ExternalLink, Globe, Send } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,35 +22,49 @@ import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, norma
 
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
-  const { name, symbol, realEthRaised, graduated, currentPrice, isLoading, refetch } = useToken(address);
-  const { data: ethPrice } = useEthPrice();
-  const live = useChainTokenLive(address);
-  const meta = useTokenMetadata(address);
   const [tab, setTab] = useState('chart');
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [copiedAddr, setCopiedAddr] = useState(false);
 
-  // Auto-refetch on-chain reads when any Buy/Sell hits — keeps progress bar/price/mcap live
+  // Look up curve address from V2 factory
+  const { data: record } = useReadContract({
+    address: FACTORY_V2_ADDRESS ?? undefined,
+    abi: FACTORY_V2_ABI,
+    functionName: 'getRecord',
+    args: [address],
+    query: { enabled: !!FACTORY_V2_ADDRESS && !!address },
+  });
+  const curveAddress = (record as any)?.curve as `0x${string}` | undefined;
+
+  const { name, symbol, realEthRaised, graduated, currentPrice, isLoading, refetch } = useToken(address, curveAddress);
+  const { data: ethPrice } = useEthPrice();
+  const live = useChainTokenLive(address, curveAddress);
+  const meta = useTokenMetadata(address);
+
+  // Refetch on-chain reads when curve emits Buy/Sell/Graduated
   useWatchContractEvent({
-    address,
-    abi: BONDING_CURVE_ABI,
+    address: curveAddress,
+    abi: CURVE_V2_ABI,
     eventName: 'Buy',
+    enabled: !!curveAddress,
     onLogs: () => refetch(),
   });
   useWatchContractEvent({
-    address,
-    abi: BONDING_CURVE_ABI,
+    address: curveAddress,
+    abi: CURVE_V2_ABI,
     eventName: 'Sell',
+    enabled: !!curveAddress,
     onLogs: () => refetch(),
   });
   useWatchContractEvent({
-    address,
-    abi: BONDING_CURVE_ABI,
+    address: curveAddress,
+    abi: CURVE_V2_ABI,
     eventName: 'Graduated',
+    enabled: !!curveAddress,
     onLogs: () => refetch(),
   });
 
-  // Polling fallback (every 12s) in case WS subscription drops
+  // Polling fallback every 12s
   useEffect(() => {
     const id = setInterval(() => refetch(), 12000);
     return () => clearInterval(id);
@@ -61,7 +75,7 @@ export default function TokenDetailPage() {
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
   const change24h = live.priceChange24hPct;
 
-  if (isLoading) {
+  if (isLoading && !name) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -71,9 +85,7 @@ export default function TokenDetailPage() {
               <Skeleton className="h-32 w-full bg-muted/50" />
               <Skeleton className="h-64 w-full bg-muted/50" />
             </div>
-            <div>
-              <Skeleton className="h-[400px] w-full bg-muted/50" />
-            </div>
+            <div><Skeleton className="h-[400px] w-full bg-muted/50" /></div>
           </div>
         </main>
       </div>
@@ -118,103 +130,97 @@ export default function TokenDetailPage() {
                     );
                   })()}
                   <div className="min-w-0">
-                  <div className="flex items-center gap-3 flex-wrap">
-                    <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground break-words">{name}</h1>
-                    <span className="text-lg md:text-xl text-primary font-mono uppercase bg-primary/10 px-2 py-1 border border-primary/20">${symbol}</span>
-                    {graduated ? (
-                      <span className="text-[10px] font-black px-1.5 py-0.5 border-2 border-primary text-primary uppercase tracking-widest flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-                        On DEX
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-black px-1.5 py-0.5 border-2 border-foreground text-foreground uppercase tracking-widest flex items-center gap-1">
-                        <span className="h-1.5 w-1.5 bg-foreground rounded-full animate-pulse" />
-                        Bonding
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 mt-3 text-xs font-mono text-muted-foreground">
-                    <span className="opacity-60">Contract</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        navigator.clipboard.writeText(address);
-                        setCopiedAddr(true);
-                        setTimeout(() => setCopiedAddr(false), 1500);
-                      }}
-                      className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer truncate text-left"
-                    >
-                      <span className="truncate">
-                        {address.slice(0, 6)}…{address.slice(-4)}
-                      </span>
-                      {copiedAddr ? (
-                        <span className="text-[10px] text-primary font-bold">copied</span>
+                    <div className="flex items-center gap-3 flex-wrap">
+                      <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground break-words">{name}</h1>
+                      <span className="text-lg md:text-xl text-primary font-mono uppercase bg-primary/10 px-2 py-1 border border-primary/20">${symbol}</span>
+                      {graduated ? (
+                        <span className="text-[10px] font-black px-1.5 py-0.5 border-2 border-primary text-primary uppercase tracking-widest flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
+                          On DEX
+                        </span>
                       ) : (
-                        <Copy className="h-3 w-3 shrink-0" />
+                        <span className="text-[10px] font-black px-1.5 py-0.5 border-2 border-foreground text-foreground uppercase tracking-widest flex items-center gap-1">
+                          <span className="h-1.5 w-1.5 bg-foreground rounded-full animate-pulse" />
+                          Bonding
+                        </span>
                       )}
-                    </button>
-                    <a
-                      href={`https://etherscan.io/address/${address}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="flex items-center gap-1 hover:text-foreground transition-colors"
-                    >
-                      <ExternalLink className="h-3 w-3" /> Etherscan
-                    </a>
-                  </div>
+                    </div>
+                    <div className="flex items-center gap-2 mt-3 text-xs font-mono text-muted-foreground">
+                      <span className="opacity-60">Token</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText(address);
+                          setCopiedAddr(true);
+                          setTimeout(() => setCopiedAddr(false), 1500);
+                        }}
+                        className="flex items-center gap-1.5 text-foreground hover:text-primary cursor-pointer truncate text-left"
+                      >
+                        <span className="truncate">{address.slice(0, 6)}…{address.slice(-4)}</span>
+                        {copiedAddr ? (
+                          <span className="text-[10px] text-primary font-bold">copied</span>
+                        ) : (
+                          <Copy className="h-3 w-3 shrink-0" />
+                        )}
+                      </button>
+                      <a
+                        href={`https://basescan.org/address/${address}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 hover:text-foreground transition-colors"
+                      >
+                        <ExternalLink className="h-3 w-3" /> Basescan
+                      </a>
+                      {curveAddress && (
+                        <a
+                          href={`https://basescan.org/address/${curveAddress}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex items-center gap-1 hover:text-foreground transition-colors"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Curve
+                        </a>
+                      )}
+                    </div>
 
-                  {(() => {
-                    const web = normalizeWebsite(meta?.website);
-                    const tw = normalizeTwitter(meta?.twitter);
-                    const tg = normalizeTelegram(meta?.telegram);
-                    if (!web && !tw && !tg && !meta?.description) return null;
-                    return (
-                      <div className="mt-3 space-y-3">
-                        {meta?.description && (
-                          <p className="text-sm text-foreground/80 leading-relaxed max-w-2xl">
-                            {meta.description}
-                          </p>
-                        )}
-                        {(web || tw || tg) && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {web && (
-                              <a
-                                href={web}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
-                              >
-                                <Globe className="h-3 w-3" />
-                                <span className="truncate max-w-[160px]">{web.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
-                              </a>
-                            )}
-                            {tw && (
-                              <a
-                                href={tw}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
-                              >
-                                <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
-                                <span>@{tw.split('/').pop()}</span>
-                              </a>
-                            )}
-                            {tg && (
-                              <a
-                                href={tg}
-                                target="_blank"
-                                rel="noreferrer noopener"
-                                className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors"
-                              >
-                                <Send className="h-3 w-3" />
-                                <span>@{tg.split('/').pop()}</span>
-                              </a>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })()}
+                    {(() => {
+                      const web = normalizeWebsite(meta?.website);
+                      const tw = normalizeTwitter(meta?.twitter);
+                      const tg = normalizeTelegram(meta?.telegram);
+                      if (!web && !tw && !tg && !meta?.description) return null;
+                      return (
+                        <div className="mt-3 space-y-3">
+                          {meta?.description && (
+                            <p className="text-sm text-foreground/80 leading-relaxed max-w-2xl">{meta.description}</p>
+                          )}
+                          {(web || tw || tg) && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                              {web && (
+                                <a href={web} target="_blank" rel="noreferrer noopener"
+                                  className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors">
+                                  <Globe className="h-3 w-3" />
+                                  <span className="truncate max-w-[160px]">{web.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
+                                </a>
+                              )}
+                              {tw && (
+                                <a href={tw} target="_blank" rel="noreferrer noopener"
+                                  className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors">
+                                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+                                  <span>@{tw.split('/').pop()}</span>
+                                </a>
+                              )}
+                              {tg && (
+                                <a href={tg} target="_blank" rel="noreferrer noopener"
+                                  className="inline-flex items-center gap-1.5 text-xs font-mono px-2.5 py-1 rounded border border-border/50 bg-muted/30 hover:bg-muted hover:border-primary/40 hover:text-primary transition-colors">
+                                  <Send className="h-3 w-3" />
+                                  <span>@{tg.split('/').pop()}</span>
+                                </a>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
@@ -245,7 +251,7 @@ export default function TokenDetailPage() {
               </div>
             </div>
 
-            {/* Bonding Curve Section */}
+            {/* Bonding Curve */}
             <div className="p-6 border border-border/50 bg-card">
               <BondingCurveProgress realEthRaised={realEthRaised} graduated={graduated} />
             </div>
@@ -254,32 +260,17 @@ export default function TokenDetailPage() {
             <div className="border border-border/50 bg-card overflow-hidden">
               <Tabs value={tab} onValueChange={setTab}>
                 <TabsList className="w-full justify-start rounded-none border-b border-border/50 bg-muted/10 h-10 px-2 gap-1">
-                  <TabsTrigger
-                    value="chart"
-                    className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
-                  >
-                    Chart
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="trades"
-                    className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
-                  >
+                  <TabsTrigger value="chart" className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm">Chart</TabsTrigger>
+                  <TabsTrigger value="trades" className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm">
                     Trades
                     {live.trades.length > 0 && (
-                      <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">
-                        {live.trades.length}
-                      </span>
+                      <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">{live.trades.length}</span>
                     )}
                   </TabsTrigger>
-                  <TabsTrigger
-                    value="holders"
-                    className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm"
-                  >
+                  <TabsTrigger value="holders" className="text-xs font-mono uppercase tracking-widest data-[state=active]:bg-card data-[state=active]:text-primary data-[state=active]:shadow-none rounded-sm">
                     Holders
                     {live.holders.length > 0 && (
-                      <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">
-                        {live.holders.length}
-                      </span>
+                      <span className="ml-1.5 text-[9px] bg-primary/15 text-primary px-1 rounded">{live.holders.length}</span>
                     )}
                   </TabsTrigger>
                 </TabsList>
@@ -301,7 +292,7 @@ export default function TokenDetailPage() {
                     ))}
                     <div className="ml-auto flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground">
                       <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-                      ON-CHAIN
+                      LIVE · BASE
                     </div>
                   </div>
                   <RealTimeChart
@@ -310,29 +301,24 @@ export default function TokenDetailPage() {
                     lastTrade={live.lastTrade}
                     timeframe={timeframe}
                     snapshotKey={`${address}:${live.snapshotKey}`}
+                    symbol={symbol || 'TOKEN'}
                     height={380}
                   />
                   {live.isInitialLoading && (
                     <p className="text-[11px] text-muted-foreground font-mono mt-2 text-center">
-                      Loading historical trades from chain…
+                      Loading historical trades from Base…
                     </p>
                   )}
                   {live.loadError && (
-                    <p className="text-[11px] text-primary font-mono mt-2 text-center">
-                      {live.loadError}
-                    </p>
+                    <p className="text-[11px] text-primary font-mono mt-2 text-center">{live.loadError}</p>
                   )}
                 </TabsContent>
 
                 <TabsContent value="trades" className="m-0">
                   {live.isInitialLoading ? (
-                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
-                      Loading trades from chain…
-                    </div>
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">Loading trades from chain…</div>
                   ) : live.trades.length === 0 ? (
-                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
-                      No trades yet.
-                    </div>
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">No trades yet.</div>
                   ) : (
                     <TradeHistoryTable trades={live.trades} symbol={symbol || 'TOKEN'} />
                   )}
@@ -340,13 +326,9 @@ export default function TokenDetailPage() {
 
                 <TabsContent value="holders" className="m-0">
                   {live.isInitialLoading ? (
-                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
-                      Loading holders from chain…
-                    </div>
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">Loading holders from chain…</div>
                   ) : live.holders.length === 0 ? (
-                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">
-                      No holders yet.
-                    </div>
+                    <div className="p-8 text-center text-xs font-mono text-muted-foreground">No holders yet.</div>
                   ) : (
                     <HoldersList holders={live.holders} symbol={symbol || 'TOKEN'} />
                   )}
@@ -358,14 +340,13 @@ export default function TokenDetailPage() {
 
           {/* Trade Widget (Right) */}
           <div className="lg:col-span-4 space-y-6">
-            <TradeWidget address={address} />
+            <TradeWidget tokenAddress={address} curveAddress={curveAddress} />
 
             {live.trades.length > 0 && (
               <div className="border border-border/50 bg-muted/10">
                 <TradeTape trades={live.trades} symbol={symbol || 'TOKEN'} />
               </div>
             )}
-
           </div>
 
         </div>

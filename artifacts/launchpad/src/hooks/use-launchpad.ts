@@ -1,5 +1,6 @@
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { FACTORY_ABI, FACTORY_ADDRESS } from '@/lib/contracts';
+import { parseEther } from 'viem';
+import { FACTORY_V2_ADDRESS, FACTORY_V2_ABI } from '@/lib/contracts';
 
 export function useCreateToken() {
   const { data: hash, isPending, writeContractAsync, error } = useWriteContract();
@@ -8,12 +9,22 @@ export function useCreateToken() {
     hash,
   });
 
-  const createToken = async (name: string, symbol: string) => {
+  const createToken = async (
+    name: string,
+    symbol: string,
+    metadataURI: string,
+    devBuyEth?: string,
+  ) => {
+    if (!FACTORY_V2_ADDRESS) throw new Error('Factory not deployed');
+    const value = devBuyEth && parseFloat(devBuyEth) > 0
+      ? parseEther(devBuyEth as `${number}`)
+      : undefined;
     return writeContractAsync({
-      address: FACTORY_ADDRESS,
-      abi: FACTORY_ABI,
+      address: FACTORY_V2_ADDRESS,
+      abi: FACTORY_V2_ABI,
       functionName: 'createToken',
-      args: [name, symbol],
+      args: [name, symbol, metadataURI],
+      value,
     });
   };
 
