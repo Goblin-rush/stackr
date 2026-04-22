@@ -480,7 +480,7 @@ export default function DemoTokenPage() {
                         <div className="col-span-2 text-right text-muted-foreground/40">{tr.ago}</div>
                       </div>
                     ))}
-                    {totalTradePages > 1 && (
+                    {pageTrades.length > 0 && (
                       <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/40">
                         <button onClick={() => setTradePage((p) => Math.max(0, p - 1))} disabled={tradePage === 0}
                           className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
@@ -511,7 +511,7 @@ export default function DemoTokenPage() {
                         <span className="text-foreground font-semibold tabular-nums shrink-0 w-10 text-right">{h.pct.toFixed(1)}%</span>
                       </div>
                     ))}
-                    {totalHolderPages > 1 && (
+                    {pageHolders.length > 0 && (
                       <div className="flex items-center justify-between px-5 py-2.5 border-t border-border/40">
                         <button onClick={() => setHolderPage((p) => Math.max(0, p - 1))} disabled={holderPage === 0}
                           className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">

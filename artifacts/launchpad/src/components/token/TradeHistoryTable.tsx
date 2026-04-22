@@ -87,7 +87,7 @@ export function TradeHistoryTable({ trades, symbol, pageSize = 20 }: TradeHistor
         </table>
       </div>
 
-      {totalPages > 1 && (
+      {trades.length > 0 && (
         <div className="flex items-center justify-between px-3 py-2.5 border-t border-border/40">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
