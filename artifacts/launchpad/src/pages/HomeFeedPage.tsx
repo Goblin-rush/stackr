@@ -82,6 +82,13 @@ const DEMO_ROWS: RowDisplay[] = [
   { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   image: genAvatarUri('BLU'),   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 3.5 ETH', progress: 20,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
 ];
 
+function accentColor(pct: number): string {
+  if (pct >= 85) return 'hsl(4 84% 58%)';
+  if (pct >= 60) return 'hsl(24 90% 55%)';
+  if (pct >= 30) return 'hsl(42 88% 50%)';
+  return 'hsl(142 66% 44%)';
+}
+
 /* ─── Animated progress bar ───────────────────────── */
 function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) {
   const [displayed, setDisplayed] = useState(0);
@@ -258,20 +265,19 @@ function Row({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
       <div className="relative rounded-xl bg-card border border-border/60 mb-2.5 cursor-pointer group card-hover overflow-hidden">
-        {/* Left accent bar */}
-        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/40 group-hover:bg-primary transition-colors rounded-l-xl" />
+        {/* Left accent bar — color follows bonding curve progress */}
+        <div
+          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl transition-all"
+          style={{ backgroundColor: accentColor(d.progress), opacity: 0.7 }}
+        />
 
         {/* Header */}
         <div className="flex items-center border-b border-border/40 pl-3 gap-2.5">
-          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-border/30 bg-muted">
-            {d.image ? (
+          {d.image && (
+            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-border/30 bg-muted">
               <img src={d.image} alt={d.symbol} className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-muted-foreground">
-                {d.symbol.slice(0, 2)}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
           <div className="flex-1 py-2.5 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <p className="text-[14px] font-bold text-foreground truncate group-hover:text-primary transition-colors">{d.name}</p>
@@ -326,7 +332,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
   const meta = useTokenMetadata(token.address);
-  const image = ipfsToHttp(meta?.image) ?? genAvatarUri(token.symbol || '?');
+  const image = ipfsToHttp(meta?.image) ?? undefined;
   return (
     <Row
       d={{
