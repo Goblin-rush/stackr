@@ -170,6 +170,17 @@ contract AethpadFactoryV2 is Ownable, ReentrancyGuard {
         AethpadTokenV2(payable(r.token)).setExcluded(account, excluded);
     }
 
+    /**
+     * @notice Set the keeper address for a token's push reward distribution.
+     *         Pass address(0) to disable push (holders must claim manually).
+     *         The keeper wallet should be funded from platform fees to cover gas.
+     */
+    function setTokenKeeper(address tokenAddr, address newKeeper) external onlyOwner {
+        TokenRecord storage r = records[tokenAddr];
+        require(r.token != address(0), "Unknown token");
+        AethpadTokenV2(payable(r.token)).setKeeper(newKeeper);
+    }
+
     // ═════════════════════════════════════════════════════════════
     //  VIEWS
     // ═════════════════════════════════════════════════════════════

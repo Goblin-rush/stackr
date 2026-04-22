@@ -395,6 +395,88 @@ describe("Aethpad V2", function () {
       await expect(curve.connect(owner).initToken(tokenAddr)).to.be.revertedWith("Already init");
     });
 
+    it("orphaned reward ETH rolls into next deposit (bug fix)", async function () {
+      // The FIRST buy on a fresh curve fires depositEthReward() before any
+      // holder has a hold score. Previously that ETH was silently lost.
+      // Now it is parked in orphanedRewardEth and included in the next deposit.
+      const { tokenAddr, curveAddr } = await createToken();
+      const token = await getToken(tokenAddr);
+      const curve = await getCurve(curveAddr);
+
+      // Alice buys first — rewards fire but liveTotal == 0 at boundary
+      await curve.connect(alice).buy(0, { value: ETH(1) });
+      const orphaned = await token.orphanedRewardEth();
+      expect(orphaned).to.be.gt(0n); // ETH was parked
+
+      // Wait so Alice builds hold score, then Bob buys (second deposit)
+      await ethers.provider.send("evm_increaseTime", [3600]);
+      await ethers.provider.send("evm_mine");
+      await curve.connect(bob).buy(0, { value: ETH(0.1) });
+
+      // After second deposit orphaned should be cleared
+      expect(await token.orphanedRewardEth()).to.equal(0n);
+
+      // Alice should now have pending rewards (including the rolled-in orphan)
+      const alicePending = await token.pendingRewards(alice.address);
+      expect(alicePending).to.be.gt(0n);
+    });
+
+    it("uniswap pair does not accumulate hold score post-graduation (bug fix)", async function () {
+      const { tokenAddr, curveAddr } = await createToken();
+      const token = await getToken(tokenAddr);
+      const curve = await getCurve(curveAddr);
+
+      // Graduate
+      await curve.connect(alice).buy(0, { value: ETH(3) });
+      await curve.connect(bob).buy(0, { value: ETH(3) });
+      expect(await curve.graduated()).to.equal(true);
+
+      const pair = await token.uniswapPair();
+      expect(pair).to.not.equal(ethers.ZeroAddress);
+
+      // Pair should have zero hold score
+      const pairScore = await token.holdScore(pair);
+      expect(pairScore).to.equal(0n);
+
+      // Pair should have zero pending rewards
+      const pairPending = await token.pendingRewards(pair);
+      expect(pairPending).to.equal(0n);
+    });
+
+    it("setTokenKeeper enables pushRewards (bug fix)", async function () {
+      const { tokenAddr, curveAddr } = await createToken();
+      const token = await getToken(tokenAddr);
+      const curve = await getCurve(curveAddr);
+
+      // Alice buys, waits, bob buys to generate rewards for alice
+      await curve.connect(alice).buy(0, { value: ETH(0.5) });
+      await ethers.provider.send("evm_increaseTime", [3600]);
+      await ethers.provider.send("evm_mine");
+      await curve.connect(bob).buy(0, { value: ETH(0.5) });
+
+      const pending = await token.pendingRewards(alice.address);
+      expect(pending).to.be.gt(0n);
+
+      // Set keeper via factory
+      await factory.connect(owner).setTokenKeeper(tokenAddr, owner.address);
+      expect(await token.keeper()).to.equal(owner.address);
+
+      // Keeper pushes rewards to alice
+      const aliceBalBefore = await ethers.provider.getBalance(alice.address);
+      await token.connect(owner).pushRewards([alice.address]);
+      const aliceBalAfter = await ethers.provider.getBalance(alice.address);
+
+      expect(aliceBalAfter).to.be.gt(aliceBalBefore);
+
+      // Alice's pending should now be zero
+      expect(await token.pendingRewards(alice.address)).to.equal(0n);
+
+      // Non-keeper cannot call pushRewards
+      await expect(
+        token.connect(alice).pushRewards([bob.address])
+      ).to.be.revertedWith("Only keeper");
+    });
+
     it("total supply conservation: sum of balances == totalSupply", async function () {
       const { tokenAddr, curveAddr } = await createToken();
       const token = await getToken(tokenAddr);

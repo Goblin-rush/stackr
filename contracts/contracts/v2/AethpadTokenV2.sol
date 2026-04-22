@@ -87,9 +87,15 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     uint256 public totalSettledBalance;     // sum of all checkpoint balances (for settling total)
 
     uint256 public cumulativeEthPerScore;   // scaled 1e18
+    uint256 public lastRewardTimestamp;     // block.timestamp of last cumulativeEthPerScore update
 
-    // Addresses excluded from holdScore / rewards (curve, pair, dead, factory, this)
+    // Addresses excluded from TAX logic (curve, factory, this, dead)
+    // NOTE: uniswapPair is intentionally NOT in this mapping post-grad so tax fires on swaps.
+    //       But it IS excluded from reward tracking via _isTracked().
     mapping(address => bool) public isExcluded;
+
+    // Accumulated reward ETH deposited before any holders existed (rolled in on next deposit)
+    uint256 public orphanedRewardEth;
 
     // Authorized keeper — the only address allowed to call pushRewards()
     // Set once by factory; can be updated by factory owner.
@@ -114,11 +120,11 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
         factory = _factory;
         curve = _curve;
 
-        // Mint full supply to the curve (curve holds both CURVE_SUPPLY for sale
-        // and GRAD_SUPPLY reserved for graduation LP)
-        _mint(_curve, TOTAL_SUPPLY);
-
-        // Exclusions
+        // Set exclusions BEFORE minting so the initial mint does not
+        // register the curve in totalSettledBalance or hold-score tracking.
+        // If exclusions come after _mint, the curve is briefly tracked and
+        // picks up 1 billion tokens in totalSettledBalance — permanently
+        // diluting all reward distributions.
         isExcluded[_curve] = true;
         isExcluded[_factory] = true;
         isExcluded[DEAD] = true;
@@ -126,6 +132,10 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
         isExcluded[address(0)] = true;
 
         totalLastUpdate = block.timestamp;
+
+        // Mint full supply to the curve (curve holds both CURVE_SUPPLY for sale
+        // and GRAD_SUPPLY reserved for graduation LP)
+        _mint(_curve, TOTAL_SUPPLY);
     }
 
     // ─── Modifiers ────────────────────────────────────────────────
@@ -258,30 +268,48 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     // ═════════════════════════════════════════════════════════════
 
     function _isTracked(address user) internal view returns (bool) {
-        return user != address(0) && !isExcluded[user];
+        if (user == address(0)) return false;
+        if (isExcluded[user]) return false;
+        // Post-graduation: exclude the Uniswap pair from reward tracking.
+        // The pair is NOT in isExcluded (so tax fires on swaps), but it must
+        // not accumulate hold score — its pendingEth would be unclaimable forever.
+        if (uniswapPair != address(0) && user == uniswapPair) return false;
+        return true;
     }
 
     /**
      * @notice Settle a user's pending ETH rewards based on current accumulator.
      *         Called before any balance change so we use pre-change holdScore.
+     *
+     *         IMPORTANT: When computing the reward delta, we cap the user's
+     *         hold score to `lastRewardTimestamp` — the moment the last reward
+     *         was deposited. Without this cap, a user settling after a reward
+     *         deposit would use a score that includes time AFTER the deposit,
+     *         causing pendingEth to exceed the actual ETH deposited (reverts on send).
+     *         The accumulated score is still extended to block.timestamp so future
+     *         rewards accumulate correctly.
      */
     function _settleUser(address user) internal {
         if (!_isTracked(user)) return;
         Checkpoint storage c = checkpoints[user];
 
-        // Extend accumulatedScore up to now before computing
-        uint256 elapsed = block.timestamp - c.lastUpdate;
-        uint256 liveScore = c.accumulatedScore + uint256(c.balance) * elapsed;
-
         uint256 delta = cumulativeEthPerScore - c.ethPerScorePaid;
-        if (delta > 0 && liveScore > 0) {
-            c.pendingEth += (liveScore * delta) / 1e18;
+        if (delta > 0) {
+            // Cap score to lastRewardTimestamp to prevent over-claiming
+            uint256 capTs = lastRewardTimestamp > c.lastUpdate
+                ? lastRewardTimestamp
+                : c.lastUpdate;
+            uint256 cappedElapsed = capTs - c.lastUpdate;
+            uint256 cappedScore = c.accumulatedScore + uint256(c.balance) * cappedElapsed;
+            if (cappedScore > 0) {
+                c.pendingEth += (cappedScore * delta) / 1e18;
+            }
+            c.ethPerScorePaid = cumulativeEthPerScore;
         }
-        c.ethPerScorePaid = cumulativeEthPerScore;
 
-        // Don't touch balance/lastUpdate here; _updateCheckpoint handles that
-        // But the accumulatedScore is brought up-to-now so the total tracking stays honest.
-        c.accumulatedScore = liveScore;
+        // Extend accumulatedScore to block.timestamp for future reward epochs.
+        uint256 elapsed = block.timestamp - c.lastUpdate;
+        c.accumulatedScore += uint256(c.balance) * elapsed;
         c.lastUpdate = uint64(block.timestamp);
     }
 
@@ -348,23 +376,19 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
 
         uint256 liveTotal = totalAccumulatedScore;
         if (liveTotal == 0) {
-            // No holders tracked yet — orphan ETH, stays in contract balance
-            // for future distributions. Re-credited next time a reward arrives.
-            // (We do this by simply not updating the accumulator; the ETH is
-            // still in address(this).balance and will effectively combine with
-            // next reward event.)
-            // To avoid permanent orphan, next reward with holders present will
-            // roll it in via _creditRewardPool again.
+            // No holders yet — park ETH until someone holds tokens.
+            orphanedRewardEth += ethAmount;
             emit RewardsDeposited(ethAmount, cumulativeEthPerScore);
             return;
         }
-        // Include any orphan balance too
-        uint256 poolEth = ethAmount;
-        // Not rolling in the full contract balance to avoid draining intended
-        // platform-held funds; orphan ETH simply sits until next reward call
-        // picks up a scale. Keep simple: add this tranche only.
+
+        // Roll in any previously orphaned ETH together with this tranche.
+        uint256 poolEth = ethAmount + orphanedRewardEth;
+        if (orphanedRewardEth > 0) orphanedRewardEth = 0;
+
         cumulativeEthPerScore += (poolEth * 1e18) / liveTotal;
-        emit RewardsDeposited(ethAmount, cumulativeEthPerScore);
+        lastRewardTimestamp = block.timestamp;
+        emit RewardsDeposited(poolEth, cumulativeEthPerScore);
     }
 
     function _antiSnipeExtraBps(address seller) internal view returns (uint256) {
@@ -496,10 +520,20 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     function pendingRewards(address user) external view returns (uint256) {
         if (!_isTracked(user)) return 0;
         Checkpoint storage c = checkpoints[user];
-        uint256 elapsed = block.timestamp - c.lastUpdate;
-        uint256 liveScore = c.accumulatedScore + uint256(c.balance) * elapsed;
         uint256 delta = cumulativeEthPerScore - c.ethPerScorePaid;
-        uint256 extra = liveScore > 0 && delta > 0 ? (liveScore * delta) / 1e18 : 0;
+        uint256 extra = 0;
+        if (delta > 0) {
+            // Mirror the capped-score logic from _settleUser so the view
+            // returns the exact amount that will be paid on claim/push.
+            uint256 capTs = lastRewardTimestamp > c.lastUpdate
+                ? lastRewardTimestamp
+                : c.lastUpdate;
+            uint256 cappedElapsed = capTs - c.lastUpdate;
+            uint256 cappedScore = c.accumulatedScore + uint256(c.balance) * cappedElapsed;
+            if (cappedScore > 0) {
+                extra = (cappedScore * delta) / 1e18;
+            }
+        }
         return c.pendingEth + extra;
     }
 
