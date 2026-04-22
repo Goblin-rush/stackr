@@ -170,40 +170,60 @@ export function Navbar({ onCreate }: NavbarProps) {
             </div>
 
             {/* Nav */}
-            <nav className="flex-1 py-3 px-2 space-y-0.5">
-              {[
-                { href: '/', icon: <Rocket className="h-4 w-4" />, label: 'Feed', color: 'text-sky-400', bg: 'bg-sky-400/10', border: 'border-sky-400/20' },
-                { href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Profile', color: 'text-violet-400', bg: 'bg-violet-400/10', border: 'border-violet-400/20' },
-                { href: '/docs', icon: <BookOpen className="h-4 w-4" />, label: 'Docs', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' },
-              ].map((item) => (
-                <Link key={item.href} href={item.href}>
-                  <div
-                    onClick={() => setMenuOpen(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-semibold text-foreground/70 hover:text-foreground hover:bg-white/5 transition-all cursor-pointer group"
-                  >
-                    <span className={`flex items-center justify-center w-7 h-7 rounded-md border ${item.bg} ${item.border} ${item.color} group-hover:scale-110 transition-transform`}>
-                      {item.icon}
-                    </span>
-                    {item.label}
-                  </div>
-                </Link>
-              ))}
+            <nav className="flex-1 flex flex-col py-4 px-3">
+              <div className="space-y-1">
+                {[
+                  { href: '/', icon: <Rocket className="h-4 w-4" />, label: 'Feed', sub: 'Browse all tokens' },
+                  { href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Profile', sub: 'Holdings & rewards' },
+                  { href: '/docs', icon: <BookOpen className="h-4 w-4" />, label: 'Docs', sub: 'Protocol reference' },
+                ].map((item) => (
+                  <Link key={item.href} href={item.href}>
+                    <div
+                      onClick={() => setMenuOpen(false)}
+                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
+                    >
+                      <span className="text-muted-foreground group-hover:text-primary transition-colors shrink-0">{item.icon}</span>
+                      <div>
+                        <div className="text-[13px] font-semibold text-foreground/85 group-hover:text-foreground transition-colors leading-none mb-0.5">{item.label}</div>
+                        <div className="text-[11px] text-muted-foreground/50 font-mono">{item.sub}</div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* Divider */}
+              <div className="my-4 border-t border-border/30" />
 
               {/* Create Token CTA */}
-              <div className="pt-2 px-1">
-                <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    if (onCreate) onCreate();
-                  }}
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-[13px] font-bold bg-primary/10 hover:bg-primary/15 border border-primary/30 hover:border-primary/50 text-primary transition-all group"
-                >
-                  <span className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/15 border border-primary/30 group-hover:scale-110 transition-transform">
-                    <Plus className="h-4 w-4" />
-                  </span>
-                  Create Token
-                  <span className="ml-auto text-[10px] font-mono text-primary/50 uppercase tracking-widest">Launch</span>
-                </button>
+              <button
+                onClick={() => { setMenuOpen(false); if (onCreate) onCreate(); }}
+                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg text-[13px] font-bold bg-primary/10 hover:bg-primary/16 border border-primary/25 hover:border-primary/40 text-primary transition-all"
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span className="flex-1 text-left">Launch a Token</span>
+                <span className="text-[10px] font-mono text-primary/40 uppercase tracking-widest">→</span>
+              </button>
+
+              {/* Info block */}
+              <div className="mt-4 rounded-lg bg-white/3 border border-border/30 px-4 py-3 space-y-1.5">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-2">Protocol</div>
+                <div className="flex justify-between text-[11px] font-mono">
+                  <span className="text-muted-foreground/50">Network</span>
+                  <span className="text-foreground/70">Base Mainnet</span>
+                </div>
+                <div className="flex justify-between text-[11px] font-mono">
+                  <span className="text-muted-foreground/50">Version</span>
+                  <span className="text-foreground/70">V2</span>
+                </div>
+                <div className="flex justify-between text-[11px] font-mono">
+                  <span className="text-muted-foreground/50">Curve target</span>
+                  <span className="text-foreground/70">3.5 ETH</span>
+                </div>
+                <div className="flex justify-between text-[11px] font-mono">
+                  <span className="text-muted-foreground/50">Fee</span>
+                  <span className="text-foreground/70">2% buy &amp; sell</span>
+                </div>
               </div>
             </nav>
 
