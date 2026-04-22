@@ -3,11 +3,11 @@ import { Footer } from '@/components/layout/Footer';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
 import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
-import { Search, X, Plus } from 'lucide-react';
+import { Search, X, Plus, Flame, TrendingUp } from 'lucide-react';
 
 type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade';
 
@@ -25,10 +25,10 @@ const TARGET_ETH_NUM = Number(formatEther(TARGET_ETH));
 function timeAgo(ts: number | null): string {
   if (!ts) return '–';
   const diff = Date.now() - ts;
-  if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s`;
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h`;
-  return `${Math.floor(diff / 86_400_000)}d`;
+  if (diff < 60_000) return `${Math.max(1, Math.floor(diff / 1000))}s ago`;
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}m ago`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}h ago`;
+  return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
 function formatUsd(n: number): string {
@@ -40,20 +40,13 @@ function formatUsd(n: number): string {
 function sortTokens(tokens: FeedToken[], sort: FeedSort): FeedToken[] {
   const arr = [...tokens];
   switch (sort) {
-    case 'new':
-      return arr.sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0) || b.createdIndex - a.createdIndex);
-    case 'oldest':
-      return arr.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0) || a.createdIndex - b.createdIndex);
-    case 'movers':
-      return arr.filter((t) => !t.graduated).sort((a, b) => b.realEthRaised - a.realEthRaised);
-    case 'graduated':
-      return arr.filter((t) => t.graduated).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
-    case 'mcap':
-      return arr.sort((a, b) => b.marketCapEth - a.marketCapEth);
-    case 'lasttrade':
-      return arr.filter((t) => t.lastTradeMs).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
-    default:
-      return arr;
+    case 'new':      return arr.sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0) || b.createdIndex - a.createdIndex);
+    case 'oldest':   return arr.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0) || a.createdIndex - b.createdIndex);
+    case 'movers':   return arr.filter((t) => !t.graduated).sort((a, b) => b.realEthRaised - a.realEthRaised);
+    case 'graduated':return arr.filter((t) => t.graduated).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
+    case 'mcap':     return arr.sort((a, b) => b.marketCapEth - a.marketCapEth);
+    case 'lasttrade':return arr.filter((t) => t.lastTradeMs).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
+    default:         return arr;
   }
 }
 
@@ -72,125 +65,99 @@ interface RowDisplay {
 }
 
 const DEMO_ROWS: RowDisplay[] = [
-  {
-    href: '/demo/STR',
-    symbol: 'STR',
-    name: 'Asteroid Shiba',
-    graduated: false,
-    priceLabel: '$0.0000142',
-    mcapLabel: '$24.3K',
-    raisedLabel: '1.84 / 3.5 ETH',
-    progress: 53,
-    ageLabel: '2h',
-    creatorLabel: '0x9f…21Ab',
-    isDemo: true,
-  },
-  {
-    href: '/demo/BNK',
-    symbol: 'BNK',
-    name: 'Bonkers',
-    graduated: true,
-    priceLabel: '$0.0001231',
-    mcapLabel: '$148K',
-    raisedLabel: '3.5 / 3.5 ETH',
-    progress: 100,
-    ageLabel: '6d',
-    creatorLabel: '0x33…be12',
-    isDemo: true,
-  },
-  {
-    href: '/demo/PEPE',
-    symbol: 'PEPE',
-    name: 'Memetics Lab',
-    graduated: false,
-    priceLabel: '$0.00000091',
-    mcapLabel: '$3.1K',
-    raisedLabel: '0.42 / 3.5 ETH',
-    progress: 12,
-    ageLabel: '11m',
-    creatorLabel: '0xf2…00cc',
-    isDemo: true,
-  },
-  {
-    href: '/demo/BASED',
-    symbol: 'BASED',
-    name: 'Based God Coin',
-    graduated: false,
-    priceLabel: '$0.0000087',
-    mcapLabel: '$14.7K',
-    raisedLabel: '1.12 / 3.5 ETH',
-    progress: 32,
-    ageLabel: '4h',
-    creatorLabel: '0xab…77f1',
-    isDemo: true,
-  },
-  {
-    href: '/demo/BLU',
-    symbol: 'BLU',
-    name: 'Blue Chip Inu',
-    graduated: false,
-    priceLabel: '$0.000003',
-    mcapLabel: '$8.2K',
-    raisedLabel: '0.71 / 3.5 ETH',
-    progress: 20,
-    ageLabel: '38m',
-    creatorLabel: '0x7d…1144',
-    isDemo: true,
-  },
+  { href: '/demo/STR',   symbol: 'STR',   name: 'Asteroid Shiba',  graduated: false, priceLabel: '$0.0000142',  mcapLabel: '$24.3K',  raisedLabel: '1.84 / 3.5 ETH', progress: 53,  ageLabel: '2h ago',   creatorLabel: '0x9f…21Ab', isDemo: true },
+  { href: '/demo/BNK',   symbol: 'BNK',   name: 'Bonkers',         graduated: true,  priceLabel: '$0.0001231',  mcapLabel: '$148K',   raisedLabel: '3.5 / 3.5 ETH',  progress: 100, ageLabel: '6d ago',   creatorLabel: '0x33…be12', isDemo: true },
+  { href: '/demo/PEPE',  symbol: 'PEPE',  name: 'Memetics Lab',    graduated: false, priceLabel: '$0.00000091', mcapLabel: '$3.1K',   raisedLabel: '0.42 / 3.5 ETH', progress: 12,  ageLabel: '11m ago',  creatorLabel: '0xf2…00cc', isDemo: true },
+  { href: '/demo/BASED', symbol: 'BASED', name: 'Based God Coin',  graduated: false, priceLabel: '$0.0000087',  mcapLabel: '$14.7K',  raisedLabel: '1.12 / 3.5 ETH', progress: 32,  ageLabel: '4h ago',   creatorLabel: '0xab…77f1', isDemo: true },
+  { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 3.5 ETH', progress: 20,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
 ];
 
-function ProgressBlocks({ pct }: { pct: number }) {
-  const total = 16;
-  const filled = Math.round((pct / 100) * total);
+/* ─── Animated progress bar ───────────────────────── */
+function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) {
+  const [displayed, setDisplayed] = useState(0);
+  const rafRef = useRef<number | null>(null);
+  const prevRef = useRef(0);
+
+  useEffect(() => {
+    const start = prevRef.current;
+    const end = Math.min(pct, 100);
+    const duration = 800;
+    const startTime = performance.now();
+    function step(now: number) {
+      const t = Math.min((now - startTime) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3);
+      const val = start + (end - start) * eased;
+      setDisplayed(val);
+      if (t < 1) rafRef.current = requestAnimationFrame(step);
+      else prevRef.current = end;
+    }
+    rafRef.current = requestAnimationFrame(step);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [pct]);
+
+  const h = size === 'sm' ? 'h-2' : 'h-1.5';
+  const isHigh = pct >= 80;
+
   return (
-    <div className="flex gap-[2px] h-2.5">
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={`flex-1 border ${
-            i < filled ? 'bg-primary border-primary' : 'border-border bg-transparent'
-          }`}
+    <div className={`relative ${h} w-full bg-white/5 rounded-full overflow-hidden border border-white/6`}>
+      <div
+        className="absolute top-0 left-0 h-full rounded-full overflow-hidden"
+        style={{
+          width: `${displayed}%`,
+          background: isHigh
+            ? 'linear-gradient(90deg, hsl(28 96% 48%) 0%, hsl(38 100% 65%) 100%)'
+            : 'linear-gradient(90deg, hsl(28 96% 42%) 0%, hsl(28 96% 58%) 100%)',
+          boxShadow: displayed > 3
+            ? `0 0 10px hsl(28 96% 56% / ${isHigh ? '0.6' : '0.35'})`
+            : 'none',
+          transition: 'box-shadow 0.3s ease',
+        }}
+      >
+        <span
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
+            animation: 'shimmer 2.2s ease-in-out infinite',
+          }}
         />
-      ))}
+      </div>
     </div>
   );
 }
 
+/* ─── Activity ticker ────────────────────────────── */
 const DEMO_TICKER = [
-  { sym: 'STR', type: 'buy' as const, eth: '0.041' },
-  { sym: 'BNK', type: 'sell' as const, eth: '0.812' },
-  { sym: 'PEPE', type: 'buy' as const, eth: '0.012' },
-  { sym: 'BASED', type: 'buy' as const, eth: '0.025' },
-  { sym: 'STR', type: 'buy' as const, eth: '0.087' },
-  { sym: 'BLU', type: 'buy' as const, eth: '0.018' },
-  { sym: 'BNK', type: 'buy' as const, eth: '1.250' },
-  { sym: 'STR', type: 'sell' as const, eth: '0.022' },
-  { sym: 'PEPE', type: 'buy' as const, eth: '0.055' },
+  { sym: 'STR',   type: 'buy'  as const, eth: '0.041' },
+  { sym: 'BNK',   type: 'sell' as const, eth: '0.812' },
+  { sym: 'PEPE',  type: 'buy'  as const, eth: '0.012' },
+  { sym: 'BASED', type: 'buy'  as const, eth: '0.025' },
+  { sym: 'STR',   type: 'buy'  as const, eth: '0.087' },
+  { sym: 'BLU',   type: 'buy'  as const, eth: '0.018' },
+  { sym: 'BNK',   type: 'buy'  as const, eth: '1.250' },
+  { sym: 'STR',   type: 'sell' as const, eth: '0.022' },
+  { sym: 'PEPE',  type: 'buy'  as const, eth: '0.055' },
   { sym: 'BASED', type: 'sell' as const, eth: '0.011' },
 ];
 
 function ActivityTicker() {
   const items = [...DEMO_TICKER, ...DEMO_TICKER];
   return (
-    <div className="border-2 border-border bg-card mb-4 overflow-hidden">
+    <div className="rounded-xl border border-border/60 bg-card/60 mb-4 overflow-hidden">
       <div className="flex items-center">
-        <div className="bg-foreground text-background px-3 py-2 text-[9px] font-black uppercase tracking-[0.25em] shrink-0 border-r-2 border-border">
-          ▶ Live
+        <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 text-[10px] font-semibold uppercase tracking-widest shrink-0 border-r border-border/60">
+          <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
+          Live
         </div>
-        <div className="flex-1 overflow-hidden relative">
-          <div className="flex gap-6 py-2 whitespace-nowrap animate-[ticker_40s_linear_infinite]">
+        <div className="flex-1 overflow-hidden">
+          <div className="flex gap-6 py-2 px-3 whitespace-nowrap animate-[ticker_40s_linear_infinite]">
             {items.map((t, i) => (
-              <span key={i} className="text-[11px] font-mono tabular-nums">
-                <span
-                  className={`font-black uppercase tracking-widest mr-1.5 ${
-                    t.type === 'buy' ? 'text-[#1f6b3e]' : 'text-primary'
-                  }`}
-                >
+              <span key={i} className="text-[11px] font-mono tabular-nums flex items-center gap-1.5">
+                <span className={`font-semibold text-[10px] uppercase tracking-wider ${t.type === 'buy' ? 'text-emerald-400' : 'text-red-400'}`}>
                   {t.type}
                 </span>
-                <span className="text-foreground font-bold">${t.sym}</span>
-                <span className="text-muted-foreground mx-1.5">·</span>
-                <span className="text-foreground">{t.eth} ETH</span>
+                <span className="text-foreground font-semibold">${t.sym}</span>
+                <span className="text-muted-foreground/60">·</span>
+                <span className="text-foreground/80">{t.eth} ETH</span>
               </span>
             ))}
           </div>
@@ -200,131 +167,111 @@ function ActivityTicker() {
   );
 }
 
+/* ─── Featured card ──────────────────────────────── */
 function FeaturedRow({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
-      <div className="relative bg-card border-2 border-foreground mb-3 cursor-pointer group hover:border-primary transition-colors overflow-hidden">
-        {/* Top stripe label */}
-        <div className="bg-foreground text-background px-3 py-1 flex items-center justify-between">
-          <span className="text-[9px] font-black uppercase tracking-[0.25em]">
-            ▲ Top mover · last 24h
+      <div className="relative rounded-xl border border-primary/30 bg-gradient-to-br from-primary/8 via-card to-card mb-3 cursor-pointer group card-hover overflow-hidden">
+        {/* Top badge */}
+        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
+          <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
+            <Flame className="h-3 w-3" />
+            Top Mover · 24h
           </span>
-          <span className="text-[9px] font-black uppercase tracking-widest">
-            +18.4%
-          </span>
+          <span className="text-[11px] font-semibold text-emerald-400 tabular-nums">+18.4%</span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
-          {/* Big ticker block */}
-          <div className="md:col-span-2 border-b-2 md:border-b-0 md:border-r-2 border-border px-5 py-4 flex flex-col justify-center">
-            <div className="text-4xl md:text-5xl font-black tracking-tighter leading-[0.9] text-foreground">
-              ${d.symbol.toUpperCase()}
+
+        <div className="grid grid-cols-1 md:grid-cols-5">
+          {/* Big ticker */}
+          <div className="md:col-span-2 border-b md:border-b-0 md:border-r border-border/60 px-5 py-5 flex flex-col justify-center">
+            <div className="text-5xl md:text-6xl font-black tracking-tighter leading-none text-gradient">
+              ${d.symbol}
             </div>
-            <div className="text-sm font-bold text-foreground mt-1.5">{d.name}</div>
-            <div className="text-[10px] text-muted-foreground font-mono mt-1">
-              {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel} ago
+            <div className="text-sm font-semibold text-foreground/90 mt-2">{d.name}</div>
+            <div className="text-[11px] text-muted-foreground font-mono mt-1">
+              {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel}
             </div>
           </div>
-          {/* Stats column */}
-          <div className="md:col-span-3 grid grid-cols-3 md:grid-rows-2 md:grid-cols-2">
+
+          {/* Stats */}
+          <div className="md:col-span-3 grid grid-cols-2 md:grid-rows-2">
             {[
               { label: 'PRICE', value: d.priceLabel },
-              { label: 'MCAP', value: d.mcapLabel },
-              { label: 'RAISED', value: d.raisedLabel.replace(' ETH', '') },
-              { label: 'CURVE', value: `${d.progress.toFixed(0)}%`, big: true },
+              { label: 'MCAP',  value: d.mcapLabel },
+              { label: 'RAISED', value: d.raisedLabel },
+              { label: 'CURVE', value: `${d.progress}%`, big: true },
             ].map((cell, i) => (
               <div
                 key={cell.label}
-                className={`px-4 py-2.5 border-border ${
-                  i < 2 ? 'border-r-2 md:border-r-0 md:border-b-2' : ''
-                } ${i === 2 ? 'md:border-r-2' : ''} ${
-                  i < 3 ? 'border-b-2 md:border-b-0' : ''
-                } ${i === 1 ? 'md:border-r-2' : ''}`}
+                className={`px-4 py-3 ${i < 2 ? 'border-b border-border/60' : ''} ${i % 2 === 0 ? 'border-r border-border/60' : ''}`}
               >
-                <div className="text-[8.5px] font-black tracking-widest text-muted-foreground mb-1">
-                  {cell.label}
-                </div>
-                <div
-                  className={`font-black tabular-nums text-foreground ${
-                    cell.big ? 'text-2xl' : 'text-sm'
-                  }`}
-                >
+                <div className="text-[9px] font-semibold tracking-widest text-muted-foreground/70 mb-1 uppercase">{cell.label}</div>
+                <div className={`font-bold tabular-nums text-foreground ${cell.big ? 'text-3xl text-gradient' : 'text-sm'}`}>
                   {cell.value}
                 </div>
               </div>
             ))}
           </div>
         </div>
-        {/* Bottom progress bar */}
-        <div className="border-t-2 border-border px-3 py-2.5">
-          <ProgressBlocks pct={d.progress} />
+
+        <div className="px-4 py-3 border-t border-border/60">
+          <ProgressBar pct={d.progress} size="sm" />
         </div>
       </div>
     </Link>
   );
 }
 
+/* ─── Standard row card ──────────────────────────── */
 function Row({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
-      <div className="relative bg-card border-2 border-border mb-3 cursor-pointer group hover:border-primary transition-colors">
-        {/* vermillion side stripe */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />
+      <div className="relative rounded-xl bg-card border border-border/60 mb-2.5 cursor-pointer group card-hover overflow-hidden">
+        {/* Left accent bar */}
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/40 group-hover:bg-primary transition-colors rounded-l-xl" />
 
-        {/* HEADER: ticker stamp + name + graduated chip */}
-        <div className="flex items-stretch border-b-2 border-border">
-          <div className="border-r-2 border-border px-3 md:px-4 py-2.5 pl-4 md:pl-5 flex items-center min-w-[80px] md:min-w-[100px]">
-            <span className="text-base md:text-xl font-black tracking-tighter leading-none text-foreground">
-              ${d.symbol.toUpperCase()}
+        {/* Header */}
+        <div className="flex items-center border-b border-border/40 pl-3">
+          <div className="px-3 py-3 min-w-[88px] border-r border-border/40">
+            <span className="text-base font-black tracking-tight text-foreground">
+              ${d.symbol}
             </span>
           </div>
-          <div className="flex-1 px-3 py-2 flex flex-col justify-center min-w-0">
-            <p className="text-sm font-bold text-foreground truncate leading-tight">
-              {d.name}
-            </p>
+          <div className="flex-1 px-3 py-2.5 min-w-0">
+            <p className="text-[13px] font-semibold text-foreground truncate">{d.name}</p>
             <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
-              {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel} ago
-              {d.isDemo && ' · demo'}
+              {d.creatorLabel ? `${d.creatorLabel} · ` : ''}{d.ageLabel}
+              {d.isDemo && <span className="opacity-40"> · demo</span>}
             </p>
           </div>
           {d.graduated && (
-            <div className="self-center mr-3 border-2 border-primary text-primary px-1.5 py-0.5 text-[9px] font-black tracking-widest leading-none">
+            <span className="self-center mr-3 text-[9px] font-semibold tracking-wider text-primary bg-primary/12 border border-primary/30 rounded-full px-2 py-0.5">
               ON DEX
-            </div>
+            </span>
           )}
         </div>
 
-        {/* DATA ROW: price · mcap · raised */}
-        <div className="grid grid-cols-3 border-b-2 border-border">
+        {/* Data row */}
+        <div className="grid grid-cols-3 pl-3">
           {[
             { label: 'PRICE', value: d.priceLabel },
-            { label: 'MCAP', value: d.mcapLabel },
-            { label: 'RAISED', value: d.raisedLabel.replace(' ETH', '') + ' ETH' },
+            { label: 'MCAP',  value: d.mcapLabel },
+            { label: 'RAISED', value: d.raisedLabel },
           ].map((cell, i) => (
-            <div
-              key={cell.label}
-              className={`px-3 py-2 ${i < 2 ? 'border-r-2 border-border' : ''}`}
-            >
-              <div className="text-[8.5px] font-black tracking-widest text-muted-foreground mb-0.5">
-                {cell.label}
-              </div>
-              <div className="text-xs font-bold tabular-nums text-foreground truncate">
-                {cell.value}
-              </div>
+            <div key={cell.label} className={`px-3 py-2.5 ${i < 2 ? 'border-r border-border/40' : ''}`}>
+              <div className="text-[9px] font-semibold tracking-widest text-muted-foreground/60 mb-0.5 uppercase">{cell.label}</div>
+              <div className="text-[12px] font-semibold tabular-nums text-foreground/90 truncate">{cell.value}</div>
             </div>
           ))}
         </div>
 
-        {/* PROGRESS */}
-        <div className="px-3 py-2.5">
-          <div className="flex justify-between items-center mb-1.5">
-            <span className="text-[8.5px] font-black tracking-widest text-muted-foreground">
-              CURVE → DEX
-            </span>
-            <span className="text-[11px] font-black tabular-nums text-foreground">
-              {d.progress.toFixed(0)}%
-            </span>
+        {/* Progress */}
+        <div className="px-4 pb-3 pt-2.5 pl-4.5">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[9px] font-semibold tracking-widest text-muted-foreground/60 uppercase">Curve → DEX</span>
+            <span className="text-[11px] font-semibold tabular-nums text-foreground/80">{d.progress.toFixed(0)}%</span>
           </div>
-          <ProgressBlocks pct={d.progress} />
+          <ProgressBar pct={d.progress} size="xs" />
         </div>
       </div>
     </Link>
@@ -360,6 +307,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   );
 }
 
+/* ─── Page ───────────────────────────────────────── */
 export default function HomeFeedPage() {
   const { tokens, isLoading } = useLaunchpadFeed(200);
   const { data: ethPrice } = useEthPrice();
@@ -385,61 +333,57 @@ export default function HomeFeedPage() {
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onCreate={() => setIsCreateOpen(true)} />
 
-      <main className="flex-1 container max-w-7xl mx-auto px-4 py-5 md:px-8">
-        {/* Header: title + actions */}
-        <div className="flex items-end justify-between mb-4 border-b-2 border-border pb-3">
+      <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
+
+        {/* Page header */}
+        <div className="flex items-end justify-between mb-6">
           <div>
-            <p className="text-[10px] font-black uppercase tracking-widest text-primary">
-              BASE
-            </p>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-none mt-1">
-              Tokens
+            <p className="text-[10px] font-semibold uppercase tracking-widest text-primary mb-1">Base Network</p>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-foreground leading-none">
+              Token Feed
             </h1>
           </div>
           <button
             onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/85 transition-colors whitespace-nowrap border-2 border-primary"
+            className="inline-flex items-center gap-2 text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary"
           >
-            <Plus className="h-3 w-3" strokeWidth={3} />
-            New token
+            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+            New Token
           </button>
         </div>
 
-        {/* Search + sort tabs */}
-        <div className="flex flex-col md:flex-row md:items-center gap-2 mb-3">
-          <div className="relative md:w-72">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+        {/* Search + sort */}
+        <div className="flex flex-col md:flex-row md:items-center gap-2.5 mb-4">
+          <div className="relative md:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none" />
             <input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="search…"
-              className="w-full pl-8 pr-8 py-2 bg-card border-2 border-border text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
+              placeholder="Search tokens…"
+              className="w-full pl-9 pr-8 py-2.5 bg-white/5 border border-border/60 rounded-lg text-[12px] font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:bg-white/7 transition-all"
             />
             {query && (
               <button
                 onClick={() => setQuery('')}
-                aria-label="Clear search"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground hover:text-foreground"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/60 hover:text-foreground"
               >
                 <X className="h-3 w-3" />
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-0 overflow-x-auto scrollbar-none flex-1 border-2 border-border md:ml-2">
-            {SORT_TABS.map((t, i) => {
+          <div className="flex items-center bg-white/4 border border-border/50 rounded-lg overflow-hidden">
+            {SORT_TABS.map((t) => {
               const active = sort === t.id;
               return (
                 <button
                   key={t.id}
                   onClick={() => setSort(t.id)}
-                  className={`text-[10px] font-black uppercase tracking-widest px-3 py-2 whitespace-nowrap transition-colors ${
-                    i > 0 ? 'border-l-2 border-border' : ''
-                  } ${
+                  className={`text-[11px] font-medium px-3.5 py-2 whitespace-nowrap transition-all ${
                     active
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-white/6'
                   }`}
                 >
                   {t.label}
@@ -449,11 +393,11 @@ export default function HomeFeedPage() {
           </div>
         </div>
 
-        {/* Rows */}
+        {/* Token list */}
         {isLoading ? (
-          <div className="space-y-3">
+          <div className="space-y-2.5">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-32 bg-card border-2 border-border animate-pulse" />
+              <div key={i} className="h-28 bg-card/60 border border-border/40 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : filtered.length > 0 ? (
@@ -465,15 +409,15 @@ export default function HomeFeedPage() {
         ) : tokens.length === 0 && !query.trim() ? (
           <div>
             <div className="flex items-center justify-between mb-3 px-1">
-              <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                Preview · mock data
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
+                Preview · Demo Data
               </p>
               <button
                 onClick={() => setIsCreateOpen(true)}
-                className="inline-flex items-center gap-1 text-[10px] font-black uppercase tracking-widest text-primary hover:opacity-80"
+                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
               >
-                <Plus className="h-3 w-3" strokeWidth={3} />
-                Be first
+                <Plus className="h-3 w-3" />
+                Be First
               </button>
             </div>
             <ActivityTicker />
@@ -483,10 +427,8 @@ export default function HomeFeedPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20 border-b border-border">
-            <p className="text-xs text-muted-foreground font-mono">
-              No matches for "{query}".
-            </p>
+          <div className="text-center py-20">
+            <p className="text-sm text-muted-foreground font-mono">No matches for "{query}"</p>
           </div>
         )}
 

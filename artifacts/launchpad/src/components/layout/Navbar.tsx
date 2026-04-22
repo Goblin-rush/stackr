@@ -45,62 +45,57 @@ export function Navbar({ onCreate }: NavbarProps) {
   const displayAddr = address ?? (user?.wallet?.address as `0x${string}` | undefined);
 
   return (
-    <nav className="border-b-2 border-border bg-background sticky top-0 z-50">
+    <nav className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
       <div className="container flex h-14 items-center max-w-7xl mx-auto px-4 md:px-8 gap-3">
-        {/* Brutal wordmark */}
+        {/* Wordmark */}
         <Link href="/">
-          <div className="flex items-baseline gap-1.5 cursor-pointer select-none whitespace-nowrap group">
-            <span className="font-black text-lg tracking-tighter text-foreground group-hover:text-primary transition-colors">
+          <div className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap group">
+            <span className="font-black text-base tracking-tight text-foreground group-hover:text-primary transition-colors">
               AETHPAD
             </span>
-            <span className="h-1.5 w-1.5 bg-primary rounded-full self-center -translate-y-px" />
+            <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
           </div>
         </Link>
 
-        {/* BASE chip — prominent chain identifier */}
-        <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest border-2 border-primary text-primary px-2 py-1 leading-none">
-          <span className="h-1.5 w-1.5 bg-primary animate-pulse" />
-          BASE
+        {/* BASE chip */}
+        <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest rounded-full border border-primary/40 text-primary px-2.5 py-1 leading-none bg-primary/8">
+          <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
+          Base
         </span>
 
         {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-1 ml-3">
-          <Link href="/">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-secondary px-2.5 py-1.5 cursor-pointer transition-colors">
-              Feed
-            </span>
-          </Link>
-          <Link href="/dashboard">
-            <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-secondary px-2.5 py-1.5 cursor-pointer transition-colors">
-              <LayoutDashboard className="h-3 w-3" />
-              Dashboard
-            </span>
-          </Link>
-          <Link href="/docs">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-secondary px-2.5 py-1.5 cursor-pointer transition-colors">
-              Docs
-            </span>
-          </Link>
+        <div className="hidden md:flex items-center gap-0.5 ml-3">
+          {[
+            { href: '/', label: 'Feed' },
+            { href: '/dashboard', label: 'Dashboard' },
+            { href: '/docs', label: 'Docs' },
+          ].map((item) => (
+            <Link key={item.href} href={item.href}>
+              <span className="text-[12px] font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md cursor-pointer transition-colors hover:bg-white/5">
+                {item.label}
+              </span>
+            </Link>
+          ))}
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
           {authenticated && displayAddr ? (
             <>
-              <span className="hidden sm:block text-[11px] font-mono font-semibold text-foreground bg-secondary border border-border px-2.5 py-1.5">
+              <span className="hidden sm:block text-[11px] font-mono text-muted-foreground bg-white/5 border border-border/60 rounded-md px-2.5 py-1.5">
                 {displayAddr.slice(0, 6)}··{displayAddr.slice(-4)}
               </span>
               <button
                 onClick={() => logout()}
-                className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-destructive px-2 py-1.5 transition-colors"
+                className="text-[11px] font-medium text-muted-foreground hover:text-destructive px-2.5 py-1.5 rounded-md transition-colors hover:bg-destructive/8"
               >
-                disconnect
+                Disconnect
               </button>
             </>
           ) : (
             <button
               onClick={() => login()}
               disabled={!ready}
-              className="inline-flex items-center text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/85 transition-colors disabled:opacity-50 border-2 border-primary"
+              className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50 glow-primary"
             >
               {ready ? 'Connect' : '…'}
             </button>
@@ -108,7 +103,7 @@ export function Navbar({ onCreate }: NavbarProps) {
           <button
             onClick={() => setMenuOpen(true)}
             aria-label="Open menu"
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors border border-border"
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
           >
             <Menu className="h-4 w-4" />
           </button>
@@ -119,85 +114,60 @@ export function Navbar({ onCreate }: NavbarProps) {
         <>
           <div
             onClick={() => setMenuOpen(false)}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
           />
-          <div className="fixed left-0 top-0 bottom-0 w-72 bg-card border-r-2 border-border z-50 flex flex-col">
-            <div className="flex items-center justify-between h-14 px-4 border-b-2 border-border">
-              <div className="flex items-baseline gap-1.5">
-                <span className="font-black text-lg tracking-tighter text-foreground">AETHPAD</span>
-                <span className="h-1.5 w-1.5 bg-primary rounded-full self-center -translate-y-px" />
+          <div className="fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border/60 z-50 flex flex-col">
+            <div className="flex items-center justify-between h-14 px-5 border-b border-border/60">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-base tracking-tight text-foreground">AETHPAD</span>
+                <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
               </div>
               <button
                 onClick={() => setMenuOpen(false)}
                 aria-label="Close menu"
-                className="p-1 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <nav className="flex-1 py-2">
-              <Link href="/">
-                <div
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary"
-                >
-                  <Rocket className="h-3.5 w-3.5 text-muted-foreground" />
-                  Feed
-                </div>
-              </Link>
-              <Link href="/dashboard">
-                <div
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary"
-                >
-                  <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
-                  My Dashboard
-                </div>
-              </Link>
-              <Link href="/docs">
-                <div
-                  onClick={() => setMenuOpen(false)}
-                  className="flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary"
-                >
-                  <span className="font-mono text-[10px] text-muted-foreground w-3.5 text-center">§</span>
-                  Docs
-                </div>
-              </Link>
+            <nav className="flex-1 py-3 px-2">
+              {[
+                { href: '/', icon: <Rocket className="h-3.5 w-3.5" />, label: 'Feed' },
+                { href: '/dashboard', icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: 'My Dashboard' },
+                { href: '/docs', icon: <span className="font-mono text-[10px] w-3.5 text-center">§</span>, label: 'Docs' },
+              ].map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <div
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    <span className="text-muted-foreground/70">{item.icon}</span>
+                    {item.label}
+                  </div>
+                </Link>
+              ))}
               {onCreate && (
                 <button
-                  onClick={() => {
-                    setMenuOpen(false);
-                    onCreate();
-                  }}
-                  className="w-full text-left flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors border-l-2 border-transparent hover:border-primary"
+                  onClick={() => { setMenuOpen(false); onCreate(); }}
+                  className="w-full text-left flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
                 >
-                  <Plus className="h-3.5 w-3.5 text-muted-foreground" />
-                  Create token
+                  <Plus className="h-3.5 w-3.5 text-muted-foreground/70" />
+                  Create Token
                 </button>
               )}
             </nav>
-            <div className="border-t-2 border-border px-4 pt-3 pb-2 md:hidden">
-              <a
-                href={X_URL}
-                target="_blank"
-                rel="noreferrer"
-                aria-label="Aethpad on X"
-                onClick={() => setMenuOpen(false)}
-                className="inline-flex p-1.5 -ml-1.5 text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-              >
-                <XIcon className="h-4 w-4" />
-              </a>
-            </div>
-            <div className="border-t-2 border-border p-4 text-[10px] font-mono uppercase tracking-widest text-muted-foreground space-y-2">
-              <div className="flex items-center justify-between">
+            <div className="border-t border-border/60 px-5 py-3 space-y-2">
+              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
                 <span>Chain</span>
-                <span className="flex items-center gap-1.5 text-primary font-bold">
-                  <span className="h-1.5 w-1.5 bg-primary" /> BASE
+                <span className="flex items-center gap-1.5 text-primary font-semibold">
+                  <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" /> Base
                 </span>
               </div>
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
                 <span>ETH</span>
-                <span className="text-foreground font-semibold tabular-nums">{ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}</span>
+                <span className="text-foreground font-semibold tabular-nums">
+                  {ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
+                </span>
               </div>
             </div>
           </div>

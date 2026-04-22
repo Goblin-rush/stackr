@@ -43,81 +43,84 @@
   --font-sans: var(--app-font-sans);
   --font-mono: var(--app-font-mono);
 
-  --radius-sm: 0px;
-  --radius-md: 0px;
-  --radius-lg: 0px;
-  --radius-xl: 0px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-xl: 12px;
 }
 
 /*
-  Aethpad v2 — PAPER / EDITORIAL.
-  Warm off-white background. Ink text. Single vermillion accent.
-  Print/zine vibe. Deliberately not a "crypto template."
+  Aethpad v2 — DARK PREMIUM.
+  Deep obsidian background. Amber fire accent. Clean hierarchy.
 */
 :root {
-  --background: 40 23% 92%;
-  --foreground: 60 7% 6%;
+  --background: 224 16% 6%;
+  --foreground: 210 20% 96%;
 
-  --card: 40 25% 89%;
-  --card-foreground: 60 7% 6%;
-  --card-border: 60 5% 12%;
+  --card: 224 14% 10%;
+  --card-foreground: 210 20% 96%;
+  --card-border: 224 12% 16%;
 
-  --popover: 40 25% 95%;
-  --popover-foreground: 60 7% 6%;
-  --popover-border: 60 5% 12%;
+  --popover: 224 14% 12%;
+  --popover-foreground: 210 20% 96%;
+  --popover-border: 224 12% 18%;
 
-  /* Vermillion — Aethpad v2 brand */
-  --primary: 9 75% 48%;
-  --primary-foreground: 40 25% 95%;
-  --primary-border: 9 75% 48%;
+  /* Amber fire — brand accent */
+  --primary: 28 96% 56%;
+  --primary-foreground: 224 16% 6%;
+  --primary-border: 28 96% 56%;
 
-  --secondary: 40 18% 86%;
-  --secondary-foreground: 60 7% 6%;
-  --secondary-border: 60 5% 18%;
+  --secondary: 224 12% 14%;
+  --secondary-foreground: 210 15% 75%;
+  --secondary-border: 224 12% 22%;
 
-  --muted: 40 15% 87%;
-  --muted-foreground: 40 6% 33%;
-  --muted-border: 60 5% 18%;
+  --muted: 224 12% 13%;
+  --muted-foreground: 215 12% 47%;
+  --muted-border: 224 12% 20%;
 
-  --accent: 9 75% 48%;
-  --accent-foreground: 40 25% 95%;
-  --accent-border: 9 75% 48%;
+  --accent: 28 96% 56%;
+  --accent-foreground: 224 16% 6%;
+  --accent-border: 28 96% 56%;
 
-  --destructive: 9 75% 40%;
-  --destructive-foreground: 40 25% 95%;
-  --destructive-border: 9 75% 40%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 20% 96%;
+  --destructive-border: 0 72% 51%;
 
-  --border: 60 5% 12%;
-  --input: 40 18% 84%;
-  --ring: 9 75% 48%;
+  --border: 224 12% 16%;
+  --input: 224 12% 14%;
+  --ring: 28 96% 56%;
 
-  --radius: 0px;
-  --app-font-sans: "JetBrains Mono", "Inter", monospace;
+  --radius: 6px;
+  --app-font-sans: "Inter", "JetBrains Mono", sans-serif;
   --app-font-mono: "JetBrains Mono", monospace;
+
+  /* Glow colors */
+  --glow-primary: hsl(28 96% 56% / 0.18);
+  --glow-green: hsl(142 71% 45% / 0.18);
 }
 
 .dark {
-  --background: 40 23% 92%;
-  --foreground: 60 7% 6%;
-  --card: 40 25% 89%;
-  --card-foreground: 60 7% 6%;
-  --card-border: 60 5% 12%;
-  --popover: 40 25% 95%;
-  --popover-foreground: 60 7% 6%;
-  --popover-border: 60 5% 12%;
-  --primary: 9 75% 48%;
-  --primary-foreground: 40 25% 95%;
-  --secondary: 40 18% 86%;
-  --secondary-foreground: 60 7% 6%;
-  --muted: 40 15% 87%;
-  --muted-foreground: 40 6% 33%;
-  --accent: 9 75% 48%;
-  --accent-foreground: 40 25% 95%;
-  --destructive: 9 75% 40%;
-  --destructive-foreground: 40 25% 95%;
-  --border: 60 5% 12%;
-  --input: 40 18% 84%;
-  --ring: 9 75% 48%;
+  --background: 224 16% 6%;
+  --foreground: 210 20% 96%;
+  --card: 224 14% 10%;
+  --card-foreground: 210 20% 96%;
+  --card-border: 224 12% 16%;
+  --popover: 224 14% 12%;
+  --popover-foreground: 210 20% 96%;
+  --popover-border: 224 12% 18%;
+  --primary: 28 96% 56%;
+  --primary-foreground: 224 16% 6%;
+  --secondary: 224 12% 14%;
+  --secondary-foreground: 210 15% 75%;
+  --muted: 224 12% 13%;
+  --muted-foreground: 215 12% 47%;
+  --accent: 28 96% 56%;
+  --accent-foreground: 224 16% 6%;
+  --destructive: 0 72% 51%;
+  --destructive-foreground: 210 20% 96%;
+  --border: 224 12% 16%;
+  --input: 224 12% 14%;
+  --ring: 28 96% 56%;
 }
 
 @layer base {
@@ -128,19 +131,16 @@
     @apply font-sans antialiased bg-background text-foreground;
     font-feature-settings: "ss01", "cv11";
   }
-  /* Brutalist global: square corners, no soft shadows */
-  button, input, select, textarea {
-    border-radius: 0 !important;
-  }
 }
 
+/* ─── Ticker ──────────────────────────────── */
 @keyframes tape-scroll {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to   { transform: translateX(-50%); }
 }
 @keyframes ticker {
   from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
+  to   { transform: translateX(-50%); }
 }
 .animate-tape-scroll {
   animation: tape-scroll 60s linear infinite;
@@ -149,13 +149,67 @@
   animation-play-state: paused;
 }
 
-/* Brutalist scanline accent for headers */
-.brutal-stripes {
-  background-image: repeating-linear-gradient(
-    135deg,
-    transparent 0px,
-    transparent 4px,
-    hsl(var(--primary) / 0.08) 4px,
-    hsl(var(--primary) / 0.08) 5px
+/* ─── Progress bar fill animation ────────── */
+@keyframes fill-bar {
+  from { width: 0%; }
+}
+
+/* ─── Shimmer sweep on progress bar ──────── */
+@keyframes shimmer {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.progress-shimmer::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.22) 50%,
+    transparent 100%
   );
+  width: 30%;
+  animation: shimmer 2.4s ease-in-out infinite;
+}
+
+/* ─── Pulsing glow dot ────────────────────── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 var(--glow-primary); }
+  50%       { opacity: 0.7; box-shadow: 0 0 0 4px transparent; }
+}
+.dot-live {
+  animation: pulse-dot 1.8s ease-in-out infinite;
+}
+
+/* ─── Card hover lift ─────────────────────── */
+.card-hover {
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+.card-hover:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+}
+
+/* ─── Glow border on primary ─────────────── */
+.glow-primary {
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.3),
+              0 0 16px hsl(var(--primary) / 0.12);
+}
+
+/* ─── Number count-up helper ─────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.fade-in-up {
+  animation: fade-in-up 0.35s ease-out both;
+}
+
+/* ─── Gradient text utility ──────────────── */
+.text-gradient {
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(38 100% 70%) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
