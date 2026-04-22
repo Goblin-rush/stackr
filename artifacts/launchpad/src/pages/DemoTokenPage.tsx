@@ -269,7 +269,7 @@ export default function DemoTokenPage() {
                   <div className="min-w-0">
                     <div className="flex items-baseline gap-3 flex-wrap">
                       <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-gradient">
-                        ${t.symbol}
+                        {t.symbol}
                       </span>
                       <h1 className="text-base md:text-lg font-bold text-foreground/90">
                         {t.name}
