@@ -233,7 +233,7 @@ export default function DashboardPage() {
           icon={<Wallet className="h-3.5 w-3.5" />}
           label="Portfolio"
           value={loading ? null : `${Number(formatEther(totals?.portfolioEth ?? 0n)).toFixed(4)} ETH`}
-          sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.portfolioEth)) * ethPrice).toFixed(2)}` : '—'}
+          sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.portfolioEth)) * ethPrice).toFixed(2)}` : '--'}
         />
         <SummaryCard
           icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
@@ -243,7 +243,7 @@ export default function DashboardPage() {
               ? null
               : totals && totals.totalReceived > 0n
                 ? `${Number(formatEther(totals.totalReceived)).toFixed(6)} ETH`
-                : '—'
+                : '--'
           }
           sub={
             ethPrice && totals && totals.totalReceived > 0n
@@ -260,7 +260,7 @@ export default function DashboardPage() {
               ? null
               : totals && totals.totalPending > 0n
                 ? `${Number(formatEther(totals.totalPending)).toFixed(6)} ETH`
-                : '—'
+                : '--'
           }
           sub="pushed on next trade"
           highlight={!!totals && totals.totalPending > 0n}
@@ -348,13 +348,13 @@ export default function DashboardPage() {
                   />
                   <StatCell
                     label="Est. Pending"
-                    value={pending > 0 ? `${pending.toFixed(6)} ETH` : '—'}
+                    value={pending > 0 ? `${pending.toFixed(6)} ETH` : '--'}
                     sub={pending > 0 ? 'pushed on next trade' : 'nothing queued'}
                     highlightAmber={pending > 0}
                   />
                   <StatCell
                     label="Total Received"
-                    value={received > 0 ? `${received.toFixed(6)} ETH` : '—'}
+                    value={received > 0 ? `${received.toFixed(6)} ETH` : '--'}
                     sub={received > 0 ? 'auto-distributed' : 'no rewards yet'}
                     highlight={received > 0}
                   />

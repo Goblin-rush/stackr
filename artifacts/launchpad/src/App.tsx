@@ -15,6 +15,8 @@ import AdminPage from "@/pages/AdminPage";
 import DashboardPage from "@/pages/DashboardPage";
 import DemoTokenPage from "@/pages/DemoTokenPage";
 import DocsPage from "@/pages/DocsPage";
+import FaqPage from "@/pages/FaqPage";
+import DisclaimerPage from "@/pages/DisclaimerPage";
 import { EarlyAccessModal } from "@/components/layout/EarlyAccessModal";
 
 const queryClient = new QueryClient();
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/token/:address" component={TokenDetailPage} />
       <Route path="/demo/:symbol" component={DemoTokenPage} />
       <Route path="/docs" component={DocsPage} />
+      <Route path="/faq" component={FaqPage} />
+      <Route path="/disclaimer" component={DisclaimerPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

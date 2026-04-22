@@ -46,7 +46,7 @@ export default function DocsPage() {
         </pre>
         <ol className="space-y-2 text-[14px] text-foreground/90 list-none pl-0">
           {[
-            ['Create', 'Anyone deploys a token through the factory. Fixed 1B supply. No premint to the creator. An optional dev buy can be made at launch — subject to the same anti-snipe rules as everyone else.'],
+            ['Create', 'Anyone deploys a token through the factory. Fixed 1B supply. No premint to the creator. An optional dev buy can be made at launch, subject to the same anti-snipe rules as everyone else.'],
             ['Bonding curve', 'Buyers and sellers trade against the curve until it raises 5 ETH real (a 3 ETH virtual reserve smooths the early price). Holder rewards auto-distribute on every trade.'],
             ['Graduation', 'When the target hits, the contract automatically pairs remaining tokens + raised ETH on a DEX and burns the LP to 0xdead.'],
             ['DEX trading', 'The token becomes a normal ERC-20. The curve is closed forever. Holder rewards continue from a 3.5% post-graduation tax.'],
@@ -94,7 +94,7 @@ export default function DocsPage() {
         <H2 n="03">Anti-Snipe Tiers</H2>
         <P>
           Sells carry an extra tax based on how long ago the wallet first bought. The penalty stacks on top of the
-          standard 5% and is routed entirely to the holder rewards pool — diamond hands paid by paper hands.
+          standard 5% and is routed entirely to the holder rewards pool. Diamond hands paid by paper hands.
         </P>
         <div className="border-2 border-border mb-3">
           <table className="w-full font-mono text-[12px]">
@@ -143,8 +143,8 @@ export default function DocsPage() {
 {`holdScore += balance × (now − lastUpdate)`}
         </pre>
         <P>
-          Updated on every balance change (buy, sell, transfer). Between events the score accrues silently — no
-          transaction, no gas. Hold 1,000 tokens for 1 hour → 3,600,000 token-seconds. Hold 10,000 for the same hour
+          Updated on every balance change (buy, sell, transfer). Between events the score accrues silently, no
+          transaction needed, no gas. Hold 1,000 tokens for 1 hour → 3,600,000 token-seconds. Hold 10,000 for the same hour
           → 36,000,000.
         </P>
 
@@ -167,7 +167,7 @@ export default function DocsPage() {
         </pre>
 
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
-          4.3 Auto-Distribution — No Claim Button
+          4.3 Auto-Distribution: No Claim Button
         </h3>
         <P>
           On Stackr, rewards are <span className="font-bold">pushed automatically</span> to holders. There is no
@@ -189,8 +189,8 @@ export default function DocsPage() {
         </ul>
         <P>
           Your <Mono>pendingRewards</Mono> balance shown in the Profile tab represents ETH that has accrued since your
-          last on-chain interaction. The next time you trade or transfer, it is automatically pushed to your wallet —
-          no extra step needed.
+          last on-chain interaction. The next time you trade or transfer, it is automatically pushed to your wallet.
+          No extra step needed.
         </P>
 
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
@@ -297,7 +297,7 @@ export default function DocsPage() {
         </div>
         <P>
           Wallet C also paid +20% on their dump (anti-snipe tax), which went directly into this same pool and funded
-          A and B's payday. All of this settles automatically — no one had to press a button.
+          A and B's payday. All of this settles automatically. No one had to press a button.
         </P>
 
         <h3 className="mt-6 mb-2 text-[13px] font-bold uppercase tracking-widest text-foreground border-l-2 border-primary pl-2">
@@ -349,10 +349,10 @@ export default function DocsPage() {
         </ul>
 
         <div className="mt-6 border-2 border-foreground bg-foreground text-background p-4">
-          <div className="font-mono text-[10px] uppercase tracking-widest opacity-70 mb-1">TL;DR — Rewards</div>
+          <div className="font-mono text-[10px] uppercase tracking-widest opacity-70 mb-1">TL;DR: Rewards</div>
           <div className="text-[14px] leading-relaxed">
             Hold longer + hold more = bigger share. Sell early = surcharge that pays everyone else. Rewards land in your
-            wallet automatically on your next trade — no manual claim, no extra gas, no expiry.
+            wallet automatically on your next trade. No manual claim, no extra gas, no expiry.
           </div>
         </div>
 
@@ -392,7 +392,7 @@ export default function DocsPage() {
         <H2 n="06">Dev Buy at Launch</H2>
         <P>
           Token creators can optionally buy tokens at the moment of deployment. This dev buy is subject to the exact
-          same anti-snipe rules as any other wallet — there is no special window, no tax exemption, and no lock.
+          same anti-snipe rules as any other wallet. There is no special window, no tax exemption, and no lock.
         </P>
         <ul className="space-y-1.5 text-[14px] text-foreground/90 list-none pl-0 mb-3">
           {[
@@ -441,7 +441,7 @@ export default function DocsPage() {
         <ul className="space-y-1.5 text-[14px] text-foreground/90 list-none pl-0">
           {[
             'All contracts are non-upgradeable.',
-            'LP burn is unconditional and immediate at graduation — verifiable on-chain.',
+            'LP burn is unconditional and immediate at graduation, verifiable on-chain.',
             'No admin function can pause trading, change tax rates, or seize tokens.',
             'Treasury receives ETH only; it cannot touch user balances or the curve.',
             'Factory deployer address is public. All tokens deployed from it are traceable.',
@@ -455,7 +455,7 @@ export default function DocsPage() {
 
         {/* Colophon */}
         <div className="mt-16 pt-4 border-t-2 border-border flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-          <span>Stackr — Base Mainnet</span>
+          <span>Stackr / Base Mainnet</span>
           <span>Read in ~4 min</span>
         </div>
       </main>

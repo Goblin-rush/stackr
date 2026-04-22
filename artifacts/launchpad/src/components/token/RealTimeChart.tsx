@@ -420,7 +420,7 @@ export function RealTimeChart({
       {trades.length === 0 && (
         <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none">
           <p className="text-[11px] font-mono text-muted-foreground/50 bg-background/40 px-3 py-1.5 rounded border border-border/20">
-            No trades yet — showing bonding curve start price
+            No trades yet. Showing bonding curve start price.
           </p>
         </div>
       )}

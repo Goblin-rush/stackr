@@ -16,8 +16,8 @@ export function parseTxError(err: unknown): string {
 
   if (/user rejected|user denied|rejected the request/i.test(raw)) return 'Transaction rejected in wallet';
   if (/insufficient funds|exceeds the balance/i.test(raw)) return 'Not enough ETH for gas + value';
-  if (/slippage|min(EthOut|TokensOut)|too little|min received/i.test(raw)) return 'Price moved — increase slippage and retry';
-  if (/nonce/i.test(raw)) return 'Nonce conflict — reset wallet activity';
+  if (/slippage|min(EthOut|TokensOut)|too little|min received/i.test(raw)) return 'Price moved. Increase slippage and retry.';
+  if (/nonce/i.test(raw)) return 'Nonce conflict. Reset wallet activity.';
   if (/replacement transaction underpriced/i.test(raw)) return 'Replacement transaction underpriced';
   if (raw.length > 0 && raw.length < 140) return raw;
   return 'Transaction failed';

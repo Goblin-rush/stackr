@@ -300,7 +300,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
             {/* Dev buy */}
             <div className="border-t border-border/40 pt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Dev Buy <span className="normal-case font-normal tracking-normal">(optional — included in deploy tx)</span></p>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Dev Buy <span className="normal-case font-normal tracking-normal">(optional, included in deploy tx)</span></p>
               <FormField control={form.control} name="initialBuy" render={({ field }) => (
                 <FormItem>
                   <FormControl>

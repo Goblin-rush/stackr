@@ -2,7 +2,7 @@ import { Link } from 'wouter';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAccount } from 'wagmi';
-import { Plus, Menu, Rocket, X, LayoutDashboard, BookOpen, Wallet, LogOut } from 'lucide-react';
+import { Plus, Menu, Rocket, X, LayoutDashboard, BookOpen, Wallet, LogOut, HelpCircle, Shield } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useEthPrice } from '@/hooks/use-eth-price';
 
@@ -68,6 +68,8 @@ export function Navbar({ onCreate }: NavbarProps) {
               { href: '/', label: 'Feed' },
               { href: '/dashboard', label: 'Profile' },
               { href: '/docs', label: 'Docs' },
+              { href: '/faq', label: 'FAQ' },
+              { href: '/disclaimer', label: 'Disclaimer' },
             ].map((item) => (
               <Link key={item.href} href={item.href}>
                 <span className="text-[12px] font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md cursor-pointer transition-colors hover:bg-white/5">
@@ -154,6 +156,8 @@ export function Navbar({ onCreate }: NavbarProps) {
                 { href: '/', icon: <Rocket className="h-4 w-4" />, label: 'Feed' },
                 { href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Profile' },
                 { href: '/docs', icon: <BookOpen className="h-4 w-4" />, label: 'Docs' },
+                { href: '/faq', icon: <HelpCircle className="h-4 w-4" />, label: 'FAQ' },
+                { href: '/disclaimer', icon: <Shield className="h-4 w-4" />, label: 'Disclaimer' },
               ].map((item) => (
                 <Link key={item.href} href={item.href}>
                   <div

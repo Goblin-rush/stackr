@@ -143,7 +143,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
       {/* Graduated DEX link */}
       {graduated && pairAddr && (
         <div className="mx-3 mt-3 flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-md px-3 py-2.5">
-          <span className="text-[11px] text-primary font-mono flex-1">Token graduated — trading on DEX</span>
+          <span className="text-[11px] text-primary font-mono flex-1">Token graduated. Trading on DEX.</span>
           <a
             href={`https://app.uniswap.org/explore/pools/base/${pairAddr}`}
             target="_blank"
@@ -227,7 +227,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
           <TabsContent value="sell" className="mt-0 space-y-4">
             {graduated ? (
               <div className="bg-primary/10 border border-primary/20 text-primary p-3 rounded text-sm text-center">
-                Token graduated — trading moved to DEX.
+                Token graduated. Trading has moved to DEX.
                 {pairAddr && (
                   <a
                     href={`https://app.uniswap.org/explore/pools/base/${pairAddr}`}
@@ -288,7 +288,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
                     </div>
                     {allowance !== undefined && allowance >= sellAmountWei && (
                       <div className="text-[10px] font-mono text-muted-foreground/50">
-                        ✓ Allowance already approved — no separate approve tx needed
+                        Allowance already approved. No separate approve tx needed.
                       </div>
                     )}
                   </div>

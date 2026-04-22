@@ -31,7 +31,7 @@ export function EarlyAccessModal({ onContinue }: Props) {
 
           <ul className="space-y-2 mb-4">
             {[
-              'This app is in beta — use at your own risk',
+              'This app is in beta. Use at your own risk.',
               'Visual bugs and interface issues may be present',
               'Data may not always be live and may require refreshes',
               'Features may not work as intended at all times',

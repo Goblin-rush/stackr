@@ -598,7 +598,7 @@ export default function DemoTokenPage() {
                       ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
                       : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
                   }`}
-                  onClick={() => alert('Demo only — connect wallet to trade.')}
+                  onClick={() => alert('Demo only. Connect wallet to trade.')}
                 >
                   {side === 'buy' ? 'Buy' : 'Sell'} {t.symbol}
                 </button>
