@@ -1,5 +1,13 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, type MutableRefObject } from 'react';
 import type { Timeframe } from './PriceChart';
+
+interface LiveBucket {
+  time: number;   // seconds — bucket start
+  open: number;
+  high: number;
+  low: number;
+  volume: number;
+}
 
 declare global {
   interface Window {
@@ -55,6 +63,7 @@ function generateAllBars(
   resolution: string,
   ethPrice: number,
   currentMcUsd?: number | null,
+  initialDevBuyEth?: number,
 ) {
   const intervalSec = TF_SECONDS[resolution] ?? 900;
   const rand = mulberry32(hashSeed(`${seed}:${resolution}`));
@@ -63,7 +72,10 @@ function generateAllBars(
   const ticksPerCandle = 6;
   const totalTicks = candleCount * ticksPerCandle;
 
-  let ethReserve = VIRTUAL_ETH;
+  // Start the simulated history from the reserve right after the dev buy,
+  // so the opening candle reflects the correct post-launch market cap.
+  const startReserve = VIRTUAL_ETH + (initialDevBuyEth ?? 0);
+  let ethReserve = startReserve;
   const nowSec = Math.floor(Date.now() / 1000);
   const bucketNow = Math.floor(nowSec / intervalSec) * intervalSec;
   const startBucket = bucketNow - (candleCount - 1) * intervalSec;
@@ -127,7 +139,17 @@ function generateAllBars(
   return bars;
 }
 
-function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: boolean, ethPrice: number, currentMcUsd?: number | null) {
+function makeDemoDatasource(
+  seed: string,
+  baseEthRaised: number,
+  graduated: boolean,
+  ethPrice: number,
+  currentMcUsd: number | null | undefined,
+  onTickRef: MutableRefObject<((bar: unknown) => void) | null>,
+  resolutionRef: MutableRefObject<string>,
+  bucketRef: MutableRefObject<LiveBucket | null>,
+  initialDevBuyEth?: number,
+) {
   const supportedResolutions = ['1', '3', '5', '15', '30', '60', '120', '240', '1D'];
   return {
     onReady(callback: (config: unknown) => void) {
@@ -173,7 +195,7 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
       onResult: (bars: unknown[], meta: { noData: boolean }) => void,
       _onError: (err: string) => void,
     ) {
-      const allBars = generateAllBars(seed, baseEthRaised, graduated, resolution, ethPrice, currentMcUsd);
+      const allBars = generateAllBars(seed, baseEthRaised, graduated, resolution, ethPrice, currentMcUsd, initialDevBuyEth);
       const filtered = allBars.filter(b => b.time >= periodParams.from && b.time <= periodParams.to);
       if (filtered.length === 0 && periodParams.firstDataRequest) {
         onResult(allBars, { noData: false });
@@ -183,16 +205,25 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
     },
     subscribeBars(
       _symbolInfo: unknown,
-      _resolution: string,
-      _onTick: (bar: unknown) => void,
-      listenerGuid: string,
+      resolution: string,
+      onTick: (bar: unknown) => void,
+      _listenerGuid: string,
     ) {
-      void listenerGuid;
+      onTickRef.current = onTick;
+      resolutionRef.current = resolution;
+      bucketRef.current = null;
     },
-    unsubscribeBars(listenerGuid: string) {
-      void listenerGuid;
+    unsubscribeBars(_listenerGuid: string) {
+      onTickRef.current = null;
+      bucketRef.current = null;
     },
   };
+}
+
+export interface LiveTradeTick {
+  price: number;       // ETH per token
+  ethAmount: number;   // ETH traded
+  timestamp: number;   // ms
 }
 
 interface TVAdvancedChartProps {
@@ -204,6 +235,8 @@ interface TVAdvancedChartProps {
   symbol?: string;
   ethPrice?: number;
   currentMcUsd?: number | null;
+  lastTrade?: LiveTradeTick | null;
+  initialDevBuyEth?: number;
 }
 
 let _chartCounter = 0;
@@ -216,10 +249,43 @@ export function TVAdvancedChart({
   symbol,
   ethPrice = 3000,
   currentMcUsd,
+  lastTrade,
+  initialDevBuyEth,
 }: TVAdvancedChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<{ remove?: () => void } | null>(null);
   const idRef = useRef(`tv_chart_${++_chartCounter}`);
+
+  const onTickRef = useRef<((bar: unknown) => void) | null>(null);
+  const resolutionRef = useRef<string>('15');
+  const bucketRef = useRef<LiveBucket | null>(null);
+
+  // Push a live tick to TradingView whenever a new trade arrives
+  useEffect(() => {
+    if (!lastTrade || !onTickRef.current) return;
+    const resolvedEthPrice = ethPrice > 0 ? ethPrice : 3000;
+    const intervalSec = TF_SECONDS[resolutionRef.current] ?? 900;
+    const tradeSec = Math.floor(lastTrade.timestamp / 1000);
+    const bucketTime = Math.floor(tradeSec / intervalSec) * intervalSec;
+    // Y-axis is MC in USD, matching the historical bars
+    const mcUsd = lastTrade.price * VIRTUAL_TOKENS * resolvedEthPrice;
+    const vol = lastTrade.ethAmount;
+
+    const prev = bucketRef.current;
+    if (!prev || bucketTime > prev.time) {
+      bucketRef.current = { time: bucketTime, open: mcUsd, high: mcUsd, low: mcUsd, volume: vol };
+    } else {
+      bucketRef.current = {
+        time: prev.time,
+        open: prev.open,
+        high: Math.max(prev.high, mcUsd),
+        low: Math.min(prev.low, mcUsd),
+        volume: prev.volume + vol,
+      };
+    }
+    const b = bucketRef.current;
+    onTickRef.current({ time: b.time, open: b.open, high: b.high, low: b.low, close: mcUsd, volume: b.volume });
+  }, [lastTrade, ethPrice]);
 
   useEffect(() => {
     const containerId = idRef.current;
@@ -228,7 +294,7 @@ export function TVAdvancedChart({
 
     const resolvedEthPrice = ethPrice > 0 ? ethPrice : 3000;
     const displaySymbol = symbol ?? seed;
-    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, resolvedEthPrice, currentMcUsd);
+    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, resolvedEthPrice, currentMcUsd, onTickRef, resolutionRef, bucketRef, initialDevBuyEth);
 
     widgetRef.current = new window.TradingView.widget({
       symbol: displaySymbol,
@@ -281,7 +347,7 @@ export function TVAdvancedChart({
       }
       widgetRef.current = null;
     };
-  }, [seed, baseEthRaised, graduated, symbol, ethPrice, currentMcUsd]);
+  }, [seed, baseEthRaised, graduated, symbol, ethPrice, currentMcUsd, initialDevBuyEth]);
 
   return (
     <div
