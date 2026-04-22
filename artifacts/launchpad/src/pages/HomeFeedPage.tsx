@@ -4,9 +4,8 @@ import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
-import { formatEther } from 'viem';
 import { useCurveConstants } from '@/hooks/use-curve-constants';
-import { Search, X, Plus, Flame, TrendingUp } from 'lucide-react';
+import { Search, X, Plus, Rocket } from 'lucide-react';
 import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
 function genAvatarUri(symbol: string): string {
@@ -69,16 +68,7 @@ interface RowDisplay {
   progress: number;
   ageLabel: string;
   creatorLabel: string | null;
-  isDemo?: boolean;
 }
-
-const DEMO_ROWS: RowDisplay[] = [
-  { href: '/demo/STR',   symbol: 'STR',   name: 'Asteroid Shiba',  image: genAvatarUri('STR'),   graduated: false, priceLabel: '$0.0000142',  mcapLabel: '$24.3K',  raisedLabel: '1.84 / 5 ETH', progress: 37,  ageLabel: '2h ago',   creatorLabel: '0x9f…21Ab', isDemo: true },
-  { href: '/demo/BNK',   symbol: 'BNK',   name: 'Bonkers',         image: genAvatarUri('BNK'),   graduated: true,  priceLabel: '$0.0001231',  mcapLabel: '$148K',   raisedLabel: '5 / 5 ETH',     progress: 100, ageLabel: '6d ago',   creatorLabel: '0x33…be12', isDemo: true },
-  { href: '/demo/PEPE',  symbol: 'PEPE',  name: 'Memetics Lab',    image: genAvatarUri('PEPE'),  graduated: false, priceLabel: '$0.00000091', mcapLabel: '$3.1K',   raisedLabel: '0.42 / 5 ETH',  progress: 8,   ageLabel: '11m ago',  creatorLabel: '0xf2…00cc', isDemo: true },
-  { href: '/demo/BASED', symbol: 'BASED', name: 'Based God Coin',  image: genAvatarUri('BASED'), graduated: false, priceLabel: '$0.0000087',  mcapLabel: '$14.7K',  raisedLabel: '1.12 / 5 ETH',  progress: 22,  ageLabel: '4h ago',   creatorLabel: '0xab…77f1', isDemo: true },
-  { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   image: genAvatarUri('BLU'),   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 5 ETH',  progress: 14,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
-];
 
 function accentColor(pct: number): string {
   if (pct >= 85) return 'hsl(4 84% 58%)';
@@ -156,65 +146,6 @@ function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) 
   );
 }
 
-/* ─── Featured card ──────────────────────────────── */
-function FeaturedRow({ d }: { d: RowDisplay }) {
-  return (
-    <Link href={d.href}>
-      <div className="relative rounded-xl border border-primary/30 bg-gradient-to-br from-primary/8 via-card to-card mb-3 cursor-pointer group card-hover overflow-hidden">
-        {/* Top badge */}
-        <div className="flex items-center px-4 py-2.5 border-b border-border/60">
-          <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
-            <Flame className="h-3 w-3" />
-            Featured
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-5">
-          {/* Big name */}
-          <div className="md:col-span-2 border-b md:border-b-0 md:border-r border-border/60 px-5 py-5 flex flex-col justify-center">
-            {d.image && (
-              <div className="w-10 h-10 rounded-xl overflow-hidden border border-border/30 bg-muted mb-3">
-                <img src={d.image} alt={d.symbol} className="w-full h-full object-cover" />
-              </div>
-            )}
-            <div className="text-2xl md:text-3xl font-black tracking-tight leading-tight text-gradient">
-              {d.name}
-            </div>
-            <div className="text-sm font-mono text-muted-foreground/60 mt-1">{d.symbol}</div>
-            <div className="text-[11px] text-muted-foreground font-mono mt-1">
-              {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel}
-            </div>
-          </div>
-
-          {/* Stats */}
-          <div className="md:col-span-3 grid grid-cols-2 md:grid-rows-2">
-            {[
-              { label: 'PRICE', value: d.priceLabel },
-              { label: 'MCAP',  value: d.mcapLabel },
-              { label: 'RAISED', value: d.raisedLabel },
-              { label: 'CURVE', value: `${d.progress}%`, big: true },
-            ].map((cell, i) => (
-              <div
-                key={cell.label}
-                className={`px-4 py-3 ${i < 2 ? 'border-b border-border/60' : ''} ${i % 2 === 0 ? 'border-r border-border/60' : ''}`}
-              >
-                <div className="text-[9px] font-semibold tracking-widest text-muted-foreground/70 mb-1 uppercase">{cell.label}</div>
-                <div className={`font-bold tabular-nums text-foreground ${cell.big ? 'text-3xl text-gradient' : 'text-sm'}`}>
-                  {cell.value}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="px-4 py-3 border-t border-border/60">
-          <ProgressBar pct={d.progress} size="sm" />
-        </div>
-      </div>
-    </Link>
-  );
-}
-
 /* ─── Standard row card ──────────────────────────── */
 function Row({ d }: { d: RowDisplay }) {
   return (
@@ -240,7 +171,6 @@ function Row({ d }: { d: RowDisplay }) {
             </div>
             <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
               {d.creatorLabel ? `${d.creatorLabel} · ` : ''}{d.ageLabel}
-              {d.isDemo && <span className="opacity-40"> · demo</span>}
             </p>
           </div>
           {d.graduated && (
@@ -288,7 +218,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
   const meta = useTokenMetadata(token.address);
-  const image = ipfsToHttp(meta?.image) ?? undefined;
+  const image = ipfsToHttp(meta?.image) ?? genAvatarUri(token.symbol || '?');
   return (
     <Row
       d={{
@@ -403,16 +333,21 @@ export default function HomeFeedPage() {
             ))}
           </div>
         ) : tokens.length === 0 && !query.trim() ? (
-          <div>
-            <div className="flex items-center justify-between mb-3 px-1">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
-                Preview · Demo Data
-              </p>
+          <div className="flex flex-col items-center justify-center py-24 text-center">
+            <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
+              <Rocket className="h-6 w-6 text-primary" />
             </div>
-            <FeaturedRow d={DEMO_ROWS[0]} />
-            {DEMO_ROWS.slice(1).map((d) => (
-              <Row key={d.symbol} d={d} />
-            ))}
+            <h2 className="text-base font-bold mb-2">No tokens launched yet</h2>
+            <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
+              Be the first to launch a token on Base mainnet via the bonding curve.
+            </p>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 text-[13px] font-bold bg-primary text-primary-foreground px-5 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.5} />
+              Launch First Token
+            </button>
           </div>
         ) : (
           <div className="text-center py-20">
