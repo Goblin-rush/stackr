@@ -5,9 +5,19 @@ import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, Exte
 import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { SlippageSettings } from '@/components/token/SlippageSettings';
 
+function genAvatarUri(symbol: string): string {
+  const palette = ['#c2410c','#7c3aed','#15803d','#1d4ed8','#0e7490','#b45309','#9f1239','#4d7c0f'];
+  const hash = symbol.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const color = palette[hash % palette.length];
+  const label = symbol.slice(0, 2).toUpperCase();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="${color}"/><text x="20" y="27" font-family="monospace,sans-serif" font-size="14" font-weight="900" text-anchor="middle" fill="white">${label}</text></svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
+
 interface DemoToken {
   symbol: string;
   name: string;
+  image: string;
   address: string;
   description: string;
   creator: string;
@@ -32,6 +42,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   STR: {
     symbol: 'STR',
     name: 'Asteroid Shiba',
+    image: genAvatarUri('STR'),
     address: '0xA1d4F83bE802345Cc1234567890abCDEF12345AB',
     description:
       'The degen dog that survived the asteroid. Community-driven memecoin launched on the Aethpad bonding curve.',
@@ -67,6 +78,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   BNK: {
     symbol: 'BNK',
     name: 'Bonkers',
+    image: genAvatarUri('BNK'),
     address: '0xBe12cC3344aBEF77Dc9012345678901CdEF23456',
     description: 'Fully bonded. Liquidity migrated to Uniswap V2 with LP tokens burned forever.',
     creator: '0x33ab…be12',
@@ -96,6 +108,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   PEPE: {
     symbol: 'PEPE',
     name: 'Memetics Lab',
+    image: genAvatarUri('PEPE'),
     address: '0xF244aB00Cc9087fedCBA987654321DEF34567890',
     description: 'Lab-grown memetics. Fresh bond, early entry zone.',
     creator: '0xf244…00cc',
@@ -122,6 +135,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   BASED: {
     symbol: 'BASED',
     name: 'Based God Coin',
+    image: genAvatarUri('BASED'),
     address: '0xAb77F100Ef2345678901234567890abcDEF45678',
     description: 'For the based, by the based. Ship code, hold bags.',
     creator: '0xab77…77f1',
@@ -150,6 +164,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   BLU: {
     symbol: 'BLU',
     name: 'Blue Chip Inu',
+    image: genAvatarUri('BLU'),
     address: '0x7D1144AbCDef5678901234567890abcDEF56789a',
     description: 'Pretending to be a blue chip until it actually is.',
     creator: '0x7d11…1144',
@@ -266,7 +281,11 @@ export default function DemoTokenPage() {
 
                 {/* Symbol + name + badge */}
                 <div className="flex items-start justify-between gap-4 mb-4">
-                  <div className="min-w-0">
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-border/30 bg-muted mt-0.5">
+                      <img src={t.image} alt={t.symbol} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="min-w-0">
                     <div className="flex items-baseline gap-3 flex-wrap">
                       <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-gradient">
                         {t.symbol}
@@ -287,6 +306,7 @@ export default function DemoTokenPage() {
                       </a>
                       {' '}· {t.age} ago
                     </p>
+                    </div>
                   </div>
                   <span className={`shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border ${
                     t.graduated

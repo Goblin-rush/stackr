@@ -7,6 +7,16 @@ import { Link } from 'wouter';
 import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { Search, X, Plus, Flame, TrendingUp } from 'lucide-react';
+import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
+
+function genAvatarUri(symbol: string): string {
+  const palette = ['#c2410c','#7c3aed','#15803d','#1d4ed8','#0e7490','#b45309','#9f1239','#4d7c0f'];
+  const hash = symbol.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  const color = palette[hash % palette.length];
+  const label = symbol.slice(0, 2).toUpperCase();
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" rx="8" fill="${color}"/><text x="20" y="27" font-family="monospace,sans-serif" font-size="14" font-weight="900" text-anchor="middle" fill="white">${label}</text></svg>`;
+  return `data:image/svg+xml;base64,${btoa(svg)}`;
+}
 
 type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade';
 
@@ -53,6 +63,7 @@ interface RowDisplay {
   href: string;
   symbol: string;
   name: string;
+  image?: string;
   graduated: boolean;
   priceLabel: string;
   mcapLabel: string;
@@ -64,11 +75,11 @@ interface RowDisplay {
 }
 
 const DEMO_ROWS: RowDisplay[] = [
-  { href: '/demo/STR',   symbol: 'STR',   name: 'Asteroid Shiba',  graduated: false, priceLabel: '$0.0000142',  mcapLabel: '$24.3K',  raisedLabel: '1.84 / 3.5 ETH', progress: 53,  ageLabel: '2h ago',   creatorLabel: '0x9f…21Ab', isDemo: true },
-  { href: '/demo/BNK',   symbol: 'BNK',   name: 'Bonkers',         graduated: true,  priceLabel: '$0.0001231',  mcapLabel: '$148K',   raisedLabel: '3.5 / 3.5 ETH',  progress: 100, ageLabel: '6d ago',   creatorLabel: '0x33…be12', isDemo: true },
-  { href: '/demo/PEPE',  symbol: 'PEPE',  name: 'Memetics Lab',    graduated: false, priceLabel: '$0.00000091', mcapLabel: '$3.1K',   raisedLabel: '0.42 / 3.5 ETH', progress: 12,  ageLabel: '11m ago',  creatorLabel: '0xf2…00cc', isDemo: true },
-  { href: '/demo/BASED', symbol: 'BASED', name: 'Based God Coin',  graduated: false, priceLabel: '$0.0000087',  mcapLabel: '$14.7K',  raisedLabel: '1.12 / 3.5 ETH', progress: 32,  ageLabel: '4h ago',   creatorLabel: '0xab…77f1', isDemo: true },
-  { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 3.5 ETH', progress: 20,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
+  { href: '/demo/STR',   symbol: 'STR',   name: 'Asteroid Shiba',  image: genAvatarUri('STR'),   graduated: false, priceLabel: '$0.0000142',  mcapLabel: '$24.3K',  raisedLabel: '1.84 / 3.5 ETH', progress: 53,  ageLabel: '2h ago',   creatorLabel: '0x9f…21Ab', isDemo: true },
+  { href: '/demo/BNK',   symbol: 'BNK',   name: 'Bonkers',         image: genAvatarUri('BNK'),   graduated: true,  priceLabel: '$0.0001231',  mcapLabel: '$148K',   raisedLabel: '3.5 / 3.5 ETH',  progress: 100, ageLabel: '6d ago',   creatorLabel: '0x33…be12', isDemo: true },
+  { href: '/demo/PEPE',  symbol: 'PEPE',  name: 'Memetics Lab',    image: genAvatarUri('PEPE'),  graduated: false, priceLabel: '$0.00000091', mcapLabel: '$3.1K',   raisedLabel: '0.42 / 3.5 ETH', progress: 12,  ageLabel: '11m ago',  creatorLabel: '0xf2…00cc', isDemo: true },
+  { href: '/demo/BASED', symbol: 'BASED', name: 'Based God Coin',  image: genAvatarUri('BASED'), graduated: false, priceLabel: '$0.0000087',  mcapLabel: '$14.7K',  raisedLabel: '1.12 / 3.5 ETH', progress: 32,  ageLabel: '4h ago',   creatorLabel: '0xab…77f1', isDemo: true },
+  { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   image: genAvatarUri('BLU'),   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 3.5 ETH', progress: 20,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
 ];
 
 /* ─── Animated progress bar ───────────────────────── */
@@ -199,6 +210,11 @@ function FeaturedRow({ d }: { d: RowDisplay }) {
         <div className="grid grid-cols-1 md:grid-cols-5">
           {/* Big name */}
           <div className="md:col-span-2 border-b md:border-b-0 md:border-r border-border/60 px-5 py-5 flex flex-col justify-center">
+            {d.image && (
+              <div className="w-10 h-10 rounded-xl overflow-hidden border border-border/30 bg-muted mb-3">
+                <img src={d.image} alt={d.symbol} className="w-full h-full object-cover" />
+              </div>
+            )}
             <div className="text-2xl md:text-3xl font-black tracking-tight leading-tight text-gradient">
               {d.name}
             </div>
@@ -246,8 +262,17 @@ function Row({ d }: { d: RowDisplay }) {
         <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-primary/40 group-hover:bg-primary transition-colors rounded-l-xl" />
 
         {/* Header */}
-        <div className="flex items-center border-b border-border/40 pl-3">
-          <div className="flex-1 px-3 py-2.5 min-w-0">
+        <div className="flex items-center border-b border-border/40 pl-3 gap-2.5">
+          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-border/30 bg-muted">
+            {d.image ? (
+              <img src={d.image} alt={d.symbol} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-[10px] font-black text-muted-foreground">
+                {d.symbol.slice(0, 2)}
+              </div>
+            )}
+          </div>
+          <div className="flex-1 py-2.5 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <p className="text-[14px] font-bold text-foreground truncate group-hover:text-primary transition-colors">{d.name}</p>
               <span className="text-[10px] font-mono text-muted-foreground/60 shrink-0">{d.symbol}</span>
@@ -300,12 +325,15 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
+  const meta = useTokenMetadata(token.address);
+  const image = ipfsToHttp(meta?.image) ?? genAvatarUri(token.symbol || '?');
   return (
     <Row
       d={{
         href: `/token/${token.address}`,
         symbol: token.symbol || '?',
         name: token.name || 'Unnamed',
+        image,
         graduated: token.graduated,
         priceLabel: priceUsd
           ? `$${priceUsd.toFixed(priceUsd < 0.01 ? 8 : 4)}`
