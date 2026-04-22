@@ -45,78 +45,81 @@ export function Navbar({ onCreate }: NavbarProps) {
   const displayAddr = address ?? (user?.wallet?.address as `0x${string}` | undefined);
 
   return (
-    <nav className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
-      <div className="container flex h-14 items-center max-w-7xl mx-auto px-4 md:px-8 gap-3">
-        {/* Wordmark */}
-        <Link href="/">
-          <div className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap group">
-            <span className="font-black text-base tracking-tight text-foreground group-hover:text-primary transition-colors">
-              AETHPAD
-            </span>
+    <>
+      <nav className="border-b border-border/60 bg-background/80 backdrop-blur-xl sticky top-0 z-50">
+        <div className="container flex h-14 items-center max-w-7xl mx-auto px-4 md:px-8 gap-3">
+          {/* Wordmark */}
+          <Link href="/">
+            <div className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap group">
+              <span className="font-black text-base tracking-tight text-foreground group-hover:text-primary transition-colors">
+                AETHPAD
+              </span>
+              <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
+            </div>
+          </Link>
+
+          {/* BASE chip */}
+          <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest rounded-full border border-primary/40 text-primary px-2.5 py-1 leading-none bg-primary/8">
             <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
+            Base
+          </span>
+
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-0.5 ml-3">
+            {[
+              { href: '/', label: 'Feed' },
+              { href: '/dashboard', label: 'Dashboard' },
+              { href: '/docs', label: 'Docs' },
+            ].map((item) => (
+              <Link key={item.href} href={item.href}>
+                <span className="text-[12px] font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md cursor-pointer transition-colors hover:bg-white/5">
+                  {item.label}
+                </span>
+              </Link>
+            ))}
           </div>
-        </Link>
 
-        {/* BASE chip */}
-        <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest rounded-full border border-primary/40 text-primary px-2.5 py-1 leading-none bg-primary/8">
-          <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
-          Base
-        </span>
-
-        {/* Desktop nav */}
-        <div className="hidden md:flex items-center gap-0.5 ml-3">
-          {[
-            { href: '/', label: 'Feed' },
-            { href: '/dashboard', label: 'Dashboard' },
-            { href: '/docs', label: 'Docs' },
-          ].map((item) => (
-            <Link key={item.href} href={item.href}>
-              <span className="text-[12px] font-medium text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-md cursor-pointer transition-colors hover:bg-white/5">
-                {item.label}
-              </span>
-            </Link>
-          ))}
-        </div>
-
-        <div className="flex items-center gap-2 ml-auto">
-          {authenticated && displayAddr ? (
-            <>
-              <span className="hidden sm:block text-[11px] font-mono text-muted-foreground bg-white/5 border border-border/60 rounded-md px-2.5 py-1.5">
-                {displayAddr.slice(0, 6)}··{displayAddr.slice(-4)}
-              </span>
+          <div className="flex items-center gap-2 ml-auto">
+            {authenticated && displayAddr ? (
+              <>
+                <span className="hidden sm:block text-[11px] font-mono text-muted-foreground bg-white/5 border border-border/60 rounded-md px-2.5 py-1.5">
+                  {displayAddr.slice(0, 6)}··{displayAddr.slice(-4)}
+                </span>
+                <button
+                  onClick={() => logout()}
+                  className="text-[11px] font-medium text-muted-foreground hover:text-destructive px-2.5 py-1.5 rounded-md transition-colors hover:bg-destructive/8"
+                >
+                  Disconnect
+                </button>
+              </>
+            ) : (
               <button
-                onClick={() => logout()}
-                className="text-[11px] font-medium text-muted-foreground hover:text-destructive px-2.5 py-1.5 rounded-md transition-colors hover:bg-destructive/8"
+                onClick={() => login()}
+                disabled={!ready}
+                className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50 glow-primary"
               >
-                Disconnect
+                {ready ? 'Connect' : '…'}
               </button>
-            </>
-          ) : (
+            )}
             <button
-              onClick={() => login()}
-              disabled={!ready}
-              className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50 glow-primary"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+              className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
             >
-              {ready ? 'Connect' : '…'}
+              <Menu className="h-4 w-4" />
             </button>
-          )}
-          <button
-            onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
-          >
-            <Menu className="h-4 w-4" />
-          </button>
+          </div>
         </div>
-      </div>
+      </nav>
 
+      {/* Drawer rendered OUTSIDE <nav> to escape backdrop-filter stacking context */}
       {menuOpen && (
         <>
           <div
             onClick={() => setMenuOpen(false)}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+            className="fixed inset-0 bg-black/70 z-[200]"
           />
-          <div className="fixed left-0 top-0 bottom-0 w-72 bg-card border-r border-border/60 z-50 flex flex-col">
+          <div className="fixed right-0 top-0 bottom-0 w-72 bg-card border-l border-border/60 z-[201] flex flex-col shadow-2xl">
             <div className="flex items-center justify-between h-14 px-5 border-b border-border/60">
               <div className="flex items-center gap-2">
                 <span className="font-black text-base tracking-tight text-foreground">AETHPAD</span>
@@ -173,6 +176,6 @@ export function Navbar({ onCreate }: NavbarProps) {
           </div>
         </>
       )}
-    </nav>
+    </>
   );
 }
