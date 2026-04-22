@@ -2,6 +2,10 @@
 // Lowercase addresses only.
 export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   '0x49adaeb41d12cb01de7dbd93ad2798e392fde4b2', // duplicate AETH (hidden)
+  '0x5e4143663e9525d32e9863e646e8ab6c429a8e4e', // Test (dev test token)
+  '0xe56f88d278fc312cf4a4734d72adb7e3b97ddd67', // Last test (dev test token)
+  '0xec1c2f9638471a8123889371d51f4e0052cada11', // 1more (dev test token)
+  '0x9a50755b3df55429f7c1f33b50c93b0c0238659e', // Last (dev test token)
 ]);
 
 export function isHiddenToken(address: string): boolean {
