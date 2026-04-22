@@ -1,17 +1,6 @@
-import { http, fallback } from 'wagmi';
-import { base } from 'wagmi/chains';
-import { createConfig } from '@privy-io/wagmi';
+import { wagmiAdapter } from './appkit';
 
-const BASE_RPC_URL = import.meta.env.VITE_BASE_RPC_URL as string | undefined;
-
-export const config = createConfig({
-  chains: [base],
-  transports: {
-    [base.id]: BASE_RPC_URL
-      ? fallback([http(BASE_RPC_URL), http('https://mainnet.base.org')])
-      : http('https://mainnet.base.org'),
-  },
-});
+export const config = wagmiAdapter.wagmiConfig;
 
 declare module 'wagmi' {
   interface Register {
