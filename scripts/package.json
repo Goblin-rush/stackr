@@ -5,10 +5,17 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "push-rewards": "tsx ./src/push-rewards.ts",
+    "index-trades": "tsx ./src/index-trades.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "pg": "^8.13.1",
+    "viem": "^2.30.6"
   },
   "devDependencies": {
     "@types/node": "catalog:",
+    "@types/pg": "^8.11.13",
     "tsx": "catalog:"
   }
 }

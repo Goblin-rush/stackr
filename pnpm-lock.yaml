@@ -698,10 +698,20 @@ importers:
         version: 0.31.9
 
   scripts:
+    dependencies:
+      pg:
+        specifier: ^8.13.1
+        version: 8.20.0
+      viem:
+        specifier: ^2.30.6
+        version: 2.48.1(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)(zod@4.3.6)
     devDependencies:
       '@types/node':
         specifier: 'catalog:'
         version: 25.3.5
+      '@types/pg':
+        specifier: ^8.11.13
+        version: 8.18.0
       tsx:
         specifier: 'catalog:'
         version: 4.21.0

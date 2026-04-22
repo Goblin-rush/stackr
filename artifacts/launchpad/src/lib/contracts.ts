@@ -149,6 +149,16 @@ export const FACTORY_V2_ABI = [
     outputs: [],
   },
   {
+    name: 'setTokenKeeper',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'tokenAddr', type: 'address' },
+      { name: 'newKeeper', type: 'address' },
+    ],
+    outputs: [],
+  },
+  {
     name: 'updateMetadataURI',
     type: 'function',
     stateMutability: 'nonpayable',
@@ -209,11 +219,19 @@ export const TOKEN_V2_ABI = [
   { name: 'pendingPlatformEth', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { name: 'totalReceivedByHolder', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
   { name: 'tokenURI', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] },
+  { name: 'keeper', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   {
     name: 'claim',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [],
+    outputs: [],
+  },
+  {
+    name: 'pushRewards',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'holders', type: 'address[]' }],
     outputs: [],
   },
   {
