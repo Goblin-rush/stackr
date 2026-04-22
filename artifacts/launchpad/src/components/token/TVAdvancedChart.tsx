@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-const VIRTUAL_ETH = 3.0; // V2 virtual ETH reserve
+const VIRTUAL_ETH = 3.0;
 const VIRTUAL_TOKENS = 1_073_000_000;
 const K = VIRTUAL_ETH * VIRTUAL_TOKENS;
 
@@ -46,7 +46,13 @@ const TF_SECONDS: Record<string, number> = {
   '240': 14400, '1D': 86400,
 };
 
-function generateAllBars(seed: string, baseEthRaised: number, graduated: boolean, resolution: string) {
+function generateAllBars(
+  seed: string,
+  baseEthRaised: number,
+  graduated: boolean,
+  resolution: string,
+  ethPrice: number,
+) {
   const intervalSec = TF_SECONDS[resolution] ?? 900;
   const rand = mulberry32(hashSeed(`${seed}:${resolution}`));
   const targetEthReserve = VIRTUAL_ETH + baseEthRaised;
@@ -79,10 +85,10 @@ function generateAllBars(seed: string, baseEthRaised: number, graduated: boolean
     if (ethReserve + delta < minR) delta = minR - ethReserve;
 
     const newReserve = ethReserve + delta;
-    const price = priceFromEthReserve(newReserve);
+    const price = priceFromEthReserve(newReserve) * ethPrice;
 
     if (pendingOpen === null) {
-      pendingOpen = priceFromEthReserve(ethReserve);
+      pendingOpen = priceFromEthReserve(ethReserve) * ethPrice;
       pendingHigh = pendingOpen;
       pendingLow = pendingOpen;
       pendingVol = 0;
@@ -90,7 +96,7 @@ function generateAllBars(seed: string, baseEthRaised: number, graduated: boolean
     pendingHigh = Math.max(pendingHigh, price);
     pendingLow = Math.min(pendingLow, price);
     pendingClose = price;
-    pendingVol += Math.abs(delta);
+    pendingVol += Math.abs(delta) * ethPrice;
     ethReserve = newReserve;
 
     if ((tick + 1) % ticksPerCandle === 0) {
@@ -104,7 +110,7 @@ function generateAllBars(seed: string, baseEthRaised: number, graduated: boolean
   return bars;
 }
 
-function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: boolean) {
+function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: boolean, ethPrice: number) {
   const supportedResolutions = ['1', '3', '5', '15', '30', '60', '120', '240', '1D'];
   return {
     onReady(callback: (config: unknown) => void) {
@@ -134,11 +140,11 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
           exchange: 'STACKR',
           listed_exchange: 'STACKR',
           minmov: 1,
-          pricescale: 100000000,
+          pricescale: 1000000000,
           has_intraday: true,
           has_daily: true,
           supported_resolutions: supportedResolutions,
-          volume_precision: 8,
+          volume_precision: 4,
           data_status: 'streaming',
         });
       }, 0);
@@ -150,7 +156,7 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
       onResult: (bars: unknown[], meta: { noData: boolean }) => void,
       _onError: (err: string) => void,
     ) {
-      const allBars = generateAllBars(seed, baseEthRaised, graduated, resolution);
+      const allBars = generateAllBars(seed, baseEthRaised, graduated, resolution, ethPrice);
       const filtered = allBars.filter(b => b.time >= periodParams.from && b.time <= periodParams.to);
       if (filtered.length === 0 && periodParams.firstDataRequest) {
         onResult(allBars, { noData: false });
@@ -179,6 +185,7 @@ interface TVAdvancedChartProps {
   timeframe?: Timeframe;
   height?: number;
   symbol?: string;
+  ethPrice?: number;
 }
 
 let _chartCounter = 0;
@@ -189,6 +196,7 @@ export function TVAdvancedChart({
   graduated = false,
   height = 320,
   symbol,
+  ethPrice = 3000,
 }: TVAdvancedChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<{ remove?: () => void } | null>(null);
@@ -200,7 +208,7 @@ export function TVAdvancedChart({
     if (!window.TradingView?.widget) return;
 
     const displaySymbol = symbol ?? seed;
-    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated);
+    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, ethPrice);
 
     widgetRef.current = new window.TradingView.widget({
       symbol: displaySymbol,
@@ -253,7 +261,7 @@ export function TVAdvancedChart({
       }
       widgetRef.current = null;
     };
-  }, [seed, baseEthRaised, graduated, symbol]);
+  }, [seed, baseEthRaised, graduated, symbol, ethPrice]);
 
   return (
     <div

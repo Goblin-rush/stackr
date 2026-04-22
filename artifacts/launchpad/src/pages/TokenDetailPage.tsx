@@ -316,6 +316,7 @@ export default function TokenDetailPage() {
                 graduated={graduated}
                 symbol={`${symbol || 'TOKEN'}/ETH`}
                 height={440}
+                ethPrice={ethPrice ?? 3000}
               />
             </div>
 

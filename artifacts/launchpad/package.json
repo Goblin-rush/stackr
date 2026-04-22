@@ -75,6 +75,7 @@
     "zod": "catalog:"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^0.10.4",
     "@privy-io/react-auth": "^3.22.1",
     "@privy-io/wagmi": "^4.0.5",
     "@rainbow-me/rainbowkit": "^2.2.10",

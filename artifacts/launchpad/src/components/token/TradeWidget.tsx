@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useAccount, useBalance, useConnect } from 'wagmi';
@@ -20,7 +19,7 @@ interface TradeWidgetProps {
   curveAddress?: `0x${string}`;
 }
 
-const QUICK_AMOUNTS = ['0.05', '0.1', '0.5', '1'];
+const BUY_QUICK = ['0.01', '0.05', '0.1', '0.5'];
 
 export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const { isConnected, address: userAddress } = useAccount();
@@ -30,7 +29,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const { graduated, symbol, forceClosed, uniswapPair } = useToken(tokenAddress, curveAddress);
   const { applyMinOut, percent: slippagePercent } = useSlippage();
 
-  const [activeTab, setActiveTab] = useState<'buy' | 'sell'>('buy');
+  const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [buyAmount, setBuyAmount] = useState('');
   const [sellAmount, setSellAmount] = useState('');
 
@@ -40,7 +39,6 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const { data: previewTokensOut } = useTokenPreviewBuy(curveAddress, buyAmountWei);
   const { data: previewEthOut }    = useTokenPreviewSell(curveAddress, sellAmountWei, userAddress);
 
-  // Allowance check — avoid re-approving if already sufficient
   const { allowance, refetch: refetchAllowance } = useTokenAllowance(tokenAddress, userAddress, curveAddress);
 
   const { writeContractAsync, isPending, isConfirming, isConfirmed, hash } = useTokenTrade();
@@ -90,8 +88,6 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
     pendingToastRef.current = { id, label: `Sold ${symbol || 'tokens'}`, expectedHash: null };
     try {
       const minEthOut = previewEthOut ? applyMinOut(previewEthOut) : 0n;
-
-      // Only approve if allowance is insufficient — approve MaxUint256 so future sells skip this step
       if (allowance === undefined || allowance < sellAmountWei) {
         await writeContractAsync({
           address: tokenAddress,
@@ -100,7 +96,6 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
           args: [curveAddress, maxUint256],
         });
       }
-
       const sellHash = await writeContractAsync({
         address: curveAddress,
         abi: CURVE_V2_ABI,
@@ -119,20 +114,23 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const minTokensOut = previewTokensOut ? applyMinOut(previewTokensOut) : 0n;
   const minEthOut    = previewEthOut    ? applyMinOut(previewEthOut)    : 0n;
 
-  // Uniswap pair URL on Base (Uniswap v2-style)
   const ZERO_ADDR = '0x0000000000000000000000000000000000000000';
   const pairAddr = uniswapPair && uniswapPair !== ZERO_ADDR ? uniswapPair : null;
 
+  const tokenBalanceNum = tokenBalance ? Number(formatUnits(tokenBalance, 18)) : 0;
+
   return (
-    <div className="border border-border/50 rounded-lg overflow-hidden bg-card">
-      <div className="flex items-center justify-between px-3 pt-3">
+    <div className="border border-border/50 rounded-xl overflow-hidden bg-card">
+
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
         <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Trade</span>
         <SlippageSettings />
       </div>
 
       {/* Force-closed banner */}
       {forceClosed && (
-        <div className="mx-3 mt-3 flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2.5">
+        <div className="mx-3 mt-2 flex items-start gap-2 bg-destructive/10 border border-destructive/30 rounded-md px-3 py-2.5">
           <AlertTriangle className="h-3.5 w-3.5 text-destructive shrink-0 mt-0.5" />
           <p className="text-[11px] text-destructive font-mono leading-relaxed">
             This curve has been force-closed by the protocol admin. Trading is disabled.
@@ -142,7 +140,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
 
       {/* Graduated DEX link */}
       {graduated && pairAddr && (
-        <div className="mx-3 mt-3 flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-md px-3 py-2.5">
+        <div className="mx-3 mt-2 flex items-center gap-2 bg-primary/8 border border-primary/20 rounded-md px-3 py-2.5">
           <span className="text-[11px] text-primary font-mono flex-1">Token graduated. Trading on DEX.</span>
           <a
             href={`https://app.uniswap.org/explore/pools/base/${pairAddr}`}
@@ -155,158 +153,154 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
         </div>
       )}
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'buy' | 'sell')} className="w-full">
-        <TabsList className="grid w-full grid-cols-2 rounded-none border-b border-border/50 h-12 bg-muted/20 mt-3">
-          <TabsTrigger value="buy"  className="rounded-none data-[state=active]:bg-card data-[state=active]:text-primary font-mono uppercase tracking-widest text-xs">Buy</TabsTrigger>
-          <TabsTrigger value="sell" className="rounded-none data-[state=active]:bg-card data-[state=active]:text-destructive font-mono uppercase tracking-widest text-xs">Sell</TabsTrigger>
-        </TabsList>
+      {/* Buy / Sell switcher */}
+      <div className="grid grid-cols-2 p-1.5 gap-1.5 mt-2 border-b border-border/40">
+        {(['buy', 'sell'] as const).map((s) => (
+          <button
+            key={s}
+            onClick={() => setSide(s)}
+            className={`text-[11px] font-semibold uppercase tracking-wider py-2.5 rounded-lg transition-all ${
+              side === s
+                ? s === 'buy'
+                  ? 'bg-emerald-600 text-white shadow-sm'
+                  : 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+            }`}
+          >
+            {s}
+          </button>
+        ))}
+      </div>
 
-        <div className="p-4">
-          {/* ── BUY ── */}
-          <TabsContent value="buy" className="mt-0 space-y-4">
-            <div className="space-y-2">
-              <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
-                <span>Amount (ETH)</span>
-                <span>Balance: {ethBalance ? Number(formatEther(ethBalance.value)).toFixed(4) : '0'} ETH</span>
-              </div>
-              <div className="relative">
-                <Input
-                  type="number"
-                  placeholder="0.0"
-                  className="font-mono text-lg bg-muted/30 border-border/50 h-12 pr-16"
-                  value={buyAmount}
-                  onChange={(e) => setBuyAmount(e.target.value)}
-                  disabled={isLoading || !!forceClosed}
-                />
-                <span className="absolute right-4 top-3 text-muted-foreground font-mono text-sm">ETH</span>
-              </div>
-              {/* Quick-amount chips */}
-              <div className="flex gap-1.5 flex-wrap">
-                {QUICK_AMOUNTS.map((amt) => (
-                  <button
-                    key={amt}
-                    onClick={() => setBuyAmount(amt)}
-                    disabled={isLoading || !!forceClosed}
-                    className="text-[10px] font-mono px-2.5 py-1 rounded border border-border/50 hover:border-primary/40 hover:text-primary text-muted-foreground transition-colors disabled:opacity-40"
-                  >
-                    {amt} ETH
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {buyAmountWei > 0n && (
-              <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-xs text-muted-foreground">You receive (est.)</span>
-                  <span className="font-mono text-primary font-bold">
-                    {previewTokensOut ? Number(formatUnits(previewTokensOut, 18)).toLocaleString() : '0'} {symbol}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground border-t border-border/30 pt-1.5">
-                  <span>Min received ({slippagePercent}% slip)</span>
-                  <span className="text-foreground">{minTokensOut ? Number(formatUnits(minTokensOut, 18)).toLocaleString() : '0'} {symbol}</span>
-                </div>
-                <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
-                  <span>5% tax (burn + rewards + platform)</span>
-                  <span>{(Number(buyAmount) * 0.05).toFixed(4)} ETH</span>
-                </div>
-              </div>
+      {/* Trade panel */}
+      <div className="p-4 space-y-3">
+        {/* Amount input */}
+        <div>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
+              Amount ({side === 'buy' ? 'ETH' : (symbol || 'tokens')})
+            </label>
+            {side === 'buy' ? (
+              <span className="text-[10px] font-mono text-muted-foreground/50">
+                Bal: {ethBalance ? Number(formatEther(ethBalance.value)).toFixed(4) : '0'} ETH
+              </span>
+            ) : (
+              <span className="text-[10px] font-mono text-muted-foreground/50">
+                Bal: {tokenBalanceNum.toLocaleString()} {symbol}
+              </span>
             )}
-
-            <Button
-              className="w-full h-12 font-bold tracking-wider text-primary-foreground"
-              onClick={handleBuy}
-              disabled={isLoading || !!forceClosed || (isConnected && (!buyAmountWei || !curveAddress))}
-            >
-              {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : !isConnected ? 'CONNECT WALLET TO BUY' : 'PLACE BUY ORDER'}
-            </Button>
-          </TabsContent>
-
-          {/* ── SELL ── */}
-          <TabsContent value="sell" className="mt-0 space-y-4">
-            {graduated ? (
-              <div className="bg-primary/10 border border-primary/20 text-primary p-3 rounded text-sm text-center">
-                Token graduated. Trading has moved to DEX.
-                {pairAddr && (
-                  <a
-                    href={`https://app.uniswap.org/explore/pools/base/${pairAddr}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="ml-2 underline underline-offset-2"
-                  >
-                    Trade on Uniswap ↗
-                  </a>
-                )}
-              </div>
-            ) : forceClosed ? null : (
-              <>
-                <div className="space-y-2">
-                  <div className="flex justify-between items-center text-xs font-mono text-muted-foreground">
-                    <span>Amount ({symbol})</span>
-                    <span>Balance: {tokenBalance ? Number(formatUnits(tokenBalance, 18)).toLocaleString() : '0'}</span>
-                  </div>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      placeholder="0.0"
-                      className="font-mono text-lg bg-muted/30 border-border/50 h-12 pr-20"
-                      value={sellAmount}
-                      onChange={(e) => setSellAmount(e.target.value)}
-                      disabled={isLoading}
-                    />
-                    <div className="absolute right-2 top-2 flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-8 text-xs font-mono px-2"
-                        onClick={() => tokenBalance && setSellAmount(formatUnits(tokenBalance, 18))}
-                        disabled={isLoading || !tokenBalance}
-                      >
-                        MAX
-                      </Button>
-                      <span className="text-muted-foreground font-mono mr-2 text-xs">{symbol}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {sellAmountWei > 0n && (
-                  <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs text-muted-foreground">You receive (est.)</span>
-                      <span className="font-mono text-foreground font-bold">
-                        {previewEthOut ? Number(formatEther(previewEthOut)).toFixed(6) : '0'} ETH
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground border-t border-border/30 pt-1.5">
-                      <span>Min received ({slippagePercent}% slip)</span>
-                      <span className="text-foreground">{minEthOut ? Number(formatEther(minEthOut)).toFixed(6) : '0'} ETH</span>
-                    </div>
-                    <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
-                      <span>Sell tax</span>
-                      <span>5%</span>
-                    </div>
-                    {allowance !== undefined && allowance >= sellAmountWei && (
-                      <div className="text-[10px] font-mono text-muted-foreground/50">
-                        Allowance already approved. No separate approve tx needed.
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <Button
-                  variant="destructive"
-                  className="w-full h-12 font-bold tracking-wider"
-                  onClick={handleSell}
-                  disabled={isLoading || (isConnected && (!sellAmountWei || !curveAddress))}
-                >
-                  {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : !isConnected ? 'CONNECT WALLET TO SELL' : 'PLACE SELL ORDER'}
-                </Button>
-              </>
-            )}
-          </TabsContent>
+          </div>
+          <Input
+            type="number"
+            placeholder="0.0"
+            className="w-full font-mono text-base bg-background/60 border-border/60 h-11 focus:border-primary/60"
+            value={side === 'buy' ? buyAmount : sellAmount}
+            onChange={(e) => side === 'buy' ? setBuyAmount(e.target.value) : setSellAmount(e.target.value)}
+            disabled={isLoading || !!forceClosed}
+          />
         </div>
-      </Tabs>
+
+        {/* Quick amounts */}
+        {side === 'buy' ? (
+          <div className="grid grid-cols-4 gap-1.5">
+            {BUY_QUICK.map((v) => (
+              <button
+                key={v}
+                onClick={() => setBuyAmount(v)}
+                disabled={isLoading || !!forceClosed}
+                className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-emerald-500/50 hover:text-emerald-400 hover:bg-emerald-500/5 transition-all disabled:opacity-40"
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-4 gap-1.5">
+            {[25, 50, 75].map((pct) => (
+              <button
+                key={pct}
+                onClick={() => setSellAmount(Math.floor(tokenBalanceNum * pct / 100).toString())}
+                disabled={isLoading || !tokenBalance}
+                className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all disabled:opacity-40"
+              >
+                {pct}%
+              </button>
+            ))}
+            <button
+              onClick={() => tokenBalance && setSellAmount(formatUnits(tokenBalance, 18))}
+              disabled={isLoading || !tokenBalance}
+              className="text-[10px] font-semibold py-1.5 rounded-md border border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 transition-all disabled:opacity-40"
+            >
+              MAX
+            </button>
+          </div>
+        )}
+
+        {/* Preview box */}
+        {side === 'buy' && buyAmountWei > 0n && (
+          <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">You receive (est.)</span>
+              <span className="font-mono text-emerald-400 font-bold">
+                {previewTokensOut ? Number(formatUnits(previewTokensOut, 18)).toLocaleString() : '0'} {symbol}
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground border-t border-border/30 pt-1.5">
+              <span>Min received ({slippagePercent}% slip)</span>
+              <span className="text-foreground">{minTokensOut ? Number(formatUnits(minTokensOut, 18)).toLocaleString() : '0'} {symbol}</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
+              <span>5% tax (burn + rewards + platform)</span>
+              <span>{(Number(buyAmount) * 0.05).toFixed(4)} ETH</span>
+            </div>
+          </div>
+        )}
+
+        {side === 'sell' && sellAmountWei > 0n && !graduated && !forceClosed && (
+          <div className="bg-muted/30 p-3 rounded border border-border/30 space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-muted-foreground">You receive (est.)</span>
+              <span className="font-mono text-foreground font-bold">
+                {previewEthOut ? Number(formatEther(previewEthOut)).toFixed(6) : '0'} ETH
+              </span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground border-t border-border/30 pt-1.5">
+              <span>Min received ({slippagePercent}% slip)</span>
+              <span className="text-foreground">{minEthOut ? Number(formatEther(minEthOut)).toFixed(6) : '0'} ETH</span>
+            </div>
+            <div className="flex justify-between items-center text-[10px] font-mono text-muted-foreground">
+              <span>Sell tax</span>
+              <span>5%</span>
+            </div>
+            {allowance !== undefined && allowance >= sellAmountWei && (
+              <div className="text-[10px] font-mono text-muted-foreground/50">
+                Allowance approved. No separate approve tx needed.
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Action button */}
+        {!forceClosed && (
+          <button
+            onClick={side === 'buy' ? handleBuy : handleSell}
+            disabled={isLoading || (isConnected && (side === 'buy' ? (!buyAmountWei || !curveAddress) : (!sellAmountWei || !curveAddress || graduated)))}
+            className={`w-full text-[12px] font-semibold uppercase tracking-wider py-3 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${
+              side === 'buy'
+                ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
+                : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
+            }`}
+          >
+            {isLoading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : !isConnected ? (
+              `Connect Wallet to ${side === 'buy' ? 'Buy' : 'Sell'}`
+            ) : (
+              `${side === 'buy' ? 'Buy' : 'Sell'} ${symbol || 'Tokens'}`
+            )}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
