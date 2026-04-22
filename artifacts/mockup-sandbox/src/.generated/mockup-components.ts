@@ -2,8 +2,9 @@
 type ModuleMap = Record<string, () => Promise<Record<string, unknown>>>;
 export const modules: ModuleMap = {
   "./components/mockups/aethpad-home/Home.tsx": () => import("../components/mockups/aethpad-home/Home.tsx"),
+  "./components/mockups/asteroid-shiba/PresalePage.tsx": () => import("../components/mockups/asteroid-shiba/PresalePage.tsx"),
   "./components/mockups/feed-variants/VariantA.tsx": () => import("../components/mockups/feed-variants/VariantA.tsx"),
   "./components/mockups/feed-variants/VariantB.tsx": () => import("../components/mockups/feed-variants/VariantB.tsx"),
-  "./components/mockups/asteroid-shiba/PresalePage.tsx": () => import("../components/mockups/asteroid-shiba/PresalePage.tsx"),
+  "./components/mockups/feed-variants/VariantC.tsx": () => import("../components/mockups/feed-variants/VariantC.tsx"),
   "./components/mockups/token-card/TokenCard.tsx": () => import("../components/mockups/token-card/TokenCard.tsx")
 };
