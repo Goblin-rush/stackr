@@ -11,7 +11,7 @@ import {
   TOKEN_V2_ABI,
   CURVE_V2_ABI,
 } from '@/lib/contracts';
-import { Wallet, PieChart, Coins, ExternalLink, TrendingUp } from 'lucide-react';
+import { Wallet, Coins, ExternalLink, TrendingUp, Star } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Holding {
@@ -22,7 +22,8 @@ interface Holding {
   balance: bigint;
   holdScore: bigint;
   totalLiveScore: bigint;
-  actualReceived: bigint;   // sum of RewardClaimed events for this user
+  pendingRewards: bigint;       // pendingRewards(address) — allocated but not yet pushed
+  totalReceivedByHolder: bigint; // totalReceivedByHolder(address) — cumulative auto-distributed ETH
   graduated: boolean;
   curvePriceEth: bigint;
 }
@@ -39,14 +40,6 @@ function formatCompact(n: number): string {
   return n.toFixed(2);
 }
 
-const REWARD_CLAIMED_EVENT = {
-  type: 'event' as const,
-  name: 'RewardsClaimed' as const,
-  inputs: [
-    { type: 'address' as const, name: 'user' as const, indexed: true as const },
-    { type: 'uint256' as const, name: 'ethAmount' as const, indexed: false as const },
-  ],
-};
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
@@ -123,43 +116,28 @@ export default function DashboardPage() {
           return;
         }
 
-        // 6 multicall slots per token
+        // 8 multicall slots per token:
+        // 0 name  1 symbol  2 holdScore  3 totalHoldScoreLive
+        // 4 graduated  5 currentPrice  6 pendingRewards  7 totalReceivedByHolder
         const detailCalls = candidates.flatMap((c) => [
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'name' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'symbol' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'holdScore' as const, args: [address] },
+          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'holdScore' as const, args: [address] as [`0x${string}`] },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalHoldScoreLive' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'graduated' as const },
           { address: c.curve, abi: CURVE_V2_ABI, functionName: 'currentPrice' as const },
+          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'pendingRewards' as const, args: [address] as [`0x${string}`] },
+          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalReceivedByHolder' as const, args: [address] as [`0x${string}`] },
         ]);
 
-        // Query RewardsClaimed events for user — exact on-chain receipts
-        const rewardLogsPromises = candidates.map((c) =>
-          client.getLogs({
-            address: c.token,
-            event: REWARD_CLAIMED_EVENT,
-            args: { user: address },
-            fromBlock: 'earliest',
-            toBlock: 'latest',
-          }).catch(() => [] as { args: { ethAmount?: bigint } }[])
-        );
-
-        const [detailResults, rewardLogsAll] = await Promise.all([
-          client.multicall({ contracts: detailCalls, allowFailure: true }),
-          Promise.all(rewardLogsPromises),
-        ]);
+        const detailResults = await client.multicall({ contracts: detailCalls, allowFailure: true });
 
         const list: Holding[] = candidates.map((c, i) => {
-          const off = i * 6;
+          const off = i * 8;
           const get = <T,>(idx: number, fallback: T): T => {
             const r = detailResults[off + idx];
             return r.status === 'success' ? (r.result as T) : fallback;
           };
-          const logs = rewardLogsAll[i];
-          const actualReceived = logs.reduce(
-            (sum, log) => sum + ((log.args as { ethAmount?: bigint }).ethAmount ?? 0n),
-            0n
-          );
           return {
             token: c.token,
             curve: c.curve,
@@ -170,7 +148,8 @@ export default function DashboardPage() {
             totalLiveScore: get<bigint>(3, 0n),
             graduated: get<boolean>(4, false),
             curvePriceEth: get<bigint>(5, 0n),
-            actualReceived,
+            pendingRewards: get<bigint>(6, 0n),
+            totalReceivedByHolder: get<bigint>(7, 0n),
           };
         });
 
@@ -196,11 +175,13 @@ export default function DashboardPage() {
     if (!holdings) return null;
     let portfolioEth = 0n;
     let totalReceived = 0n;
+    let totalPending = 0n;
     for (const h of holdings) {
       portfolioEth += (h.balance * h.curvePriceEth) / 10n ** 18n;
-      totalReceived += h.actualReceived;
+      totalReceived += h.totalReceivedByHolder;
+      totalPending  += h.pendingRewards;
     }
-    return { portfolioEth, totalReceived, count: holdings.length };
+    return { portfolioEth, totalReceived, totalPending, count: holdings.length };
   }, [holdings]);
 
   if (!FACTORY_V2_ADDRESS) {
@@ -241,7 +222,7 @@ export default function DashboardPage() {
   return (
     <Shell>
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <SummaryCard
           icon={<Coins className="h-3.5 w-3.5" />}
           label="Holdings"
@@ -256,7 +237,7 @@ export default function DashboardPage() {
         />
         <SummaryCard
           icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
-          label="ETH Received"
+          label="Total Received"
           value={
             loading
               ? null
@@ -267,9 +248,23 @@ export default function DashboardPage() {
           sub={
             ethPrice && totals && totals.totalReceived > 0n
               ? `≈ $${(Number(formatEther(totals.totalReceived)) * ethPrice).toFixed(2)}`
-              : 'auto-distributed rewards'
+              : 'auto-distributed'
           }
           highlight={!!totals && totals.totalReceived > 0n}
+        />
+        <SummaryCard
+          icon={<Star className="h-3.5 w-3.5 text-amber-400" />}
+          label="Est. Pending"
+          value={
+            loading
+              ? null
+              : totals && totals.totalPending > 0n
+                ? `${Number(formatEther(totals.totalPending)).toFixed(6)} ETH`
+                : '—'
+          }
+          sub="pushed on next trade"
+          highlight={!!totals && totals.totalPending > 0n}
+          highlightColor="amber"
         />
       </div>
 
@@ -305,7 +300,9 @@ export default function DashboardPage() {
             const share = poolSharePct(h);
             const valEth = Number(formatEther((h.balance * h.curvePriceEth) / 10n ** 18n));
             const balFormatted = formatCompact(Number(formatUnits(h.balance, 18)));
-            const received = Number(formatEther(h.actualReceived));
+            const received = Number(formatEther(h.totalReceivedByHolder));
+            const pending  = Number(formatEther(h.pendingRewards));
+            const scoreStr = formatCompact(Number(formatUnits(h.holdScore, 18)));
 
             return (
               <div
@@ -336,18 +333,29 @@ export default function DashboardPage() {
                   </a>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
                   <StatCell label="Balance" value={`${balFormatted} ${h.symbol}`} />
                   <StatCell label="Value" value={`${valEth.toFixed(5)} ETH`} />
+                  <StatCell
+                    label="Hold Score"
+                    value={scoreStr}
+                    sub="reward multiplier"
+                  />
                   <StatCell
                     label="Pool Share"
                     value={`${share.toFixed(2)}%`}
                     sub="of reward pool"
                   />
                   <StatCell
-                    label="ETH Received"
+                    label="Est. Pending"
+                    value={pending > 0 ? `${pending.toFixed(6)} ETH` : '—'}
+                    sub={pending > 0 ? 'pushed on next trade' : 'nothing queued'}
+                    highlightAmber={pending > 0}
+                  />
+                  <StatCell
+                    label="Total Received"
                     value={received > 0 ? `${received.toFixed(6)} ETH` : '—'}
-                    sub={received > 0 ? 'from auto-distribution' : 'no rewards yet'}
+                    sub={received > 0 ? 'auto-distributed' : 'no rewards yet'}
                     highlight={received > 0}
                   />
                 </div>
@@ -366,7 +374,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-1 container max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10">
         <div className="mb-8">
-          <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-black tracking-tight">Profile</h1>
         </div>
         {children}
       </main>
@@ -380,15 +388,19 @@ function SummaryCard({
   value,
   sub,
   highlight,
+  highlightColor = 'primary',
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | null;
   sub: React.ReactNode;
   highlight?: boolean;
+  highlightColor?: 'primary' | 'amber';
 }) {
+  const isAmber = highlight && highlightColor === 'amber';
+  const isPrimary = highlight && highlightColor === 'primary';
   return (
-    <div className={`rounded-xl border bg-card p-4 transition-colors ${highlight ? 'border-primary/30 bg-primary/5' : 'border-border/60'}`}>
+    <div className={`rounded-xl border bg-card p-4 transition-colors ${isAmber ? 'border-amber-500/30 bg-amber-500/5' : isPrimary ? 'border-primary/30 bg-primary/5' : 'border-border/60'}`}>
       <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
         {icon}
         {label}
@@ -396,7 +408,7 @@ function SummaryCard({
       {value === null ? (
         <Skeleton className="h-6 w-24 bg-muted/40 mb-1" />
       ) : (
-        <div className={`text-lg font-bold tabular-nums leading-tight ${highlight ? 'text-primary' : 'text-foreground'}`}>
+        <div className={`text-lg font-bold tabular-nums leading-tight ${isAmber ? 'text-amber-400' : isPrimary ? 'text-primary' : 'text-foreground'}`}>
           {value}
         </div>
       )}
@@ -410,16 +422,19 @@ function StatCell({
   value,
   sub,
   highlight,
+  highlightAmber,
 }: {
   label: string;
   value: string;
   sub?: string;
   highlight?: boolean;
+  highlightAmber?: boolean;
 }) {
+  const color = highlightAmber ? 'text-amber-400' : highlight ? 'text-primary' : 'text-foreground/90';
   return (
     <div className="px-4 py-3">
       <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 mb-0.5">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums truncate ${highlight ? 'text-primary' : 'text-foreground/90'}`}>
+      <div className={`text-[13px] font-semibold tabular-nums truncate ${color}`}>
         {value}
       </div>
       {sub && <div className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">{sub}</div>}
