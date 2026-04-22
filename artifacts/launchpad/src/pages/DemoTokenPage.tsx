@@ -2,11 +2,12 @@ import { useParams, Link } from 'wouter';
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check } from 'lucide-react';
 
 interface DemoToken {
   symbol: string;
   name: string;
+  address: string;
   description: string;
   creator: string;
   age: string;
@@ -29,6 +30,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   STR: {
     symbol: 'STR',
     name: 'Asteroid Shiba',
+    address: '0xA1d4F83bE802345Cc1234567890abCDEF12345AB',
     description:
       'The degen dog that survived the asteroid. Community-driven memecoin launched on the Aethpad bonding curve.',
     creator: '0x9f12…21Ab',
@@ -62,6 +64,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   BNK: {
     symbol: 'BNK',
     name: 'Bonkers',
+    address: '0xBe12cC3344aBEF77Dc9012345678901CdEF23456',
     description: 'Fully bonded. Liquidity migrated to Uniswap V2 with LP tokens burned forever.',
     creator: '0x33ab…be12',
     age: '6d',
@@ -89,6 +92,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   PEPE: {
     symbol: 'PEPE',
     name: 'Memetics Lab',
+    address: '0xF244aB00Cc9087fedCBA987654321DEF34567890',
     description: 'Lab-grown memetics. Fresh bond, early entry zone.',
     creator: '0xf244…00cc',
     age: '11m',
@@ -113,6 +117,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   BASED: {
     symbol: 'BASED',
     name: 'Based God Coin',
+    address: '0xAb77F100Ef2345678901234567890abcDEF45678',
     description: 'For the based, by the based. Ship code, hold bags.',
     creator: '0xab77…77f1',
     age: '4h',
@@ -139,6 +144,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   BLU: {
     symbol: 'BLU',
     name: 'Blue Chip Inu',
+    address: '0x7D1144AbCDef5678901234567890abcDEF56789a',
     description: 'Pretending to be a blue chip until it actually is.',
     creator: '0x7d11…1144',
     age: '38m',
@@ -198,6 +204,16 @@ export default function DemoTokenPage() {
   const t = DEMO_TOKENS[symbol?.toUpperCase() ?? ''];
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
+  const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
+  const [copied, setCopied] = useState(false);
+
+  const copyCA = () => {
+    if (!t) return;
+    navigator.clipboard.writeText(t.address).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
 
   if (!t) {
     return (
@@ -236,25 +252,24 @@ export default function DemoTokenPage() {
           {/* LEFT */}
           <div className="lg:col-span-8 space-y-4">
 
-            {/* Token header */}
+            {/* Token header — contains stats, progress, about, links */}
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
-              {/* Primary stripe accent */}
               <div className="h-0.5 w-full bg-gradient-to-r from-primary via-primary/60 to-transparent" />
-
               <div className="p-5 md:p-6">
-                {/* Symbol + name row */}
+
+                {/* Symbol + name + badge */}
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="min-w-0">
                     <div className="flex items-baseline gap-3 flex-wrap">
                       <span className="text-3xl md:text-4xl font-black tracking-tighter leading-none text-gradient">
                         ${t.symbol}
                       </span>
-                      <h1 className="text-base md:text-lg font-bold text-foreground/90 truncate">
+                      <h1 className="text-base md:text-lg font-bold text-foreground/90">
                         {t.name}
                       </h1>
                     </div>
                     <p className="text-[11px] text-muted-foreground font-mono mt-1.5">
-                      by {t.creator} · {t.age} ago · {t.holders} holders
+                      by {t.creator} · {t.age} ago
                     </p>
                   </div>
                   <span className={`shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border ${
@@ -266,28 +281,40 @@ export default function DemoTokenPage() {
                   </span>
                 </div>
 
-                {/* Stats row */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-5">
+                {/* CA row */}
+                <div className="flex items-center gap-2 mb-4 font-mono">
+                  <span className="text-[9px] font-semibold tracking-wider text-muted-foreground/50 uppercase shrink-0">CA</span>
+                  <span className="text-[11px] text-muted-foreground/70 truncate flex-1">
+                    {t.address.slice(0, 6)}…{t.address.slice(-4)}
+                  </span>
+                  <button
+                    onClick={copyCA}
+                    className="shrink-0 inline-flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-primary transition-colors"
+                  >
+                    {copied
+                      ? <><Check className="h-3 w-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                      : <><Copy className="h-3 w-3" /><span>Copy</span></>
+                    }
+                  </button>
+                </div>
+
+                {/* Stats — flat, thin vertical dividers only */}
+                <div className="grid grid-cols-4 gap-0 mb-5 pt-3 border-t border-border/30">
                   {[
-                    { label: 'Price', value: t.priceUsd, highlight: false },
-                    { label: 'Market Cap', value: t.mcapUsd, highlight: false },
+                    { label: 'Price', value: t.priceUsd, color: '' },
+                    { label: 'Market Cap', value: t.mcapUsd, color: '' },
                     {
-                      label: '24h Change',
+                      label: '24h',
                       value: `${change24hPositive ? '+' : ''}${t.change24h.toFixed(1)}%`,
-                      highlight: true,
-                      positive: change24hPositive,
+                      color: change24hPositive ? 'text-emerald-400' : 'text-primary',
                     },
-                    { label: 'Holders', value: String(t.holders), highlight: false },
-                  ].map((cell) => (
-                    <div key={cell.label} className="rounded-lg bg-white/3 border border-border/40 px-3 py-2.5">
-                      <div className="text-[9px] font-semibold tracking-wider text-muted-foreground/70 mb-1 uppercase">
+                    { label: 'Holders', value: String(t.holders), color: '' },
+                  ].map((cell, i) => (
+                    <div key={cell.label} className={i > 0 ? 'pl-4 border-l border-border/30' : ''}>
+                      <div className="text-[9px] font-semibold tracking-wider text-muted-foreground/50 mb-1 uppercase">
                         {cell.label}
                       </div>
-                      <div className={`text-sm font-bold tabular-nums ${
-                        cell.highlight
-                          ? cell.positive ? 'text-emerald-400' : 'text-primary'
-                          : 'text-foreground'
-                      }`}>
+                      <div className={`text-sm font-bold tabular-nums ${cell.color || 'text-foreground'}`}>
                         {cell.value}
                       </div>
                     </div>
@@ -295,9 +322,9 @@ export default function DemoTokenPage() {
                 </div>
 
                 {/* Bonding curve progress */}
-                <div>
+                <div className="mb-5">
                   <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
+                    <span className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
                       Bonding curve
                     </span>
                     <span className="text-[11px] font-semibold tabular-nums text-foreground/80">
@@ -306,195 +333,154 @@ export default function DemoTokenPage() {
                   </div>
                   <ProgressBar pct={pct} />
                 </div>
-              </div>
-            </div>
 
-            {/* About */}
-            <div className="rounded-xl bg-card border border-border/60 p-5">
-              <p className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase mb-2.5">About</p>
-              <p className="text-sm text-foreground/90 leading-relaxed">{t.description}</p>
-              {(t.twitter || t.telegram || t.website) && (
-                <div className="flex items-center gap-2 mt-3.5 flex-wrap">
-                  {t.twitter && (
-                    <a
-                      href={`https://x.com/${t.twitter}`}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border border-border/50 bg-white/3 hover:bg-white/6 hover:border-primary/40 hover:text-primary transition-all"
-                    >
-                      <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
-                      </svg>
-                      <span>@{t.twitter}</span>
-                    </a>
-                  )}
-                  {t.telegram && (
-                    <a
-                      href={`https://t.me/${t.telegram}`}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border border-border/50 bg-white/3 hover:bg-white/6 hover:border-primary/40 hover:text-primary transition-all"
-                    >
-                      <Send className="h-3 w-3 shrink-0" />
-                      <span>@{t.telegram}</span>
-                    </a>
-                  )}
-                  {t.website && (
-                    <a
-                      href={t.website}
-                      target="_blank"
-                      rel="noreferrer noopener"
-                      className="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border border-border/50 bg-white/3 hover:bg-white/6 hover:border-primary/40 hover:text-primary transition-all"
-                    >
-                      <Globe className="h-3 w-3 shrink-0" />
-                      <span>{t.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}</span>
-                    </a>
+                {/* About — merged in, no separate card */}
+                <div className="pt-4 border-t border-border/30">
+                  <p className="text-sm text-foreground/80 leading-relaxed mb-3">{t.description}</p>
+                  {(t.twitter || t.telegram || t.website) && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {t.twitter && (
+                        <a href={`https://x.com/${t.twitter}`} target="_blank" rel="noreferrer noopener"
+                          className="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border border-border/40 hover:border-primary/40 hover:text-primary transition-all">
+                          <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                          </svg>
+                          @{t.twitter}
+                        </a>
+                      )}
+                      {t.telegram && (
+                        <a href={`https://t.me/${t.telegram}`} target="_blank" rel="noreferrer noopener"
+                          className="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border border-border/40 hover:border-primary/40 hover:text-primary transition-all">
+                          <Send className="h-3 w-3 shrink-0" />
+                          @{t.telegram}
+                        </a>
+                      )}
+                      {t.website && (
+                        <a href={t.website} target="_blank" rel="noreferrer noopener"
+                          className="inline-flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded-lg border border-border/40 hover:border-primary/40 hover:text-primary transition-all">
+                          <Globe className="h-3 w-3 shrink-0" />
+                          {t.website.replace(/^https?:\/\//, '').replace(/\/$/, '')}
+                        </a>
+                      )}
+                    </div>
                   )}
                 </div>
-              )}
+              </div>
             </div>
 
             {/* Chart */}
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
               <div className="px-5 py-3 border-b border-border/40 flex items-center justify-between">
-                <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                  Price · 15m
-                </span>
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/60">
+                <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">Price · 15m</span>
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/50">
                   <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
                   mock
                 </span>
               </div>
               <div className="relative h-64 px-2 pt-2 pb-1">
                 <div className="absolute inset-0 flex flex-col justify-between pointer-events-none px-2 pt-2 pb-1">
-                  {[0, 1, 2, 3, 4].map((i) => (
-                    <div key={i} className="border-t border-border/25" />
-                  ))}
+                  {[0,1,2,3,4].map((i) => <div key={i} className="border-t border-border/25" />)}
                 </div>
                 <div className="absolute left-2 top-0 bottom-0 flex flex-col justify-between text-[8px] font-mono text-muted-foreground/50 py-2">
-                  <span>0.000018</span>
-                  <span>0.000016</span>
-                  <span>0.000014</span>
-                  <span>0.000012</span>
-                  <span>0.000010</span>
+                  {['0.000018','0.000016','0.000014','0.000012','0.000010'].map(v => <span key={v}>{v}</span>)}
                 </div>
                 <div className="absolute inset-0 pl-14 pr-3 flex items-stretch gap-[3px]">
-                  {(() => {
-                    const candles = [
-                      { o: 30, c: 38, h: 42, l: 28, up: true },
-                      { o: 38, c: 35, h: 41, l: 32, up: false },
-                      { o: 35, c: 44, h: 47, l: 33, up: true },
-                      { o: 44, c: 41, h: 46, l: 38, up: false },
-                      { o: 41, c: 50, h: 54, l: 40, up: true },
-                      { o: 50, c: 48, h: 53, l: 45, up: false },
-                      { o: 48, c: 56, h: 60, l: 47, up: true },
-                      { o: 56, c: 54, h: 58, l: 51, up: false },
-                      { o: 54, c: 62, h: 65, l: 53, up: true },
-                      { o: 62, c: 58, h: 64, l: 56, up: false },
-                      { o: 58, c: 67, h: 70, l: 56, up: true },
-                      { o: 67, c: 72, h: 76, l: 65, up: true },
-                      { o: 72, c: 69, h: 74, l: 67, up: false },
-                      { o: 69, c: 78, h: 82, l: 68, up: true },
-                      { o: 78, c: 75, h: 80, l: 73, up: false },
-                      { o: 75, c: 84, h: 88, l: 74, up: true },
-                      { o: 84, c: 81, h: 86, l: 79, up: false },
-                      { o: 81, c: 88, h: 91, l: 80, up: true },
-                      { o: 88, c: 92, h: 95, l: 86, up: true },
-                      { o: 92, c: 90, h: 94, l: 88, up: false },
-                      { o: 90, c: 95, h: 97, l: 89, up: true },
-                    ];
-                    return candles.map((c, i) => {
-                      const top = 100 - c.h;
-                      const bottom = 100 - c.l;
-                      const bodyTop = 100 - Math.max(c.o, c.c);
-                      const bodyBot = 100 - Math.min(c.o, c.c);
-                      const color = c.up ? '#22c55e' : '#D63A1F';
-                      return (
-                        <div key={i} className="relative flex-1">
-                          <div
-                            className="absolute left-1/2 -translate-x-1/2 w-px opacity-70"
-                            style={{ top: `${top}%`, height: `${bottom - top}%`, background: color }}
-                          />
-                          <div
-                            className="absolute left-[10%] right-[10%] rounded-sm"
-                            style={{
-                              top: `${bodyTop}%`,
-                              height: `${Math.max(bodyBot - bodyTop, 1.5)}%`,
-                              background: c.up ? color : 'transparent',
-                              border: `1px solid ${color}`,
-                            }}
-                          />
-                        </div>
-                      );
-                    });
-                  })()}
+                  {[
+                    {o:30,c:38,h:42,l:28,up:true},{o:38,c:35,h:41,l:32,up:false},{o:35,c:44,h:47,l:33,up:true},
+                    {o:44,c:41,h:46,l:38,up:false},{o:41,c:50,h:54,l:40,up:true},{o:50,c:48,h:53,l:45,up:false},
+                    {o:48,c:56,h:60,l:47,up:true},{o:56,c:54,h:58,l:51,up:false},{o:54,c:62,h:65,l:53,up:true},
+                    {o:62,c:58,h:64,l:56,up:false},{o:58,c:67,h:70,l:56,up:true},{o:67,c:72,h:76,l:65,up:true},
+                    {o:72,c:69,h:74,l:67,up:false},{o:69,c:78,h:82,l:68,up:true},{o:78,c:75,h:80,l:73,up:false},
+                    {o:75,c:84,h:88,l:74,up:true},{o:84,c:81,h:86,l:79,up:false},{o:81,c:88,h:91,l:80,up:true},
+                    {o:88,c:92,h:95,l:86,up:true},{o:92,c:90,h:94,l:88,up:false},{o:90,c:95,h:97,l:89,up:true},
+                  ].map((c, i) => {
+                    const color = c.up ? '#22c55e' : '#D63A1F';
+                    return (
+                      <div key={i} className="relative flex-1">
+                        <div className="absolute left-1/2 -translate-x-1/2 w-px opacity-70"
+                          style={{top:`${100-c.h}%`,height:`${c.l-c.h+(100-100)}%`,background:color,height:`${c.h-c.l}%`,top:`${100-c.h}%`}} />
+                        <div className="absolute left-[10%] right-[10%] rounded-sm"
+                          style={{top:`${100-Math.max(c.o,c.c)}%`,height:`${Math.max(Math.abs(c.o-c.c),1.5)}%`,background:c.up?color:'transparent',border:`1px solid ${color}`}} />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </div>
 
-            {/* Recent trades */}
+            {/* Trades / Holders — tabbed, one card */}
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
-              <div className="px-5 py-3 border-b border-border/40">
-                <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                  Recent Trades
-                </span>
-              </div>
-              <div>
-                {t.trades.map((tr, i) => (
-                  <div
-                    key={i}
-                    className="grid grid-cols-12 items-center gap-2 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono tabular-nums hover:bg-white/2 transition-colors"
+              <div className="flex border-b border-border/40">
+                {(['trades', 'holders'] as const).map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setInfoTab(tab)}
+                    className={`flex-1 py-3 text-[11px] font-semibold uppercase tracking-wider transition-colors ${
+                      infoTab === tab
+                        ? 'text-foreground border-b-2 border-primary -mb-px'
+                        : 'text-muted-foreground/60 hover:text-muted-foreground'
+                    }`}
                   >
-                    <div className="col-span-2 flex items-center gap-1.5">
-                      {tr.type === 'buy' ? (
-                        <ArrowUpRight className="h-3 w-3 text-emerald-400" strokeWidth={2.5} />
-                      ) : (
-                        <ArrowDownRight className="h-3 w-3 text-primary" strokeWidth={2.5} />
-                      )}
-                      <span className={`font-semibold text-[10px] uppercase tracking-wider ${
-                        tr.type === 'buy' ? 'text-emerald-400' : 'text-primary'
-                      }`}>
-                        {tr.type}
-                      </span>
-                    </div>
-                    <div className="col-span-3 text-right">
-                      <span className="text-foreground/90">{tr.eth}</span>
-                      <span className="text-muted-foreground/60 ml-1 text-[10px]">ETH</span>
-                    </div>
-                    <div className="col-span-3 text-right text-foreground/80">{tr.tokens}</div>
-                    <div className="col-span-2 text-right text-muted-foreground/60">{tr.addr}</div>
-                    <div className="col-span-2 text-right text-muted-foreground/50">{tr.ago}</div>
-                  </div>
+                    {tab === 'trades' ? 'Recent Trades' : 'Top Holders'}
+                  </button>
                 ))}
               </div>
+
+              {infoTab === 'trades' ? (
+                <div>
+                  {t.trades.map((tr, i) => (
+                    <div key={i} className="grid grid-cols-12 items-center gap-2 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono tabular-nums hover:bg-white/2 transition-colors">
+                      <div className="col-span-2 flex items-center gap-1.5">
+                        {tr.type === 'buy'
+                          ? <ArrowUpRight className="h-3 w-3 text-emerald-400" strokeWidth={2.5} />
+                          : <ArrowDownRight className="h-3 w-3 text-primary" strokeWidth={2.5} />}
+                        <span className={`font-semibold text-[10px] uppercase tracking-wider ${tr.type === 'buy' ? 'text-emerald-400' : 'text-primary'}`}>
+                          {tr.type}
+                        </span>
+                      </div>
+                      <div className="col-span-3 text-right">
+                        <span className="text-foreground/90">{tr.eth}</span>
+                        <span className="text-muted-foreground/50 ml-1 text-[10px]">ETH</span>
+                      </div>
+                      <div className="col-span-3 text-right text-foreground/70">{tr.tokens}</div>
+                      <div className="col-span-2 text-right text-muted-foreground/50">{tr.addr}</div>
+                      <div className="col-span-2 text-right text-muted-foreground/40">{tr.ago}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div>
+                  {t.topHolders.map((h, i) => (
+                    <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono hover:bg-white/2 transition-colors">
+                      <span className="text-muted-foreground/40 tabular-nums w-4 shrink-0">{i + 1}</span>
+                      <span className="flex-1 text-foreground/80 truncate">{h.addr}</span>
+                      <span className="text-muted-foreground/50 tabular-nums shrink-0">{h.tokens}</span>
+                      <span className="text-foreground font-semibold tabular-nums shrink-0 w-10 text-right">{h.pct.toFixed(1)}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* RIGHT — trade widget + holders */}
-          <div className="lg:col-span-4 space-y-4">
-
-            {/* Trade widget */}
-            <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
+          {/* RIGHT — trade widget only */}
+          <div className="lg:col-span-4">
+            <div className="rounded-xl bg-card border border-border/60 overflow-hidden sticky top-4">
               <div className="grid grid-cols-2 p-1.5 gap-1.5 border-b border-border/40">
                 {(['buy', 'sell'] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSide(s)}
+                  <button key={s} onClick={() => setSide(s)}
                     className={`text-[11px] font-semibold uppercase tracking-wider py-2.5 rounded-lg transition-all ${
                       side === s
-                        ? s === 'buy'
-                          ? 'bg-emerald-600 text-white shadow-sm'
-                          : 'bg-primary text-primary-foreground shadow-sm'
+                        ? s === 'buy' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-primary text-primary-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                    }`}
-                  >
+                    }`}>
                     {s}
                   </button>
                 ))}
               </div>
               <div className="p-4 space-y-3">
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-wider text-muted-foreground/70 mb-1.5 uppercase">
+                  <label className="block text-[10px] font-semibold tracking-wider text-muted-foreground/60 mb-1.5 uppercase">
                     Amount ({side === 'buy' ? 'ETH' : t.symbol})
                   </label>
                   <input
@@ -502,16 +488,13 @@ export default function DemoTokenPage() {
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0.0"
-                    className="w-full bg-background/60 border border-border/60 rounded-lg px-3 py-2.5 text-base font-mono tabular-nums focus:outline-none focus:border-primary/60 focus:bg-background transition-all"
+                    className="w-full bg-background/60 border border-border/60 rounded-lg px-3 py-2.5 text-base font-mono tabular-nums focus:outline-none focus:border-primary/60 transition-all"
                   />
                 </div>
                 <div className="grid grid-cols-4 gap-1.5">
-                  {['0.01', '0.05', '0.1', '0.5'].map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setAmount(v)}
-                      className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all"
-                    >
+                  {['0.01','0.05','0.1','0.5'].map((v) => (
+                    <button key={v} onClick={() => setAmount(v)}
+                      className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
                       {v}
                     </button>
                   ))}
@@ -519,40 +502,16 @@ export default function DemoTokenPage() {
                 <button
                   className={`w-full text-[12px] font-semibold uppercase tracking-wider py-3 rounded-lg transition-all ${
                     side === 'buy'
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm shadow-emerald-900/30'
-                      : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20'
+                      ? 'bg-emerald-600 text-white hover:bg-emerald-500 shadow-sm'
+                      : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm'
                   }`}
                   onClick={() => alert('Demo only — connect wallet to trade.')}
                 >
                   {side === 'buy' ? 'Buy' : 'Sell'} {t.symbol}
                 </button>
-                <p className="text-[10px] font-mono text-muted-foreground/50 text-center">
+                <p className="text-[10px] font-mono text-muted-foreground/40 text-center">
                   Tax: 1.5% burn · 2% holders · 1.5% platform
                 </p>
-              </div>
-            </div>
-
-            {/* Top holders */}
-            <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
-              <div className="px-5 py-3 border-b border-border/40">
-                <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">
-                  Top Holders
-                </span>
-              </div>
-              <div>
-                {t.topHolders.map((h, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono hover:bg-white/2 transition-colors"
-                  >
-                    <span className="text-muted-foreground/40 tabular-nums w-4 shrink-0">
-                      {i + 1}
-                    </span>
-                    <span className="flex-1 text-foreground/80 truncate">{h.addr}</span>
-                    <span className="text-muted-foreground/60 tabular-nums shrink-0">{h.tokens}</span>
-                    <span className="text-foreground font-semibold tabular-nums shrink-0 w-10 text-right">{h.pct.toFixed(1)}%</span>
-                  </div>
-                ))}
               </div>
             </div>
           </div>
