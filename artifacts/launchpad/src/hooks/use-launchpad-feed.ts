@@ -343,17 +343,57 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
           });
         }
 
-        // 7) Polling fallback every 20s
+        // 7) Polling: every 12s re-fetch prices + check for new tokens
         pollTimer = window.setInterval(async () => {
           try {
+            // Check for new tokens
             const latestTotal = (await client.readContract({
               address: factory,
               abi: FACTORY_V2_ABI,
               functionName: 'allTokensLength',
             })) as bigint;
-            if (Number(latestTotal) > tokensRef.current.size) refresh();
+            if (Number(latestTotal) > tokensRef.current.size) {
+              refresh();
+              return;
+            }
+
+            // Re-fetch price + realEthRaised for all known tokens
+            const knownTokens = Array.from(tokensRef.current.values());
+            if (knownTokens.length === 0) return;
+            const priceCalls = knownTokens.flatMap((t) =>
+              t.curveAddress
+                ? [
+                    { address: t.curveAddress, abi: CURVE_V2_ABI, functionName: 'realEthRaised' as const },
+                    { address: t.curveAddress, abi: CURVE_V2_ABI, functionName: 'currentPrice' as const },
+                    { address: t.curveAddress, abi: CURVE_V2_ABI, functionName: 'graduated' as const },
+                  ]
+                : []
+            );
+            if (priceCalls.length === 0) return;
+            const priceRes = await client.multicall({ contracts: priceCalls, allowFailure: true });
+
+            let changed = false;
+            let resIdx = 0;
+            for (const tok of knownTokens) {
+              if (!tok.curveAddress) continue;
+              const raisedR = priceRes[resIdx];
+              const priceR  = priceRes[resIdx + 1];
+              const gradR   = priceRes[resIdx + 2];
+              resIdx += 3;
+              const newRaised = raisedR?.status === 'success' ? Number(formatEther(raisedR.result as bigint)) : tok.realEthRaised;
+              const newPrice  = priceR?.status === 'success'  ? Number(formatEther(priceR.result as bigint))  : tok.currentPriceEth;
+              const newGrad   = gradR?.status  === 'success'  ? !!(gradR.result)                              : tok.graduated;
+              if (newRaised !== tok.realEthRaised || newPrice !== tok.currentPriceEth || newGrad !== tok.graduated) {
+                tok.realEthRaised  = newRaised;
+                tok.currentPriceEth = newPrice;
+                tok.marketCapEth    = newPrice * TOTAL_SUPPLY_NUM;
+                tok.graduated       = newGrad;
+                changed = true;
+              }
+            }
+            if (changed) publishTokens();
           } catch { /* ignore */ }
-        }, 20000);
+        }, 12000);
       } catch (err: any) {
         if (cancelled) return;
         setState((s) => ({
