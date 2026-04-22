@@ -161,19 +161,34 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
   },
 };
 
-function ProgressBlocks({ pct }: { pct: number }) {
-  const total = 24;
-  const filled = Math.round((pct / 100) * total);
+function ProgressBar({ pct }: { pct: number }) {
+  const p = Math.min(pct, 100);
+  let gradient = 'linear-gradient(90deg, hsl(142 66% 36%) 0%, hsl(152 68% 48%) 100%)';
+  let glow = '0 0 10px hsl(142 66% 44% / 0.38)';
+  if (p >= 85) {
+    gradient = 'linear-gradient(90deg, hsl(4 84% 46%) 0%, hsl(18 92% 64%) 100%)';
+    glow = '0 0 14px hsl(4 84% 58% / 0.55)';
+  } else if (p >= 60) {
+    gradient = 'linear-gradient(90deg, hsl(24 90% 46%) 0%, hsl(36 92% 60%) 100%)';
+    glow = '0 0 12px hsl(24 90% 55% / 0.45)';
+  } else if (p >= 30) {
+    gradient = 'linear-gradient(90deg, hsl(42 88% 42%) 0%, hsl(48 90% 56%) 100%)';
+    glow = '0 0 10px hsl(42 88% 50% / 0.40)';
+  }
   return (
-    <div className="flex gap-[2px] h-3">
-      {Array.from({ length: total }, (_, i) => (
-        <div
-          key={i}
-          className={`flex-1 border ${
-            i < filled ? 'bg-primary border-primary' : 'border-border bg-transparent'
-          }`}
+    <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/6">
+      <div
+        className="absolute top-0 left-0 h-full rounded-full overflow-hidden transition-all duration-700"
+        style={{ width: `${p}%`, background: gradient, boxShadow: p > 3 ? glow : 'none' }}
+      >
+        <span
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
+            animation: 'shimmer 2.2s ease-in-out infinite',
+          }}
         />
-      ))}
+      </div>
     </div>
   );
 }
@@ -291,7 +306,7 @@ export default function DemoTokenPage() {
                     {pct.toFixed(0)}% · {t.raisedEth} / {t.targetEth} ETH
                   </span>
                 </div>
-                <ProgressBlocks pct={pct} />
+                <ProgressBar pct={pct} />
               </div>
             </div>
 
