@@ -228,6 +228,30 @@ uri = "file://attached_assets/generated_images/stackr-favicon-hex.png"
 type = "image"
 title = "striped hexagon favicon"
 
+[[generated]]
+id = "HnOabEl6i0rMLQyRfE07M"
+uri = "file://attached_assets/generated_images/stackr-favicon-gem.png"
+type = "image"
+title = "diamond gem favicon"
+
+[[generated]]
+id = "zl8tsLW66clUbK8feoKtn"
+uri = "file://attached_assets/generated_images/stackr-favicon-lock.png"
+type = "image"
+title = "padlock favicon"
+
+[[generated]]
+id = "Z_hSvmN5jgS3X1p2TmbP0"
+uri = "file://attached_assets/generated_images/stackr-favicon-crown.png"
+type = "image"
+title = "crown favicon"
+
+[[generated]]
+id = "e7rCWnSKR5La384MMEPcg"
+uri = "file://attached_assets/generated_images/stackr-favicon-fist.png"
+type = "image"
+title = "fist made of bars favicon"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
