@@ -1,6 +1,6 @@
 import { useParams, Link } from 'wouter';
-import { useState, useEffect } from 'react';
-import { useReadContract, useWatchContractEvent } from 'wagmi';
+import { useState, useEffect, useRef } from 'react';
+import { useReadContract, useWatchContractEvent, useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -10,10 +10,12 @@ import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI, V2_TARGET_REAL_ETH } from '@/lib/contracts';
-import { ArrowLeft, Copy, Check, ExternalLink, Globe, Send } from 'lucide-react';
+import { ArrowLeft, Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
+import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata } from '@/lib/token-metadata';
+import { uploadImage } from '@/lib/upload';
+import { toast } from 'sonner';
 
 function timeAgo(ts: number | null): string {
   if (!ts) return '–';
@@ -73,6 +75,9 @@ export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
   const [copiedCA, setCopiedCA] = useState(false);
+  const [imgUpdating, setImgUpdating] = useState(false);
+  const imgInputRef = useRef<HTMLInputElement>(null);
+  const { address: walletAddress } = useAccount();
 
   const { data: record, isLoading: isRecordLoading } = useReadContract({
     address: FACTORY_V2_ADDRESS ?? undefined,
@@ -108,6 +113,27 @@ export default function TokenDetailPage() {
   const pct = progress
     ? Number(progress) / 100
     : Math.min((realEthRaisedNum / TARGET_ETH_NUM) * 100, 100);
+
+  const creator = (record as any)?.creator as string | undefined;
+  const isCreator = !!(walletAddress && creator && walletAddress.toLowerCase() === creator.toLowerCase());
+
+  const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !address) return;
+    setImgUpdating(true);
+    const tid = toast.loading('Uploading image…');
+    try {
+      const r = await uploadImage(file);
+      await saveTokenMetadata(address, { image: r.url });
+      toast.success('Image saved!', { id: tid, description: r.cid.slice(0, 12) + '…' });
+      setTimeout(() => window.location.reload(), 800);
+    } catch (err: any) {
+      toast.error('Upload failed', { id: tid, description: err?.message });
+    } finally {
+      setImgUpdating(false);
+      if (imgInputRef.current) imgInputRef.current.value = '';
+    }
+  };
 
   const imgUrl = ipfsToHttp(meta?.image);
   const avatarSrc = imgUrl || (symbol ? genAvatarUri(symbol) : '');
@@ -172,8 +198,29 @@ export default function TokenDetailPage() {
                 {/* Symbol + name + badge */}
                 <div className="flex items-start justify-between gap-4 mb-4">
                   <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-border/30 bg-muted mt-0.5">
-                      {avatarSrc && <img src={avatarSrc} alt={symbol || ''} className="w-full h-full object-cover" />}
+                    <div className="relative w-12 h-12 shrink-0 mt-0.5 group">
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-border/30 bg-muted">
+                        {avatarSrc && <img src={avatarSrc} alt={symbol || ''} className="w-full h-full object-cover" />}
+                      </div>
+                      {isCreator && (
+                        <button
+                          onClick={() => imgInputRef.current?.click()}
+                          disabled={imgUpdating}
+                          title="Update token image"
+                          className="absolute inset-0 flex items-center justify-center rounded-xl bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-not-allowed"
+                        >
+                          {imgUpdating
+                            ? <Loader2 className="h-4 w-4 text-white animate-spin" />
+                            : <ImagePlus className="h-4 w-4 text-white" />}
+                        </button>
+                      )}
+                      <input
+                        ref={imgInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleUpdateImage}
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="flex items-baseline gap-3 flex-wrap">
