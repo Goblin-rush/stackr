@@ -247,13 +247,11 @@ function Row({ d }: { d: RowDisplay }) {
 
         {/* Header */}
         <div className="flex items-center border-b border-border/40 pl-3">
-          <div className="px-3 py-3 min-w-[88px] border-r border-border/40">
-            <span className="text-base font-black tracking-tight text-foreground">
-              ${d.symbol}
-            </span>
-          </div>
           <div className="flex-1 px-3 py-2.5 min-w-0">
-            <p className="text-[13px] font-semibold text-foreground truncate">{d.name}</p>
+            <div className="flex items-center gap-2 min-w-0">
+              <p className="text-[14px] font-bold text-foreground truncate group-hover:text-primary transition-colors">{d.name}</p>
+              <span className="text-[10px] font-mono text-muted-foreground/60 shrink-0">{d.symbol}</span>
+            </div>
             <p className="text-[10px] text-muted-foreground font-mono mt-0.5 truncate">
               {d.creatorLabel ? `${d.creatorLabel} · ` : ''}{d.ageLabel}
               {d.isDemo && <span className="opacity-40"> · demo</span>}
