@@ -156,6 +156,113 @@ function ProgressBlocks({ pct }: { pct: number }) {
   );
 }
 
+const DEMO_TICKER = [
+  { sym: 'STR', type: 'buy' as const, eth: '0.041' },
+  { sym: 'BNK', type: 'sell' as const, eth: '0.812' },
+  { sym: 'PEPE', type: 'buy' as const, eth: '0.012' },
+  { sym: 'BASED', type: 'buy' as const, eth: '0.025' },
+  { sym: 'STR', type: 'buy' as const, eth: '0.087' },
+  { sym: 'BLU', type: 'buy' as const, eth: '0.018' },
+  { sym: 'BNK', type: 'buy' as const, eth: '1.250' },
+  { sym: 'STR', type: 'sell' as const, eth: '0.022' },
+  { sym: 'PEPE', type: 'buy' as const, eth: '0.055' },
+  { sym: 'BASED', type: 'sell' as const, eth: '0.011' },
+];
+
+function ActivityTicker() {
+  const items = [...DEMO_TICKER, ...DEMO_TICKER];
+  return (
+    <div className="border-2 border-border bg-card mb-4 overflow-hidden">
+      <div className="flex items-center">
+        <div className="bg-foreground text-background px-3 py-2 text-[9px] font-black uppercase tracking-[0.25em] shrink-0 border-r-2 border-border">
+          ▶ Live
+        </div>
+        <div className="flex-1 overflow-hidden relative">
+          <div className="flex gap-6 py-2 whitespace-nowrap animate-[ticker_40s_linear_infinite]">
+            {items.map((t, i) => (
+              <span key={i} className="text-[11px] font-mono tabular-nums">
+                <span
+                  className={`font-black uppercase tracking-widest mr-1.5 ${
+                    t.type === 'buy' ? 'text-[#1f6b3e]' : 'text-primary'
+                  }`}
+                >
+                  {t.type}
+                </span>
+                <span className="text-foreground font-bold">${t.sym}</span>
+                <span className="text-muted-foreground mx-1.5">·</span>
+                <span className="text-foreground">{t.eth} ETH</span>
+              </span>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FeaturedRow({ d }: { d: RowDisplay }) {
+  return (
+    <Link href={d.href}>
+      <div className="relative bg-card border-2 border-foreground mb-3 cursor-pointer group hover:border-primary transition-colors overflow-hidden">
+        {/* Top stripe label */}
+        <div className="bg-foreground text-background px-3 py-1 flex items-center justify-between">
+          <span className="text-[9px] font-black uppercase tracking-[0.25em]">
+            ▲ Top mover · last 24h
+          </span>
+          <span className="text-[9px] font-black uppercase tracking-widest">
+            +18.4%
+          </span>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-0">
+          {/* Big ticker block */}
+          <div className="md:col-span-2 border-b-2 md:border-b-0 md:border-r-2 border-border px-5 py-4 flex flex-col justify-center">
+            <div className="text-4xl md:text-5xl font-black tracking-tighter leading-[0.9] text-foreground">
+              ${d.symbol.toUpperCase()}
+            </div>
+            <div className="text-sm font-bold text-foreground mt-1.5">{d.name}</div>
+            <div className="text-[10px] text-muted-foreground font-mono mt-1">
+              {d.creatorLabel ? `by ${d.creatorLabel} · ` : ''}{d.ageLabel} ago
+            </div>
+          </div>
+          {/* Stats column */}
+          <div className="md:col-span-3 grid grid-cols-3 md:grid-rows-2 md:grid-cols-2">
+            {[
+              { label: 'PRICE', value: d.priceLabel },
+              { label: 'MCAP', value: d.mcapLabel },
+              { label: 'RAISED', value: d.raisedLabel.replace(' ETH', '') },
+              { label: 'CURVE', value: `${d.progress.toFixed(0)}%`, big: true },
+            ].map((cell, i) => (
+              <div
+                key={cell.label}
+                className={`px-4 py-2.5 border-border ${
+                  i < 2 ? 'border-r-2 md:border-r-0 md:border-b-2' : ''
+                } ${i === 2 ? 'md:border-r-2' : ''} ${
+                  i < 3 ? 'border-b-2 md:border-b-0' : ''
+                } ${i === 1 ? 'md:border-r-2' : ''}`}
+              >
+                <div className="text-[8.5px] font-black tracking-widest text-muted-foreground mb-1">
+                  {cell.label}
+                </div>
+                <div
+                  className={`font-black tabular-nums text-foreground ${
+                    cell.big ? 'text-2xl' : 'text-sm'
+                  }`}
+                >
+                  {cell.value}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Bottom progress bar */}
+        <div className="border-t-2 border-border px-3 py-2.5">
+          <ProgressBlocks pct={d.progress} />
+        </div>
+      </div>
+    </Link>
+  );
+}
+
 function Row({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
@@ -369,7 +476,9 @@ export default function HomeFeedPage() {
                 Be first
               </button>
             </div>
-            {DEMO_ROWS.map((d) => (
+            <ActivityTicker />
+            <FeaturedRow d={DEMO_ROWS[0]} />
+            {DEMO_ROWS.slice(1).map((d) => (
               <Row key={d.symbol} d={d} />
             ))}
           </div>

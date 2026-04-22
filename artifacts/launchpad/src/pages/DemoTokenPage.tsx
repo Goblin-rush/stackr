@@ -300,16 +300,79 @@ export default function DemoTokenPage() {
                   MOCK
                 </div>
               </div>
-              <div className="h-56 px-4 py-3 flex items-end gap-1">
-                {[34, 42, 38, 51, 48, 55, 62, 58, 67, 64, 72, 78, 74, 81, 88, 85, 92, 95, 90, 97].map(
-                  (h, i) => (
-                    <div
-                      key={i}
-                      className="flex-1 bg-primary"
-                      style={{ height: `${h}%`, opacity: 0.3 + (i / 30) }}
-                    />
-                  )
-                )}
+              <div className="relative h-64">
+                {/* horizontal grid lines */}
+                <div className="absolute inset-0 flex flex-col justify-between pointer-events-none">
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} className="border-t border-border/40" />
+                  ))}
+                </div>
+                {/* y-axis labels */}
+                <div className="absolute left-2 top-0 bottom-0 flex flex-col justify-between text-[8.5px] font-mono text-muted-foreground py-0.5">
+                  <span>0.000018</span>
+                  <span>0.000016</span>
+                  <span>0.000014</span>
+                  <span>0.000012</span>
+                  <span>0.000010</span>
+                </div>
+                {/* candles */}
+                <div className="absolute inset-0 pl-14 pr-3 flex items-stretch gap-[3px]">
+                  {(() => {
+                    const candles = [
+                      { o: 30, c: 38, h: 42, l: 28, up: true },
+                      { o: 38, c: 35, h: 41, l: 32, up: false },
+                      { o: 35, c: 44, h: 47, l: 33, up: true },
+                      { o: 44, c: 41, h: 46, l: 38, up: false },
+                      { o: 41, c: 50, h: 54, l: 40, up: true },
+                      { o: 50, c: 48, h: 53, l: 45, up: false },
+                      { o: 48, c: 56, h: 60, l: 47, up: true },
+                      { o: 56, c: 54, h: 58, l: 51, up: false },
+                      { o: 54, c: 62, h: 65, l: 53, up: true },
+                      { o: 62, c: 58, h: 64, l: 56, up: false },
+                      { o: 58, c: 67, h: 70, l: 56, up: true },
+                      { o: 67, c: 72, h: 76, l: 65, up: true },
+                      { o: 72, c: 69, h: 74, l: 67, up: false },
+                      { o: 69, c: 78, h: 82, l: 68, up: true },
+                      { o: 78, c: 75, h: 80, l: 73, up: false },
+                      { o: 75, c: 84, h: 88, l: 74, up: true },
+                      { o: 84, c: 81, h: 86, l: 79, up: false },
+                      { o: 81, c: 88, h: 91, l: 80, up: true },
+                      { o: 88, c: 92, h: 95, l: 86, up: true },
+                      { o: 92, c: 90, h: 94, l: 88, up: false },
+                      { o: 90, c: 95, h: 97, l: 89, up: true },
+                    ];
+                    return candles.map((c, i) => {
+                      const top = 100 - c.h;
+                      const bottom = 100 - c.l;
+                      const bodyTop = 100 - Math.max(c.o, c.c);
+                      const bodyBot = 100 - Math.min(c.o, c.c);
+                      const color = c.up ? '#1f6b3e' : '#D63A1F';
+                      return (
+                        <div key={i} className="relative flex-1">
+                          {/* wick */}
+                          <div
+                            className="absolute left-1/2 -translate-x-1/2 w-px"
+                            style={{
+                              top: `${top}%`,
+                              height: `${bottom - top}%`,
+                              background: color,
+                            }}
+                          />
+                          {/* body */}
+                          <div
+                            className="absolute left-0 right-0"
+                            style={{
+                              top: `${bodyTop}%`,
+                              height: `${Math.max(bodyBot - bodyTop, 1.5)}%`,
+                              background: c.up ? color : 'transparent',
+                              border: `1.5px solid ${color}`,
+                            }}
+                          />
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
               </div>
             </div>
 
@@ -326,13 +389,13 @@ export default function DemoTokenPage() {
                   >
                     <div className="col-span-2 flex items-center gap-1">
                       {tr.type === 'buy' ? (
-                        <ArrowUpRight className="h-3 w-3 text-foreground" strokeWidth={3} />
+                        <ArrowUpRight className="h-3 w-3 text-[#1f6b3e]" strokeWidth={3} />
                       ) : (
                         <ArrowDownRight className="h-3 w-3 text-primary" strokeWidth={3} />
                       )}
                       <span
                         className={`uppercase font-black tracking-widest text-[10px] ${
-                          tr.type === 'buy' ? 'text-foreground' : 'text-primary'
+                          tr.type === 'buy' ? 'text-[#1f6b3e]' : 'text-primary'
                         }`}
                       >
                         {tr.type}
@@ -362,7 +425,7 @@ export default function DemoTokenPage() {
                     className={`text-[11px] font-black uppercase tracking-widest py-2.5 transition-colors ${
                       side === s
                         ? s === 'buy'
-                          ? 'bg-foreground text-background'
+                          ? 'bg-[#1f6b3e] text-white'
                           : 'bg-primary text-primary-foreground'
                         : 'text-muted-foreground hover:text-foreground'
                     } ${s === 'sell' ? 'border-l-2 border-border' : ''}`}
@@ -398,7 +461,7 @@ export default function DemoTokenPage() {
                 <button
                   className={`w-full text-[11px] font-black uppercase tracking-widest py-3 border-2 ${
                     side === 'buy'
-                      ? 'bg-foreground text-background border-foreground hover:opacity-85'
+                      ? 'bg-[#1f6b3e] text-white border-[#1f6b3e] hover:opacity-85'
                       : 'bg-primary text-primary-foreground border-primary hover:opacity-85'
                   } transition-opacity`}
                   onClick={() => alert('Demo only — connect wallet & deploy V2 to trade.')}

@@ -53,7 +53,7 @@ export function Navbar({ onCreate }: NavbarProps) {
             <span className="font-black text-lg tracking-tighter text-foreground group-hover:text-primary transition-colors">
               AETHPAD
             </span>
-            <span className="font-black text-lg tracking-tighter text-primary">//v2</span>
+            <span className="h-1.5 w-1.5 bg-primary rounded-full self-center -translate-y-px" />
           </div>
         </Link>
 
@@ -118,9 +118,9 @@ export function Navbar({ onCreate }: NavbarProps) {
           />
           <div className="fixed left-0 top-0 bottom-0 w-72 bg-card border-r-2 border-border z-50 flex flex-col">
             <div className="flex items-center justify-between h-14 px-4 border-b-2 border-border">
-              <div className="flex items-baseline gap-1">
+              <div className="flex items-baseline gap-1.5">
                 <span className="font-black text-lg tracking-tighter text-foreground">AETHPAD</span>
-                <span className="font-black text-lg tracking-tighter text-primary">//v2</span>
+                <span className="h-1.5 w-1.5 bg-primary rounded-full self-center -translate-y-px" />
               </div>
               <button
                 onClick={() => setMenuOpen(false)}

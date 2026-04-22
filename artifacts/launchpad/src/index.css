@@ -138,6 +138,10 @@
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
 .animate-tape-scroll {
   animation: tape-scroll 60s linear infinite;
 }
