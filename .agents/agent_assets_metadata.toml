@@ -120,6 +120,30 @@ uri = "file://attached_assets/generated_images/stackr-og-banner-v3.png"
 type = "image"
 title = "stackr og banner v3"
 
+[[generated]]
+id = "1Hb3T7BrKc3PcqlN0NYcj"
+uri = "file://attached_assets/generated_images/stackr-favicon-v4.png"
+type = "image"
+title = "stackr favicon v4"
+
+[[generated]]
+id = "wYDdVwgHk2Y-qgHfod_4U"
+uri = "file://attached_assets/generated_images/stackr-og-banner-v4.png"
+type = "image"
+title = "stackr og banner v4"
+
+[[generated]]
+id = "_zyaTSywmiHYsrz-t5_5E"
+uri = "file://attached_assets/generated_images/stackr-og-meme-v1.png"
+type = "image"
+title = "stackr og meme banner"
+
+[[generated]]
+id = "qHUOBI24_B3W-OPjH9r5B"
+uri = "file://attached_assets/generated_images/stackr-favicon-diamond.png"
+type = "image"
+title = "stackr diamond favicon"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
