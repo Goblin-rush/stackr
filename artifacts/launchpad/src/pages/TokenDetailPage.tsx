@@ -278,7 +278,7 @@ export default function TokenDetailPage() {
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground uppercase tracking-wider mb-1">24h Change</p>
-                  <p className={`font-mono text-lg tabular-nums font-bold ${change24h >= 0 ? 'text-foreground' : 'text-primary'}`}>
+                  <p className={`font-mono text-lg tabular-nums font-bold ${change24h >= 0 ? 'text-emerald-400' : 'text-primary'}`}>
                     {live.trades.length > 1 ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%` : '–'}
                   </p>
                 </div>

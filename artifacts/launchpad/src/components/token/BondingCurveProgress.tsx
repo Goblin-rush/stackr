@@ -86,7 +86,13 @@ export function BondingCurveProgress({ realEthRaised, graduated, progressBps, li
             boxShadow: pct > 2 ? glow : 'none',
           }}
         >
-          <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent progress-shimmer" />
+          <span
+            className="absolute inset-0"
+            style={{
+              background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.22) 50%, transparent 100%)',
+              animation: 'shimmer 2.2s ease-in-out infinite',
+            }}
+          />
         </div>
       </div>
 

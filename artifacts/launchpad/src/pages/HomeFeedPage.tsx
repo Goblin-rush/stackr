@@ -73,11 +73,11 @@ interface RowDisplay {
 }
 
 const DEMO_ROWS: RowDisplay[] = [
-  { href: '/demo/STR',   symbol: 'STR',   name: 'Asteroid Shiba',  image: genAvatarUri('STR'),   graduated: false, priceLabel: '$0.0000142',  mcapLabel: '$24.3K',  raisedLabel: '1.84 / 3.5 ETH', progress: 53,  ageLabel: '2h ago',   creatorLabel: '0x9f…21Ab', isDemo: true },
-  { href: '/demo/BNK',   symbol: 'BNK',   name: 'Bonkers',         image: genAvatarUri('BNK'),   graduated: true,  priceLabel: '$0.0001231',  mcapLabel: '$148K',   raisedLabel: '3.5 / 3.5 ETH',  progress: 100, ageLabel: '6d ago',   creatorLabel: '0x33…be12', isDemo: true },
-  { href: '/demo/PEPE',  symbol: 'PEPE',  name: 'Memetics Lab',    image: genAvatarUri('PEPE'),  graduated: false, priceLabel: '$0.00000091', mcapLabel: '$3.1K',   raisedLabel: '0.42 / 3.5 ETH', progress: 12,  ageLabel: '11m ago',  creatorLabel: '0xf2…00cc', isDemo: true },
-  { href: '/demo/BASED', symbol: 'BASED', name: 'Based God Coin',  image: genAvatarUri('BASED'), graduated: false, priceLabel: '$0.0000087',  mcapLabel: '$14.7K',  raisedLabel: '1.12 / 3.5 ETH', progress: 32,  ageLabel: '4h ago',   creatorLabel: '0xab…77f1', isDemo: true },
-  { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   image: genAvatarUri('BLU'),   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 3.5 ETH', progress: 20,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
+  { href: '/demo/STR',   symbol: 'STR',   name: 'Asteroid Shiba',  image: genAvatarUri('STR'),   graduated: false, priceLabel: '$0.0000142',  mcapLabel: '$24.3K',  raisedLabel: '1.84 / 5 ETH', progress: 37,  ageLabel: '2h ago',   creatorLabel: '0x9f…21Ab', isDemo: true },
+  { href: '/demo/BNK',   symbol: 'BNK',   name: 'Bonkers',         image: genAvatarUri('BNK'),   graduated: true,  priceLabel: '$0.0001231',  mcapLabel: '$148K',   raisedLabel: '5 / 5 ETH',     progress: 100, ageLabel: '6d ago',   creatorLabel: '0x33…be12', isDemo: true },
+  { href: '/demo/PEPE',  symbol: 'PEPE',  name: 'Memetics Lab',    image: genAvatarUri('PEPE'),  graduated: false, priceLabel: '$0.00000091', mcapLabel: '$3.1K',   raisedLabel: '0.42 / 5 ETH',  progress: 8,   ageLabel: '11m ago',  creatorLabel: '0xf2…00cc', isDemo: true },
+  { href: '/demo/BASED', symbol: 'BASED', name: 'Based God Coin',  image: genAvatarUri('BASED'), graduated: false, priceLabel: '$0.0000087',  mcapLabel: '$14.7K',  raisedLabel: '1.12 / 5 ETH',  progress: 22,  ageLabel: '4h ago',   creatorLabel: '0xab…77f1', isDemo: true },
+  { href: '/demo/BLU',   symbol: 'BLU',   name: 'Blue Chip Inu',   image: genAvatarUri('BLU'),   graduated: false, priceLabel: '$0.000003',   mcapLabel: '$8.2K',   raisedLabel: '0.71 / 5 ETH',  progress: 14,  ageLabel: '38m ago',  creatorLabel: '0x7d…1144', isDemo: true },
 ];
 
 function accentColor(pct: number): string {

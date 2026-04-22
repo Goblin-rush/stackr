@@ -149,6 +149,7 @@ export function useChainTokenLive(
       type: 'buy' | 'sell';
       account: string;
       ethAmount: bigint;
+      ethForPrice: bigint;    // ethForCurve (buy) or ethOutGross (sell) — used for price
       tokenAmount: bigint;
       blockNumber: bigint;
       logIndex: number;
@@ -234,6 +235,7 @@ export function useChainTokenLive(
                   type: 'buy',
                   account: l.args.buyer,
                   ethAmount: l.args.ethIn,
+                  ethForPrice: l.args.ethForCurve,
                   tokenAmount: l.args.tokensOut,
                   blockNumber: l.blockNumber,
                   logIndex: l.logIndex,
@@ -257,6 +259,7 @@ export function useChainTokenLive(
                   type: 'sell',
                   account: l.args.seller,
                   ethAmount: l.args.ethToUser,
+                  ethForPrice: l.args.ethOutGross,
                   tokenAmount: l.args.tokensIn,
                   blockNumber: l.blockNumber,
                   logIndex: l.logIndex,
@@ -439,8 +442,8 @@ export function useChainTokenLive(
           await handleTrade(e.type, {
             args:
               e.type === 'buy'
-                ? { buyer: e.account, ethIn: e.ethAmount, ethForCurve: e.ethAmount, tokensOut: e.tokenAmount }
-                : { seller: e.account, tokensIn: e.tokenAmount, ethOutGross: e.ethAmount, ethToUser: e.ethAmount },
+                ? { buyer: e.account, ethIn: e.ethAmount, ethForCurve: e.ethForPrice, tokensOut: e.tokenAmount }
+                : { seller: e.account, tokensIn: e.tokenAmount, ethOutGross: e.ethForPrice, ethToUser: e.ethAmount },
             blockNumber: e.blockNumber,
             logIndex: e.logIndex,
             transactionHash: e.txHash,

@@ -54,7 +54,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     priceEth: '0.0000000041',
     mcapUsd: '$24.3K',
     raisedEth: 1.84,
-    targetEth: 3.5,
+    targetEth: 5,
     holders: 142,
     change24h: 18.4,
     trades: [
@@ -88,8 +88,8 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     priceUsd: '$0.0001231',
     priceEth: '0.000000035',
     mcapUsd: '$148K',
-    raisedEth: 3.5,
-    targetEth: 3.5,
+    raisedEth: 5,
+    targetEth: 5,
     holders: 1820,
     change24h: -4.2,
     trades: [
@@ -119,7 +119,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     priceEth: '0.00000000026',
     mcapUsd: '$3.1K',
     raisedEth: 0.42,
-    targetEth: 3.5,
+    targetEth: 5,
     holders: 31,
     change24h: 0,
     trades: [
@@ -146,7 +146,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     priceEth: '0.0000000025',
     mcapUsd: '$14.7K',
     raisedEth: 1.12,
-    targetEth: 3.5,
+    targetEth: 5,
     holders: 88,
     change24h: 7.8,
     trades: [
@@ -175,7 +175,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     priceEth: '0.00000000087',
     mcapUsd: '$8.2K',
     raisedEth: 0.71,
-    targetEth: 3.5,
+    targetEth: 5,
     holders: 54,
     change24h: 2.1,
     trades: [
