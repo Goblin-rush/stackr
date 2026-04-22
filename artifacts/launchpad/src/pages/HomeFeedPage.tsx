@@ -105,10 +105,10 @@ function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) 
         style={{
           width: `${displayed}%`,
           background: isHigh
-            ? 'linear-gradient(90deg, hsl(212 100% 50%) 0%, hsl(195 100% 65%) 100%)'
-            : 'linear-gradient(90deg, hsl(212 100% 45%) 0%, hsl(212 100% 60%) 100%)',
+            ? 'linear-gradient(90deg, hsl(4 84% 50%) 0%, hsl(18 92% 64%) 100%)'
+            : 'linear-gradient(90deg, hsl(4 84% 44%) 0%, hsl(4 84% 60%) 100%)',
           boxShadow: displayed > 3
-            ? `0 0 12px hsl(212 100% 58% / ${isHigh ? '0.55' : '0.30'})`
+            ? `0 0 12px hsl(4 84% 58% / ${isHigh ? '0.55' : '0.28'})`
             : 'none',
           transition: 'box-shadow 0.3s ease',
         }}
