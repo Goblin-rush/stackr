@@ -46,7 +46,7 @@ export function TokenCard({ address }: TokenCardProps) {
               <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">{name}</p>
               {graduated && (
                 <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 border-2 border-primary text-primary shrink-0">
-                  ON DEX
+                  DEX
                 </span>
               )}
             </div>

@@ -292,7 +292,7 @@ export default function DemoTokenPage() {
                       ? 'border-primary/50 text-primary bg-primary/10'
                       : 'border-border/60 text-muted-foreground bg-white/4'
                   }`}>
-                    {t.graduated ? 'ON DEX' : 'BONDING'}
+                    {t.graduated ? 'DEX' : 'BONDING'}
                   </span>
                 </div>
 

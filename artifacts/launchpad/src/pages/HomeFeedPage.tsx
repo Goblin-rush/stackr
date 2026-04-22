@@ -261,7 +261,7 @@ function Row({ d }: { d: RowDisplay }) {
           </div>
           {d.graduated && (
             <span className="self-center mr-3 text-[9px] font-semibold tracking-wider text-primary bg-primary/12 border border-primary/30 rounded-full px-2 py-0.5">
-              ON DEX
+              DEX
             </span>
           )}
         </div>
