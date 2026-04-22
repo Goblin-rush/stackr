@@ -22,7 +22,7 @@ interface Holding {
   balance: bigint;
   holdScore: bigint;
   totalLiveScore: bigint;
-  totalDistributed: bigint;   // totalRewardsDistributed for the token
+  actualReceived: bigint;   // sum of RewardClaimed events for this user
   graduated: boolean;
   curvePriceEth: bigint;
 }
@@ -32,18 +32,21 @@ function poolSharePct(h: Holding): number {
   return (Number(h.holdScore) / Number(h.totalLiveScore)) * 100;
 }
 
-/** User's estimated ETH received = pool share % × total distributed */
-function estEthReceived(h: Holding): number {
-  const share = poolSharePct(h) / 100;
-  return Number(formatEther(h.totalDistributed)) * share;
-}
-
 function formatCompact(n: number): string {
   if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
   if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
   if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
   return n.toFixed(2);
 }
+
+const REWARD_CLAIMED_EVENT = {
+  type: 'event' as const,
+  name: 'RewardClaimed' as const,
+  inputs: [
+    { type: 'address' as const, name: 'holder' as const, indexed: true as const },
+    { type: 'uint256' as const, name: 'amount' as const, indexed: false as const },
+  ],
+};
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
@@ -55,7 +58,6 @@ export default function DashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
-  // Auto-refresh every ~6 blocks (≈12s on Base)
   const { data: blockNumber } = useBlockNumber({ watch: true });
   const lastFetchBlock = useRef<bigint>(0n);
   useEffect(() => {
@@ -121,26 +123,43 @@ export default function DashboardPage() {
           return;
         }
 
-        // 8 calls per token: name, symbol, holdScore, totalHoldScoreLive,
-        //                    totalRewardsDistributed, graduated, (unused), currentPrice
+        // 6 multicall slots per token
         const detailCalls = candidates.flatMap((c) => [
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'name' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'symbol' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'holdScore' as const, args: [address] },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalHoldScoreLive' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalRewardsDistributed' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'graduated' as const },
-          { address: c.curve, abi: CURVE_V2_ABI, functionName: 'realEthRaised' as const },
           { address: c.curve, abi: CURVE_V2_ABI, functionName: 'currentPrice' as const },
         ]);
-        const detailResults = await client.multicall({ contracts: detailCalls, allowFailure: true });
+
+        // Query RewardClaimed events for user — exact on-chain receipts
+        const rewardLogsPromises = candidates.map((c) =>
+          client.getLogs({
+            address: c.token,
+            event: REWARD_CLAIMED_EVENT,
+            args: { holder: address },
+            fromBlock: 'earliest',
+            toBlock: 'latest',
+          }).catch(() => [] as { args: { amount?: bigint } }[])
+        );
+
+        const [detailResults, rewardLogsAll] = await Promise.all([
+          client.multicall({ contracts: detailCalls, allowFailure: true }),
+          Promise.all(rewardLogsPromises),
+        ]);
 
         const list: Holding[] = candidates.map((c, i) => {
-          const off = i * 8;
+          const off = i * 6;
           const get = <T,>(idx: number, fallback: T): T => {
             const r = detailResults[off + idx];
             return r.status === 'success' ? (r.result as T) : fallback;
           };
+          const logs = rewardLogsAll[i];
+          const actualReceived = logs.reduce(
+            (sum, log) => sum + ((log.args as { amount?: bigint }).amount ?? 0n),
+            0n
+          );
           return {
             token: c.token,
             curve: c.curve,
@@ -149,13 +168,12 @@ export default function DashboardPage() {
             symbol: get<string>(1, '???'),
             holdScore: get<bigint>(2, 0n),
             totalLiveScore: get<bigint>(3, 0n),
-            totalDistributed: get<bigint>(4, 0n),
-            graduated: get<boolean>(5, false),
-            curvePriceEth: get<bigint>(7, 0n),
+            graduated: get<boolean>(4, false),
+            curvePriceEth: get<bigint>(5, 0n),
+            actualReceived,
           };
         });
 
-        // Sort: most valuable holdings first
         list.sort((a, b) => {
           const va = Number(formatEther((a.balance * a.curvePriceEth) / 10n ** 18n));
           const vb = Number(formatEther((b.balance * b.curvePriceEth) / 10n ** 18n));
@@ -177,14 +195,12 @@ export default function DashboardPage() {
   const totals = useMemo(() => {
     if (!holdings) return null;
     let portfolioEth = 0n;
-    let totalDistributed = 0n;
-    let estReceived = 0;
+    let totalReceived = 0n;
     for (const h of holdings) {
       portfolioEth += (h.balance * h.curvePriceEth) / 10n ** 18n;
-      totalDistributed += h.totalDistributed;
-      estReceived += estEthReceived(h);
+      totalReceived += h.actualReceived;
     }
-    return { portfolioEth, totalDistributed, estReceived, count: holdings.length };
+    return { portfolioEth, totalReceived, count: holdings.length };
   }, [holdings]);
 
   if (!FACTORY_V2_ADDRESS) {
@@ -208,7 +224,7 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-lg font-bold mb-2">Connect your wallet</h2>
           <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
-            See your token holdings and reward pool share.
+            See your token holdings and ETH rewards received.
           </p>
           <button
             onClick={() => login()}
@@ -225,7 +241,7 @@ export default function DashboardPage() {
   return (
     <Shell>
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <SummaryCard
           icon={<Coins className="h-3.5 w-3.5" />}
           label="Holdings"
@@ -239,44 +255,30 @@ export default function DashboardPage() {
           sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.portfolioEth)) * ethPrice).toFixed(2)}` : '—'}
         />
         <SummaryCard
-          icon={<PieChart className="h-3.5 w-3.5" />}
-          label="Total Distributed"
-          value={
-            loading
-              ? null
-              : totals && totals.totalDistributed > 0n
-                ? `${Number(formatEther(totals.totalDistributed)).toFixed(4)} ETH`
-                : '—'
-          }
-          sub="across your tokens"
-        />
-        <SummaryCard
           icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
-          label="Est. Received"
+          label="ETH Received"
           value={
             loading
               ? null
-              : totals && totals.estReceived > 0
-                ? `${totals.estReceived.toFixed(6)} ETH`
+              : totals && totals.totalReceived > 0n
+                ? `${Number(formatEther(totals.totalReceived)).toFixed(6)} ETH`
                 : '—'
           }
           sub={
-            ethPrice && totals && totals.estReceived > 0
-              ? `≈ $${(totals.estReceived * ethPrice).toFixed(2)}`
-              : 'based on your pool share'
+            ethPrice && totals && totals.totalReceived > 0n
+              ? `≈ $${(Number(formatEther(totals.totalReceived)) * ethPrice).toFixed(2)}`
+              : 'auto-distributed rewards'
           }
-          highlight={!!totals && totals.estReceived > 0}
+          highlight={!!totals && totals.totalReceived > 0n}
         />
       </div>
 
-      {/* Error */}
       {error && (
         <div className="border border-destructive/30 bg-destructive/10 text-destructive text-sm font-mono px-4 py-3 rounded-lg mb-4">
           {error}
         </div>
       )}
 
-      {/* Holdings list */}
       <div className="mb-3">
         <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Holdings</h2>
       </div>
@@ -293,7 +295,7 @@ export default function DashboardPage() {
         <EmptyState
           icon={<Coins className="h-8 w-8 text-muted-foreground" />}
           title="No holdings yet"
-          body="Buy a token on the Launchpad. Your holdings and reward pool share will appear here."
+          body="Buy a token on the Launchpad. Your holdings and rewards will appear here automatically."
         />
       )}
 
@@ -303,15 +305,13 @@ export default function DashboardPage() {
             const share = poolSharePct(h);
             const valEth = Number(formatEther((h.balance * h.curvePriceEth) / 10n ** 18n));
             const balFormatted = formatCompact(Number(formatUnits(h.balance, 18)));
-            const distributed = Number(formatEther(h.totalDistributed));
-            const estRec = estEthReceived(h);
+            const received = Number(formatEther(h.actualReceived));
 
             return (
               <div
                 key={h.token}
                 className="rounded-xl border border-border/60 bg-card overflow-hidden hover:border-border transition-colors"
               >
-                {/* Token header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                   <Link href={`/token/${h.token}`}>
                     <div className="flex items-center gap-2 cursor-pointer group">
@@ -336,7 +336,6 @@ export default function DashboardPage() {
                   </a>
                 </div>
 
-                {/* Stats grid */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
                   <StatCell label="Balance" value={`${balFormatted} ${h.symbol}`} />
                   <StatCell label="Value" value={`${valEth.toFixed(5)} ETH`} />
@@ -346,10 +345,10 @@ export default function DashboardPage() {
                     sub="of reward pool"
                   />
                   <StatCell
-                    label="Est. Received"
-                    value={estRec > 0 ? `${estRec.toFixed(6)} ETH` : '—'}
-                    sub={distributed > 0 ? `of ${distributed.toFixed(4)} total` : 'no rewards yet'}
-                    highlight={estRec > 0}
+                    label="ETH Received"
+                    value={received > 0 ? `${received.toFixed(6)} ETH` : '—'}
+                    sub={received > 0 ? 'from auto-distribution' : 'no rewards yet'}
+                    highlight={received > 0}
                   />
                 </div>
               </div>
@@ -357,11 +356,6 @@ export default function DashboardPage() {
           })}
         </div>
       )}
-
-      <p className="text-[11px] font-mono text-muted-foreground/50 mt-8 leading-relaxed max-w-2xl">
-        Rewards are distributed automatically on every trade — no claiming needed. Your share of each
-        distribution = your holdScore ÷ total holdScore. HoldScore grows while you hold and resets on sell.
-      </p>
     </Shell>
   );
 }
