@@ -2,7 +2,6 @@ import { useParams } from 'wouter';
 import { useState, useEffect } from 'react';
 import { useReadContract, useWatchContractEvent } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useChainTokenLive } from '@/hooks/use-chain-token-live';
@@ -351,7 +350,6 @@ export default function TokenDetailPage() {
 
         </div>
       </main>
-      <Footer />
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useParams, Link } from 'wouter';
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, ExternalLink } from 'lucide-react';
 import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 
@@ -517,7 +516,6 @@ export default function DemoTokenPage() {
         </div>
       </main>
 
-      <Footer />
     </div>
   );
 }

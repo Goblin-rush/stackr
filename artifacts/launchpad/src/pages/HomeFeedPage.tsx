@@ -1,5 +1,4 @@
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -450,7 +449,6 @@ export default function HomeFeedPage() {
 
       </main>
 
-      <Footer />
       <CreateTokenModal open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </div>
   );

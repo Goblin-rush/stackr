@@ -4,7 +4,6 @@ import { usePrivy } from '@privy-io/react-auth';
 import { Link } from 'wouter';
 import { formatEther } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
-import { Footer } from '@/components/layout/Footer';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import {
   FACTORY_V2_ADDRESS,
@@ -406,7 +405,6 @@ function Shell({ children }: { children: React.ReactNode }) {
         </div>
         {children}
       </main>
-      <Footer />
     </div>
   );
 }
