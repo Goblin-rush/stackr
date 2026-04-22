@@ -4,7 +4,6 @@ import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAccount } from 'wagmi';
 import { Plus, Menu, X, Wallet, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { useEthPrice } from '@/hooks/use-eth-price';
 
 interface NavbarProps {
   onCreate?: () => void;
@@ -26,8 +25,6 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { setActiveWallet } = useSetActiveWallet();
   const { address } = useAccount();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { data: ethPrice } = useEthPrice();
-
   useEffect(() => {
     if (!ready || !authenticated || !wallets.length) return;
     const injected = wallets.find((w) => w.walletClientType === 'metamask' || w.connectorType === 'injected');
@@ -186,11 +183,6 @@ export function Navbar({ onCreate }: NavbarProps) {
                 <XIcon className="h-3 w-3" />
                 @stackr
               </a>
-              {ethPrice && (
-                <span className="text-[11px] font-mono text-muted-foreground/40">
-                  ETH ${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                </span>
-              )}
             </div>
           </div>
         </>
