@@ -103,10 +103,6 @@ export default function FaqPage() {
           <div className="border-t border-border" />
         </div>
 
-        <div className="mt-10 pt-4 border-t-2 border-border flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-          <span>Stackr / Base Mainnet</span>
-          <span>{faqs.length} questions</span>
-        </div>
       </main>
     </div>
   );
