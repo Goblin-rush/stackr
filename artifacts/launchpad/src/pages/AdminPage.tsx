@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   useAccount,
   useConnect,
@@ -122,7 +122,7 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [withdrawDone, setWithdrawDone] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
     if (isSuccess) {
       setWithdrawDone(true);
       refetchStats();
@@ -310,7 +310,7 @@ function AdminTokenRow({
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  useMemo(() => {
+  useEffect(() => {
     if (isSuccess) {
       setDone(true);
       refetchMeta();

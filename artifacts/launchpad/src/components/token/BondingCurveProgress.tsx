@@ -5,7 +5,7 @@ import { useCurveConstants } from '@/hooks/use-curve-constants';
 interface BondingCurveProgressProps {
   realEthRaised: bigint | undefined;
   graduated: boolean | undefined;
-  /** progressBps from contract getProgress() — 0..10000. If provided, used directly instead of recomputing. */
+  /** progressBps from contract progressBps() — 0..10000. If provided, used directly instead of recomputing. */
   progressBps?: bigint | undefined;
   /** Live ETH raised as number (from event-tracked state). Preferred over realEthRaised when present. */
   liveRaisedEth?: number;

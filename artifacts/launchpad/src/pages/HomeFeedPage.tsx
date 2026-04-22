@@ -156,48 +156,6 @@ function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) 
   );
 }
 
-/* ─── Activity ticker ────────────────────────────── */
-const DEMO_TICKER = [
-  { sym: 'STR',   type: 'buy'  as const, eth: '0.041' },
-  { sym: 'BNK',   type: 'sell' as const, eth: '0.812' },
-  { sym: 'PEPE',  type: 'buy'  as const, eth: '0.012' },
-  { sym: 'BASED', type: 'buy'  as const, eth: '0.025' },
-  { sym: 'STR',   type: 'buy'  as const, eth: '0.087' },
-  { sym: 'BLU',   type: 'buy'  as const, eth: '0.018' },
-  { sym: 'BNK',   type: 'buy'  as const, eth: '1.250' },
-  { sym: 'STR',   type: 'sell' as const, eth: '0.022' },
-  { sym: 'PEPE',  type: 'buy'  as const, eth: '0.055' },
-  { sym: 'BASED', type: 'sell' as const, eth: '0.011' },
-];
-
-function ActivityTicker() {
-  const items = [...DEMO_TICKER, ...DEMO_TICKER];
-  return (
-    <div className="rounded-xl border border-border/60 bg-card/60 mb-4 overflow-hidden">
-      <div className="flex items-center">
-        <div className="flex items-center gap-1.5 bg-primary/10 text-primary px-3 py-2 text-[10px] font-semibold uppercase tracking-widest shrink-0 border-r border-border/60">
-          <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
-          Live
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <div className="flex gap-6 py-2 px-3 whitespace-nowrap animate-[ticker_40s_linear_infinite]">
-            {items.map((t, i) => (
-              <span key={i} className="text-[11px] font-mono tabular-nums flex items-center gap-1.5">
-                <span className={`font-semibold text-[10px] uppercase tracking-wider ${t.type === 'buy' ? 'text-emerald-400' : 'text-red-400'}`}>
-                  {t.type}
-                </span>
-                <span className="text-foreground font-semibold">${t.sym}</span>
-                <span className="text-muted-foreground/60">·</span>
-                <span className="text-foreground/80">{t.eth} ETH</span>
-              </span>
-            ))}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── Featured card ──────────────────────────────── */
 function FeaturedRow({ d }: { d: RowDisplay }) {
   return (

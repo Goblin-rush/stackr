@@ -155,7 +155,7 @@ export function useGlobalTradeTape(maxTokens = 200) {
               client.multicall({ contracts: symbolCalls, allowFailure: true }),
             ]);
             if (cancelled) return;
-            type RecordTuple = { creator: `0x${string}`; curve: `0x${string}`; createdAt: bigint; metadataURI: string };
+            type RecordTuple = { token: `0x${string}`; curve: `0x${string}`; creator: `0x${string}`; deployedAt: bigint; metadataURI: string; initialDevBuyEth: bigint; initialDevBuyTokens: bigint };
             chunk.forEach((tokenAddress, j) => {
               const rec = recordRes[j]?.status === 'success' ? (recordRes[j].result as unknown as RecordTuple) : null;
               const sym = symbolRes[j]?.status === 'success' ? (symbolRes[j].result as string) : '?';
