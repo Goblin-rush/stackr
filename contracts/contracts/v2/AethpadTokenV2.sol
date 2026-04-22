@@ -101,6 +101,9 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     // Set once by factory; can be updated by factory owner.
     address public keeper;
 
+    // Maximum holders per pushRewards batch (fix #5: prevent OOG)
+    uint256 public constant MAX_PUSH_BATCH = 150;
+
     // ─── Events ───────────────────────────────────────────────────
     event Graduated(address indexed pair);
     event RewardsDeposited(uint256 ethAmount, uint256 newCumulative);
@@ -109,6 +112,7 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     event TaxTaken(address indexed from, address indexed to, uint256 burnAmt, uint256 rewardAmt, uint256 platformAmt);
     event PlatformFeeForwarded(uint256 ethAmount);
     event KeeperUpdated(address indexed oldKeeper, address indexed newKeeper);
+    event ScoreDesyncDetected(address indexed user, uint256 drop, uint256 totalScore); // fix #6
 
     // ─── Constructor ──────────────────────────────────────────────
     constructor(
@@ -335,6 +339,8 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
             if (totalAccumulatedScore >= drop) {
                 totalAccumulatedScore -= drop;
             } else {
+                // fix #6: emit desync event instead of silently flooring to 0
+                emit ScoreDesyncDetected(user, drop, totalAccumulatedScore);
                 totalAccumulatedScore = 0;
             }
             c.accumulatedScore = newScore;
@@ -386,7 +392,17 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
         uint256 poolEth = ethAmount + orphanedRewardEth;
         if (orphanedRewardEth > 0) orphanedRewardEth = 0;
 
-        cumulativeEthPerScore += (poolEth * 1e18) / liveTotal;
+        // fix #3: if poolEth is too small relative to liveTotal the division
+        // rounds to 0 — ETH would be deposited but permanently unclaimable.
+        // Park it as orphaned instead so it is swept in the next deposit.
+        uint256 increment = (poolEth * 1e18) / liveTotal;
+        if (increment == 0) {
+            orphanedRewardEth += poolEth;
+            emit RewardsDeposited(poolEth, cumulativeEthPerScore);
+            return;
+        }
+
+        cumulativeEthPerScore += increment;
         lastRewardTimestamp = block.timestamp;
         emit RewardsDeposited(poolEth, cumulativeEthPerScore);
     }
@@ -421,10 +437,16 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
 
         _approve(address(this), address(uniswapRouter), tokenAmount);
 
+        // fix #4: compute 90% of expected output to guard against sandwich attacks
+        uint256 minOut = 0;
+        try uniswapRouter.getAmountsOut(tokenAmount, path) returns (uint256[] memory amounts) {
+            minOut = (amounts[1] * 90) / 100;
+        } catch {}
+
         uint256 ethBefore = address(this).balance;
         try uniswapRouter.swapExactTokensForETHSupportingFeeOnTransferTokens(
             tokenAmount,
-            0,
+            minOut,
             path,
             address(this),
             block.timestamp
@@ -486,6 +508,7 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
      */
     function pushRewards(address[] calldata holders) external nonReentrant {
         require(msg.sender == keeper, "Only keeper");
+        require(holders.length <= MAX_PUSH_BATCH, "Batch too large"); // fix #5
         uint256 totalSent;
         uint256 pushed;
 

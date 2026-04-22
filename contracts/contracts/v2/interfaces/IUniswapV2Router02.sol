@@ -21,6 +21,11 @@ interface IUniswapV2Router02 {
         address to,
         uint256 deadline
     ) external;
+
+    function getAmountsOut(uint256 amountIn, address[] calldata path)
+        external
+        view
+        returns (uint256[] memory amounts);
 }
 
 interface IUniswapV2Factory {

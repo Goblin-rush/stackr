@@ -105,6 +105,10 @@ contract AethpadFactoryV2 is Ownable, ReentrancyGuard {
             }
             records[tokenAddr].initialDevBuyEth = devBuyEth;
             records[tokenAddr].initialDevBuyTokens = devBuyTokens;
+
+            // fix #1: stamp lastBuyAt on the creator's address (not the factory)
+            // so the anti-snipe penalty applies correctly if creator sells early.
+            curve.stampBuyAt(msg.sender);
         }
 
         emit TokenDeployed(tokenAddr, curveAddr, msg.sender, name, symbol, metadataURI, devBuyEth, devBuyTokens);

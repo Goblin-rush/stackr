@@ -265,13 +265,19 @@ contract AethpadBondingCurveV2 is ReentrancyGuard {
 
     /**
      * @notice Factory owner can pull ETH pre-graduation. Curve closes, no
-     *         further trading. Reserved tokens remain in curve (owner can
-     *         also call burnLeftover afterward).
+     *         further trading. All remaining tokens are burned so they cannot
+     *         be resold or remain stranded in the curve forever (fix #2).
      */
     function forceCloseAndWithdraw(address to) external nonReentrant {
         require(msg.sender == factory, "Only factory");
         require(!graduated, "Already graduated");
         forceClosed = true;
+
+        // fix #2: burn all remaining tokens before withdrawing ETH
+        uint256 tokenBal = token.balanceOf(address(this));
+        if (tokenBal > 0) {
+            token.burnFromCurve(tokenBal);
+        }
 
         uint256 bal = address(this).balance;
         if (bal > 0) {
@@ -279,6 +285,16 @@ contract AethpadBondingCurveV2 is ReentrancyGuard {
             require(ok, "Withdraw failed");
         }
         emit ForceClosed(to, bal);
+    }
+
+    /**
+     * @notice Factory stamps lastBuyAt for a user — used when factory performs
+     *         the dev buy on behalf of the creator so anti-snipe applies to
+     *         creator's actual address, not the factory (fix #1).
+     */
+    function stampBuyAt(address user) external {
+        require(msg.sender == factory, "Only factory");
+        lastBuyAt[user] = uint64(block.timestamp);
     }
 
     // ═════════════════════════════════════════════════════════════
