@@ -91,12 +91,18 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     // Addresses excluded from holdScore / rewards (curve, pair, dead, factory, this)
     mapping(address => bool) public isExcluded;
 
+    // Authorized keeper — the only address allowed to call pushRewards()
+    // Set once by factory; can be updated by factory owner.
+    address public keeper;
+
     // ─── Events ───────────────────────────────────────────────────
     event Graduated(address indexed pair);
     event RewardsDeposited(uint256 ethAmount, uint256 newCumulative);
     event RewardsClaimed(address indexed user, uint256 ethAmount);
+    event RewardsPushed(uint256 holderCount, uint256 totalEthSent);
     event TaxTaken(address indexed from, address indexed to, uint256 burnAmt, uint256 rewardAmt, uint256 platformAmt);
     event PlatformFeeForwarded(uint256 ethAmount);
+    event KeeperUpdated(address indexed oldKeeper, address indexed newKeeper);
 
     // ─── Constructor ──────────────────────────────────────────────
     constructor(
@@ -427,7 +433,7 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
     // ═════════════════════════════════════════════════════════════
 
     /**
-     * @notice Claim pending ETH rewards.
+     * @notice Claim pending ETH rewards manually (pull model, always available).
      */
     function claim() external nonReentrant {
         _settleUser(msg.sender);
@@ -438,6 +444,49 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
         (bool ok, ) = payable(msg.sender).call{value: amount}("");
         require(ok, "ETH send failed");
         emit RewardsClaimed(msg.sender, amount);
+    }
+
+    /**
+     * @notice Automatic push distribution — called by the off-chain keeper
+     *         (GitHub Actions cron) to push pending ETH rewards to a batch
+     *         of holders without them needing to claim.
+     *
+     *         Only the keeper address can call this. The keeper wallet is
+     *         funded from the platform fee and pays the gas cost.
+     *
+     *         If an ETH send to a holder fails (e.g. a contract that rejects
+     *         ETH), that holder's pendingEth is left intact — they can still
+     *         call claim() manually.
+     *
+     * @param holders  List of holder addresses to push rewards to.
+     */
+    function pushRewards(address[] calldata holders) external nonReentrant {
+        require(msg.sender == keeper, "Only keeper");
+        uint256 totalSent;
+        uint256 pushed;
+
+        for (uint256 i = 0; i < holders.length; i++) {
+            address holder = holders[i];
+            if (!_isTracked(holder)) continue;
+
+            _settleUser(holder);
+            Checkpoint storage c = checkpoints[holder];
+            uint256 amount = c.pendingEth;
+            if (amount == 0) continue;
+
+            c.pendingEth = 0;
+            (bool ok, ) = payable(holder).call{value: amount}("");
+            if (ok) {
+                totalSent += amount;
+                pushed++;
+                emit RewardsClaimed(holder, amount);
+            } else {
+                // Restore pending so holder can claim() manually
+                c.pendingEth = amount;
+            }
+        }
+
+        emit RewardsPushed(pushed, totalSent);
     }
 
     // ═════════════════════════════════════════════════════════════
@@ -481,6 +530,16 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
 
     function setExcluded(address account, bool excluded) external onlyFactory {
         isExcluded[account] = excluded;
+    }
+
+    /**
+     * @notice Set or rotate the keeper address that is allowed to call pushRewards().
+     *         Only callable by factory (which restricts it to the platform owner).
+     *         Set to address(0) to disable push distribution (holders use claim()).
+     */
+    function setKeeper(address newKeeper) external onlyFactory {
+        emit KeeperUpdated(keeper, newKeeper);
+        keeper = newKeeper;
     }
 
     // Accept ETH from curve/router
