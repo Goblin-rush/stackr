@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, ExternalLink } from 'lucide-react';
-import { PriceChart, type Timeframe } from '@/components/token/PriceChart';
+import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 
 interface DemoToken {
   symbol: string;
@@ -207,7 +207,6 @@ export default function DemoTokenPage() {
   const [amount, setAmount] = useState('');
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
   const [copied, setCopied] = useState(false);
-  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
 
   const copyCA = () => {
     if (!t) return;
@@ -382,35 +381,14 @@ export default function DemoTokenPage() {
               </div>
             </div>
 
-            {/* Chart — TradingView lightweight-charts */}
-            <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40">
-                <div className="flex items-center gap-1">
-                  {(['5m', '15m', '1h', '4h', '1d'] as Timeframe[]).map((tf) => (
-                    <button
-                      key={tf}
-                      onClick={() => setTimeframe(tf)}
-                      className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded transition-all ${
-                        timeframe === tf
-                          ? 'bg-white/10 text-foreground'
-                          : 'text-muted-foreground/50 hover:text-muted-foreground'
-                      }`}
-                    >
-                      {tf}
-                    </button>
-                  ))}
-                </div>
-                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/40">
-                  <span className="h-1.5 w-1.5 bg-primary/60 rounded-full" />
-                  simulated
-                </span>
-              </div>
-              <PriceChart
+            {/* Chart — TradingView Advanced Charts */}
+            <div className="rounded-xl border border-border/60 overflow-hidden">
+              <TVAdvancedChart
                 seed={t.symbol}
                 baseEthRaised={t.raisedEth}
                 graduated={t.graduated}
-                timeframe={timeframe}
-                height={320}
+                symbol={`${t.symbol}/ETH`}
+                height={440}
               />
             </div>
 
@@ -533,9 +511,6 @@ export default function DemoTokenPage() {
                 >
                   {side === 'buy' ? 'Buy' : 'Sell'} {t.symbol}
                 </button>
-                <p className="text-[10px] font-mono text-muted-foreground/40 text-center">
-                  Tax: 1.5% burn · 2% holders · 1.5% platform
-                </p>
               </div>
             </div>
           </div>
