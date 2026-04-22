@@ -8,7 +8,7 @@ interface NavbarProps {
   onCreate?: () => void;
 }
 
-const X_URL = 'https://x.com/stackr?s=21';
+const X_URL = 'https://x.com/stakr_?s=21';
 
 export function XIcon({ className }: { className?: string }) {
   return (
@@ -67,6 +67,15 @@ export function Navbar({ onCreate }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
+            <a
+              href={X_URL}
+              target="_blank"
+              rel="noreferrer noopener"
+              aria-label="Follow on X"
+              className="hidden md:flex p-1.5 text-muted-foreground/50 hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
+            >
+              <XIcon className="h-3.5 w-3.5" />
+            </a>
             {isConnected && address ? (
               <div className="flex items-center gap-1.5 bg-white/5 border border-border/60 rounded-md pl-2.5 pr-1.5 py-1.5">
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
