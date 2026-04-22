@@ -137,7 +137,6 @@ export function Navbar({ onCreate }: NavbarProps) {
               {[
                 { href: '/', icon: <Rocket className="h-3.5 w-3.5" />, label: 'Feed' },
                 { href: '/dashboard', icon: <LayoutDashboard className="h-3.5 w-3.5" />, label: 'My Dashboard' },
-                { href: '/docs', icon: <span className="font-mono text-[10px] w-3.5 text-center">§</span>, label: 'Docs' },
               ].map((item) => (
                 <Link key={item.href} href={item.href}>
                   <div
@@ -171,6 +170,12 @@ export function Navbar({ onCreate }: NavbarProps) {
                 <span className="text-foreground font-semibold tabular-nums">
                   {ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
                 </span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground pt-1 border-t border-border/40">
+                <Link href="/docs">
+                  <span onClick={() => setMenuOpen(false)} className="hover:text-primary transition-colors cursor-pointer">Docs</span>
+                </Link>
+                <span className="opacity-40">§</span>
               </div>
             </div>
           </div>
