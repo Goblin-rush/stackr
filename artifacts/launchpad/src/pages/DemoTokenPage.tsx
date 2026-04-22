@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, ExternalLink } from 'lucide-react';
+import { PriceChart, type Timeframe } from '@/components/token/PriceChart';
 
 interface DemoToken {
   symbol: string;
@@ -206,6 +207,7 @@ export default function DemoTokenPage() {
   const [amount, setAmount] = useState('');
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
   const [copied, setCopied] = useState(false);
+  const [timeframe, setTimeframe] = useState<Timeframe>('15m');
 
   const copyCA = () => {
     if (!t) return;
@@ -380,74 +382,37 @@ export default function DemoTokenPage() {
               </div>
             </div>
 
-            {/* Chart */}
-            {(() => {
-              const candles = [
-                {o:30,c:38,h:42,l:28},{o:38,c:35,h:41,l:32},{o:35,c:44,h:47,l:33},
-                {o:44,c:41,h:46,l:38},{o:41,c:50,h:54,l:40},{o:50,c:48,h:53,l:45},
-                {o:48,c:56,h:60,l:47},{o:56,c:54,h:58,l:51},{o:54,c:62,h:65,l:53},
-                {o:62,c:58,h:64,l:56},{o:58,c:67,h:70,l:56},{o:67,c:72,h:76,l:65},
-                {o:72,c:69,h:74,l:67},{o:69,c:78,h:82,l:68},{o:78,c:75,h:80,l:73},
-                {o:75,c:84,h:88,l:74},{o:84,c:81,h:86,l:79},{o:81,c:88,h:91,l:80},
-                {o:88,c:92,h:95,l:86},{o:92,c:90,h:94,l:88},{o:90,c:95,h:97,l:89},
-              ];
-              const yLabels = ['0.000018','0.000016','0.000014','0.000012','0.000010'];
-              const W = 560; const H = 200; const PAD_L = 60; const PAD_R = 8; const PAD_V = 8;
-              const innerW = W - PAD_L - PAD_R;
-              const innerH = H - PAD_V * 2;
-              const minVal = 28; const maxVal = 97; const range = maxVal - minVal;
-              const toY = (v: number) => PAD_V + innerH - ((v - minVal) / range) * innerH;
-              const slotW = innerW / candles.length;
-              const candleW = Math.max(slotW * 0.6, 4);
-              return (
-                <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
-                  <div className="px-5 py-3 border-b border-border/40 flex items-center justify-between">
-                    <span className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-wider">Price · 15m</span>
-                    <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/50">
-                      <span className="h-1.5 w-1.5 bg-primary rounded-full animate-pulse" />
-                      mock
-                    </span>
-                  </div>
-                  <div className="p-3">
-                    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-48" preserveAspectRatio="none">
-                      {/* Grid lines */}
-                      {yLabels.map((_, i) => {
-                        const y = PAD_V + (i / (yLabels.length - 1)) * innerH;
-                        return <line key={i} x1={PAD_L} x2={W - PAD_R} y1={y} y2={y} stroke="rgba(255,255,255,0.06)" strokeWidth="1" />;
-                      })}
-                      {/* Y-axis labels */}
-                      {yLabels.map((label, i) => {
-                        const y = PAD_V + (i / (yLabels.length - 1)) * innerH;
-                        return <text key={i} x={PAD_L - 4} y={y + 3} textAnchor="end" fontSize="7" fill="rgba(255,255,255,0.3)" fontFamily="monospace">{label}</text>;
-                      })}
-                      {/* Candles */}
-                      {candles.map((c, i) => {
-                        const cx = PAD_L + i * slotW + slotW / 2;
-                        const up = c.c >= c.o;
-                        const color = up ? '#22c55e' : '#D63A1F';
-                        const bodyTop = toY(Math.max(c.o, c.c));
-                        const bodyBot = toY(Math.min(c.o, c.c));
-                        const bodyH = Math.max(bodyBot - bodyTop, 1.5);
-                        return (
-                          <g key={i}>
-                            {/* Wick */}
-                            <line x1={cx} x2={cx} y1={toY(c.h)} y2={toY(c.l)} stroke={color} strokeWidth="1" opacity="0.8" />
-                            {/* Body */}
-                            <rect
-                              x={cx - candleW / 2} y={bodyTop}
-                              width={candleW} height={bodyH}
-                              fill={up ? color : 'transparent'}
-                              stroke={color} strokeWidth="1"
-                              rx="1"
-                            />
-                          </g>
-                        );
-                      })}
-                    </svg>
-                  </div>
+            {/* Chart — TradingView lightweight-charts */}
+            <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/40">
+                <div className="flex items-center gap-1">
+                  {(['5m', '15m', '1h', '4h', '1d'] as Timeframe[]).map((tf) => (
+                    <button
+                      key={tf}
+                      onClick={() => setTimeframe(tf)}
+                      className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded transition-all ${
+                        timeframe === tf
+                          ? 'bg-white/10 text-foreground'
+                          : 'text-muted-foreground/50 hover:text-muted-foreground'
+                      }`}
+                    >
+                      {tf}
+                    </button>
+                  ))}
                 </div>
-              );
-            })()}
+                <span className="inline-flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/40">
+                  <span className="h-1.5 w-1.5 bg-primary/60 rounded-full" />
+                  simulated
+                </span>
+              </div>
+              <PriceChart
+                seed={t.symbol}
+                baseEthRaised={t.raisedEth}
+                graduated={t.graduated}
+                timeframe={timeframe}
+                height={320}
+              />
+            </div>
 
             {/* Trades / Holders — tabbed, one card */}
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
