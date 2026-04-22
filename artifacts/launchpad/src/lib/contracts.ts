@@ -319,6 +319,9 @@ export const TOKEN_V2_ABI = [
 
 export const CURVE_V2_ABI = [
   { name: 'realEthRaised', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'virtualEthReserve', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'virtualTokenReserve', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'targetEth', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { name: 'graduated', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] },
   { name: 'forceClosed', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] },
   { name: 'getProgress', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },

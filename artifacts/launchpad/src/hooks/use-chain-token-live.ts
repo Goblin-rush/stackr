@@ -1,12 +1,12 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
-import { CURVE_V2_ABI, TARGET_ETH as TARGET_ETH_BI, V2_VIRTUAL_ETH as V2_VIRTUAL_ETH_BI } from '@/lib/contracts';
+import { CURVE_V2_ABI, V2_TARGET_REAL_ETH, V2_VIRTUAL_ETH as V2_VIRTUAL_ETH_BI } from '@/lib/contracts';
 import type { LiveTrade, LiveHolder } from '@/types/live';
 
-const TARGET_ETH = Number(formatEther(TARGET_ETH_BI));   // 3.5 ETH
+const TARGET_ETH = Number(formatEther(V2_TARGET_REAL_ETH)); // 5 ETH — read from contracts.ts
 const TOTAL_SUPPLY = 1_000_000_000;
-const VIRTUAL_ETH = Number(formatEther(V2_VIRTUAL_ETH_BI)); // 3.0 ETH
+const VIRTUAL_ETH = Number(formatEther(V2_VIRTUAL_ETH_BI)); // 3.0 ETH — V2 virtual reserve
 
 // V2 event signatures — emitted by the CURVE contract
 const buyEvent = parseAbiItem(

@@ -1,6 +1,7 @@
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
-import { TARGET_ETH, TOTAL_SUPPLY } from '@/lib/contracts';
+import { TOTAL_SUPPLY } from '@/lib/contracts';
+import { useCurveConstants } from '@/hooks/use-curve-constants';
 import { formatEther } from 'viem';
 import { Link } from 'wouter';
 import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
@@ -12,6 +13,7 @@ interface TokenCardProps {
 export function TokenCard({ address }: TokenCardProps) {
   const { name, symbol, realEthRaised, graduated, currentPrice } = useToken(address);
   const { data: ethPrice } = useEthPrice();
+  const { targetEth } = useCurveConstants();
   const meta = useTokenMetadata(address);
   const imageUrl = ipfsToHttp(meta?.image);
 
@@ -21,8 +23,9 @@ export function TokenCard({ address }: TokenCardProps) {
     );
   }
 
-  const progress = realEthRaised ? Math.min(Number((realEthRaised * 100n) / TARGET_ETH), 100) : 0;
-  const ethRaised = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
+  const ethRaisedNum = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
+  const progress = Math.min((ethRaisedNum / targetEth) * 100, 100);
+  const ethRaised = ethRaisedNum;
   const priceInEth = currentPrice ? Number(formatEther(currentPrice)) : 0;
   const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
   const mcUsd = ethPrice ? mcEth * ethPrice : null;

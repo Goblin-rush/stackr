@@ -1,6 +1,6 @@
-import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
 import { useEffect, useRef, useState } from 'react';
+import { useCurveConstants } from '@/hooks/use-curve-constants';
 
 interface BondingCurveProgressProps {
   realEthRaised: bigint | undefined;
@@ -8,9 +8,9 @@ interface BondingCurveProgressProps {
 }
 
 export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveProgressProps) {
+  const { targetEth } = useCurveConstants();
   const raised = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
-  const target = Number(formatEther(TARGET_ETH));
-  const progress = Math.min((raised / target) * 100, 100);
+  const progress = Math.min((raised / targetEth) * 100, 100);
 
   const [displayed, setDisplayed] = useState(0);
   const rafRef = useRef<number | null>(null);
@@ -61,11 +61,10 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
       <div className="flex items-baseline justify-between">
         <span className="text-xs font-medium text-muted-foreground uppercase tracking-widest">Bonding Curve</span>
         <span className="font-mono text-sm text-foreground tabular-nums">
-          {raised.toFixed(3)} <span className="text-muted-foreground">/ {target} ETH</span>
+          {raised.toFixed(3)} <span className="text-muted-foreground">/ {targetEth} ETH</span>
         </span>
       </div>
 
-      {/* Animated bar */}
       <div className="relative h-2.5 w-full bg-white/5 rounded-full overflow-hidden border border-white/8">
         <div
           className="absolute top-0 left-0 h-full rounded-full transition-none overflow-hidden"
@@ -75,7 +74,6 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
             boxShadow: pct > 2 ? glow : 'none',
           }}
         >
-          {/* shimmer sweep */}
           <span className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent progress-shimmer" />
         </div>
       </div>
@@ -90,7 +88,7 @@ export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveP
             Graduated to DEX
           </span>
         ) : (
-          <span className="text-xs text-muted-foreground font-mono">target: {target} ETH</span>
+          <span className="text-xs text-muted-foreground font-mono">target: {targetEth} ETH</span>
         )}
       </div>
 

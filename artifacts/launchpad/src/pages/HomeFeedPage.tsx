@@ -4,8 +4,8 @@ import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { Link } from 'wouter';
-import { TARGET_ETH } from '@/lib/contracts';
 import { formatEther } from 'viem';
+import { useCurveConstants } from '@/hooks/use-curve-constants';
 import { Search, X, Plus, Flame, TrendingUp } from 'lucide-react';
 import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
@@ -28,8 +28,6 @@ const SORT_TABS: { id: FeedSort; label: string }[] = [
   { id: 'oldest', label: 'Oldest' },
   { id: 'lasttrade', label: 'Recent' },
 ];
-
-const TARGET_ETH_NUM = Number(formatEther(TARGET_ETH));
 
 function timeAgo(ts: number | null): string {
   if (!ts) return '–';
@@ -327,7 +325,8 @@ function shortAddr(a: string | null): string | null {
 }
 
 function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
-  const progress = Math.min((token.realEthRaised / TARGET_ETH_NUM) * 100, 100);
+  const { targetEth } = useCurveConstants();
+  const progress = Math.min((token.realEthRaised / targetEth) * 100, 100);
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
   const meta = useTokenMetadata(token.address);
@@ -344,7 +343,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
           ? `$${priceUsd.toFixed(priceUsd < 0.01 ? 8 : 4)}`
           : token.currentPriceEth.toExponential(2),
         mcapLabel: mcUsd ? formatUsd(mcUsd) : `${token.marketCapEth.toFixed(2)} ETH`,
-        raisedLabel: `${token.realEthRaised.toFixed(3)} / ${TARGET_ETH_NUM} ETH`,
+        raisedLabel: `${token.realEthRaised.toFixed(3)} / ${targetEth} ETH`,
         progress,
         ageLabel: timeAgo(token.lastTradeMs ?? token.createdAtMs),
         creatorLabel: shortAddr(token.creator),
