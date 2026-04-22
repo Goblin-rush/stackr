@@ -2,7 +2,7 @@ import { Link } from 'wouter';
 import { usePrivy, useWallets } from '@privy-io/react-auth';
 import { useSetActiveWallet } from '@privy-io/wagmi';
 import { useAccount } from 'wagmi';
-import { Plus, Menu, Rocket, X, LayoutDashboard, BookOpen, Wallet, LogOut, TrendingUp } from 'lucide-react';
+import { Plus, Menu, Rocket, X, LayoutDashboard, BookOpen, Wallet, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useEthPrice } from '@/hooks/use-eth-price';
 
@@ -112,130 +112,86 @@ export function Navbar({ onCreate }: NavbarProps) {
         </div>
       </nav>
 
-      {/* Drawer rendered OUTSIDE <nav> to escape backdrop-filter stacking context */}
+      {/* Drawer */}
       {menuOpen && (
         <>
-          <div
-            onClick={() => setMenuOpen(false)}
-            className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200]"
-          />
-          <div className="fixed right-0 top-0 bottom-0 w-72 bg-[#0e0e0f] border-l border-border/40 z-[201] flex flex-col shadow-2xl">
+          <div onClick={() => setMenuOpen(false)} className="fixed inset-0 bg-black/60 z-[200]" />
+          <div className="fixed right-0 top-0 bottom-0 w-64 bg-[#0c0c0d] border-l border-white/8 z-[201] flex flex-col">
 
-            {/* Header */}
-            <div className="relative px-5 pt-5 pb-4 border-b border-border/40 overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-transparent pointer-events-none" />
-              <div className="flex items-center justify-between relative">
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center justify-center w-7 h-7 rounded-md bg-primary/15 border border-primary/30">
-                    <TrendingUp className="h-3.5 w-3.5 text-primary" />
-                  </div>
-                  <span className="font-black text-[15px] tracking-tight text-foreground">AETHPAD</span>
-                  <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
-                </div>
-                <button
-                  onClick={() => setMenuOpen(false)}
-                  aria-label="Close menu"
-                  className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/8 rounded-md transition-colors"
-                >
-                  <X className="h-4 w-4" />
-                </button>
+            {/* Top bar */}
+            <div className="flex items-center justify-between px-5 h-14 border-b border-white/8 shrink-0">
+              <div className="flex items-center gap-2">
+                <span className="font-black text-[14px] tracking-tight text-foreground">AETHPAD</span>
+                <span className="h-1.5 w-1.5 rounded-full bg-primary dot-live" />
               </div>
-              {/* Wallet status */}
+              <button onClick={() => setMenuOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Wallet row */}
+            <div className="px-4 py-3 border-b border-white/8 shrink-0">
               {authenticated && displayAddr ? (
-                <div className="mt-3 flex items-center gap-2 bg-white/4 border border-border/40 rounded-md px-3 py-2">
-                  <div className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                  <span className="text-[11px] font-mono text-foreground/80 flex-1 truncate">{displayAddr.slice(0, 6)}··{displayAddr.slice(-4)}</span>
-                  <button onClick={() => { logout(); setMenuOpen(false); }} className="text-muted-foreground hover:text-primary transition-colors">
-                    <LogOut className="h-3 w-3" />
+                <div className="flex items-center gap-2">
+                  <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
+                  <span className="text-[12px] font-mono text-foreground/70 flex-1 truncate">{displayAddr.slice(0, 6)}···{displayAddr.slice(-4)}</span>
+                  <button onClick={() => { logout(); setMenuOpen(false); }} className="text-muted-foreground/50 hover:text-foreground transition-colors">
+                    <LogOut className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ) : (
                 <button
                   onClick={() => { login(); setMenuOpen(false); }}
                   disabled={!ready}
-                  className="mt-3 w-full flex items-center justify-center gap-2 text-[12px] font-semibold bg-primary/10 hover:bg-primary/20 border border-primary/30 text-primary px-3 py-2 rounded-md transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
                 >
                   <Wallet className="h-3.5 w-3.5" />
                   Connect Wallet
                 </button>
               )}
-              {/* ETH price */}
-              {ethPrice && (
-                <div className="mt-2 flex items-center gap-1.5 text-[10px] font-mono text-muted-foreground/60">
-                  <span className="h-1.5 w-1.5 bg-primary/50 rounded-full" />
-                  ETH <span className="text-foreground/50">${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                  <span className="ml-auto text-primary/60 uppercase tracking-widest">Base Network</span>
-                </div>
-              )}
             </div>
 
-            {/* Nav */}
-            <nav className="flex-1 flex flex-col py-4 px-3">
-              <div className="space-y-1">
-                {[
-                  { href: '/', icon: <Rocket className="h-4 w-4" />, label: 'Feed', sub: 'Browse all tokens' },
-                  { href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Profile', sub: 'Holdings & rewards' },
-                  { href: '/docs', icon: <BookOpen className="h-4 w-4" />, label: 'Docs', sub: 'Protocol reference' },
-                ].map((item) => (
-                  <Link key={item.href} href={item.href}>
-                    <div
-                      onClick={() => setMenuOpen(false)}
-                      className="flex items-center gap-3 px-3 py-3 rounded-lg hover:bg-white/5 transition-all cursor-pointer group"
-                    >
-                      <span className="text-muted-foreground group-hover:text-primary transition-colors shrink-0">{item.icon}</span>
-                      <div>
-                        <div className="text-[13px] font-semibold text-foreground/85 group-hover:text-foreground transition-colors leading-none mb-0.5">{item.label}</div>
-                        <div className="text-[11px] text-muted-foreground/50 font-mono">{item.sub}</div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-
-              {/* Divider */}
-              <div className="my-4 border-t border-border/30" />
-
-              {/* Create Token CTA */}
-              <button
-                onClick={() => { setMenuOpen(false); if (onCreate) onCreate(); }}
-                className="w-full flex items-center gap-3 px-4 py-3.5 rounded-lg text-[13px] font-bold bg-primary/10 hover:bg-primary/16 border border-primary/25 hover:border-primary/40 text-primary transition-all"
-              >
-                <Plus className="h-4 w-4 shrink-0" />
-                <span className="flex-1 text-left">Launch a Token</span>
-                <span className="text-[10px] font-mono text-primary/40 uppercase tracking-widest">→</span>
-              </button>
-
-              {/* Info block */}
-              <div className="mt-4 rounded-lg bg-white/3 border border-border/30 px-4 py-3 space-y-1.5">
-                <div className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground/40 mb-2">Protocol</div>
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-muted-foreground/50">Network</span>
-                  <span className="text-foreground/70">Base Mainnet</span>
-                </div>
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-muted-foreground/50">Version</span>
-                  <span className="text-foreground/70">V2</span>
-                </div>
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-muted-foreground/50">Curve target</span>
-                  <span className="text-foreground/70">3.5 ETH</span>
-                </div>
-                <div className="flex justify-between text-[11px] font-mono">
-                  <span className="text-muted-foreground/50">Fee</span>
-                  <span className="text-foreground/70">2% buy &amp; sell</span>
-                </div>
-              </div>
+            {/* Nav links */}
+            <nav className="flex-1 px-2 py-3 space-y-0.5">
+              {[
+                { href: '/', icon: <Rocket className="h-4 w-4" />, label: 'Feed' },
+                { href: '/dashboard', icon: <LayoutDashboard className="h-4 w-4" />, label: 'Profile' },
+                { href: '/docs', icon: <BookOpen className="h-4 w-4" />, label: 'Docs' },
+              ].map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <div
+                    onClick={() => setMenuOpen(false)}
+                    className="flex items-center gap-3 px-3 py-2.5 rounded-md text-[13px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors cursor-pointer"
+                  >
+                    {item.icon}
+                    {item.label}
+                  </div>
+                </Link>
+              ))}
             </nav>
 
+            {/* Create Token */}
+            <div className="px-4 pb-4 shrink-0">
+              <button
+                onClick={() => { setMenuOpen(false); if (onCreate) onCreate(); }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-md text-[13px] font-semibold bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+              >
+                <Plus className="h-4 w-4" />
+                Create Token
+              </button>
+            </div>
+
             {/* Footer */}
-            <div className="border-t border-border/40 px-5 py-4">
-              <div className="flex items-center justify-between">
-                <a href={X_URL} target="_blank" rel="noreferrer noopener" className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/50 hover:text-primary transition-colors">
-                  <XIcon className="h-3 w-3" />
-                  @aethpad
-                </a>
-                <span className="text-[10px] font-mono text-muted-foreground/30 uppercase tracking-widest">v2 · Base</span>
-              </div>
+            <div className="border-t border-white/8 px-5 py-3 flex items-center justify-between shrink-0">
+              <a href={X_URL} target="_blank" rel="noreferrer noopener" className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors">
+                <XIcon className="h-3 w-3" />
+                @aethpad
+              </a>
+              {ethPrice && (
+                <span className="text-[11px] font-mono text-muted-foreground/40">
+                  ETH ${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                </span>
+              )}
             </div>
           </div>
         </>
