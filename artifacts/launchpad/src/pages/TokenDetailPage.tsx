@@ -317,6 +317,7 @@ export default function TokenDetailPage() {
                 symbol={`${symbol || 'TOKEN'}/ETH`}
                 height={440}
                 ethPrice={ethPrice ?? 3000}
+                currentMcUsd={mcUsd}
               />
             </div>
 

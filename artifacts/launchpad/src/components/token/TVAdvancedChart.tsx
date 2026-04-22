@@ -54,6 +54,7 @@ function generateAllBars(
   graduated: boolean,
   resolution: string,
   ethPrice: number,
+  currentMcUsd?: number | null,
 ) {
   const intervalSec = TF_SECONDS[resolution] ?? 900;
   const rand = mulberry32(hashSeed(`${seed}:${resolution}`));
@@ -110,10 +111,23 @@ function generateAllBars(
     }
   }
 
+  // Anchor the last candle to the real on-chain market cap so the chart and
+  // header always agree on the current value.
+  if (currentMcUsd && currentMcUsd > 0 && bars.length > 0) {
+    const last = bars[bars.length - 1];
+    const scale = currentMcUsd / last.close;
+    for (const b of bars) {
+      b.open  *= scale;
+      b.high  *= scale;
+      b.low   *= scale;
+      b.close *= scale;
+    }
+  }
+
   return bars;
 }
 
-function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: boolean, ethPrice: number) {
+function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: boolean, ethPrice: number, currentMcUsd?: number | null) {
   const supportedResolutions = ['1', '3', '5', '15', '30', '60', '120', '240', '1D'];
   return {
     onReady(callback: (config: unknown) => void) {
@@ -159,7 +173,7 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
       onResult: (bars: unknown[], meta: { noData: boolean }) => void,
       _onError: (err: string) => void,
     ) {
-      const allBars = generateAllBars(seed, baseEthRaised, graduated, resolution, ethPrice);
+      const allBars = generateAllBars(seed, baseEthRaised, graduated, resolution, ethPrice, currentMcUsd);
       const filtered = allBars.filter(b => b.time >= periodParams.from && b.time <= periodParams.to);
       if (filtered.length === 0 && periodParams.firstDataRequest) {
         onResult(allBars, { noData: false });
@@ -189,6 +203,7 @@ interface TVAdvancedChartProps {
   height?: number;
   symbol?: string;
   ethPrice?: number;
+  currentMcUsd?: number | null;
 }
 
 let _chartCounter = 0;
@@ -200,6 +215,7 @@ export function TVAdvancedChart({
   height = 320,
   symbol,
   ethPrice = 3000,
+  currentMcUsd,
 }: TVAdvancedChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetRef = useRef<{ remove?: () => void } | null>(null);
@@ -212,7 +228,7 @@ export function TVAdvancedChart({
 
     const resolvedEthPrice = ethPrice > 0 ? ethPrice : 3000;
     const displaySymbol = symbol ?? seed;
-    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, resolvedEthPrice);
+    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, resolvedEthPrice, currentMcUsd);
 
     widgetRef.current = new window.TradingView.widget({
       symbol: displaySymbol,
@@ -265,7 +281,7 @@ export function TVAdvancedChart({
       }
       widgetRef.current = null;
     };
-  }, [seed, baseEthRaised, graduated, symbol, ethPrice]);
+  }, [seed, baseEthRaised, graduated, symbol, ethPrice, currentMcUsd]);
 
   return (
     <div

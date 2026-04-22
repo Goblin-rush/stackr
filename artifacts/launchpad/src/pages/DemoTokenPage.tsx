@@ -430,6 +430,7 @@ export default function DemoTokenPage() {
                 graduated={t.graduated}
                 symbol={`${t.symbol}/ETH`}
                 height={440}
+                currentMcUsd={parseFloat(t.mcapUsd.replace(/[^0-9.]/g, '')) || null}
               />
             </div>
 
