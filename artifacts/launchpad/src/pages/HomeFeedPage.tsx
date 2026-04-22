@@ -451,13 +451,6 @@ export default function HomeFeedPage() {
               <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60">
                 Preview · Demo Data
               </p>
-              <button
-                onClick={() => setIsCreateOpen(true)}
-                className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-primary hover:text-primary/80 transition-colors"
-              >
-                <Plus className="h-3 w-3" />
-                Be First
-              </button>
             </div>
             <FeaturedRow d={DEMO_ROWS[0]} />
             {DEMO_ROWS.slice(1).map((d) => (
