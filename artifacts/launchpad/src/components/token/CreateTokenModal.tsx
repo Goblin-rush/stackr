@@ -9,7 +9,7 @@ import { useLocation } from 'wouter';
 import { useWatchContractEvent } from 'wagmi';
 import { FACTORY_V2_ADDRESS, FACTORY_V2_ABI } from '@/lib/contracts';
 import { saveTokenMetadata } from '@/lib/token-metadata';
-import { Loader2, Upload, X, Rocket } from 'lucide-react';
+import { Loader2, Upload, Rocket } from 'lucide-react';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 import { toast } from 'sonner';
 import { uploadImage } from '@/lib/upload';
@@ -168,7 +168,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
       <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[460px] p-0 bg-card border-border/60 shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">
         {/* Header bar */}
         <div className="h-0.5 w-full bg-gradient-to-r from-primary via-primary/50 to-transparent" />
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
+        <div className="flex items-center px-5 py-4 border-b border-border/50 pr-12">
           <div className="flex items-center gap-2.5">
             <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 border border-primary/20">
               <Rocket className="h-3.5 w-3.5 text-primary" />
@@ -178,12 +178,6 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
               <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Base Mainnet · Bonding Curve V2</p>
             </div>
           </div>
-          <button
-            onClick={() => !isLoading && onOpenChange(false)}
-            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
-          >
-            <X className="h-4 w-4" />
-          </button>
         </div>
 
         <Form {...form}>
