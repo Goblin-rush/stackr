@@ -453,11 +453,7 @@ export default function DocsPage() {
           ))}
         </ul>
 
-        {/* Colophon */}
-        <div className="mt-16 pt-4 border-t-2 border-border flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-          <span>Stackr / Base Mainnet</span>
-          <span>Read in ~4 min</span>
-        </div>
+
       </main>
     </div>
   );

@@ -84,6 +84,42 @@ uri = "file://attached_assets/aethpad-mascot-frog.png"
 type = "image"
 title = "generated_image"
 
+[[generated]]
+id = "DiMgWvrH-YVuFw-z8rSFv"
+uri = "file://attached_assets/generated_images/stackr-favicon.png"
+type = "image"
+title = "stackr favicon icon"
+
+[[generated]]
+id = "48D1lzYyEiU3frfqhWxeT"
+uri = "file://attached_assets/generated_images/stackr-og-banner.png"
+type = "image"
+title = "stackr og banner"
+
+[[generated]]
+id = "iif9YVqPOwztbdYHF9Kf5"
+uri = "file://attached_assets/generated_images/stackr-favicon-v2.png"
+type = "image"
+title = "stackr favicon v2"
+
+[[generated]]
+id = "FH-8dAI3KDmPJKAMS4wip"
+uri = "file://attached_assets/generated_images/stackr-og-banner-v2.png"
+type = "image"
+title = "stackr og banner v2"
+
+[[generated]]
+id = "OhiTdI1BEyvfirPKYrnqY"
+uri = "file://attached_assets/generated_images/stackr-favicon-v3.png"
+type = "image"
+title = "stackr favicon v3"
+
+[[generated]]
+id = "uga6PNSqIjOaM0LOMy_iv"
+uri = "file://attached_assets/generated_images/stackr-og-banner-v3.png"
+type = "image"
+title = "stackr og banner v3"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
