@@ -165,16 +165,37 @@ contract AethpadTokenV2 is ERC20, ReentrancyGuard {
         _creditRewardPool(msg.value);
     }
 
+    // Platform ETH that could not be forwarded to factory (accumulated for retry)
+    uint256 public pendingPlatformEth;
+
     /**
      * @notice Curve deposits ETH earmarked for platform. Immediately forwards
-     *         to factory owner (via factory).
+     *         to factory. If the factory call fails (edge case), parks ETH in
+     *         pendingPlatformEth so trades are never bricked. Owner can later
+     *         call withdrawPendingPlatform() to recover it.
      */
     function depositEthPlatform() external payable onlyCurve {
-        if (msg.value > 0) {
-            (bool ok, ) = payable(factory).call{value: msg.value}("");
-            require(ok, "Platform fwd failed");
+        if (msg.value == 0) return;
+        (bool ok, ) = payable(factory).call{value: msg.value}("");
+        if (ok) {
             emit PlatformFeeForwarded(msg.value);
+        } else {
+            // Park rather than revert — a factory receive() failure must never
+            // permanently prevent buys/sells on this token.
+            pendingPlatformEth += msg.value;
         }
+    }
+
+    /**
+     * @notice Allows factory owner (via factory) to flush any parked platform ETH.
+     */
+    function withdrawPendingPlatform() external onlyFactory {
+        uint256 amount = pendingPlatformEth;
+        require(amount > 0, "Nothing pending");
+        pendingPlatformEth = 0;
+        (bool ok, ) = payable(factory).call{value: amount}("");
+        require(ok, "ETH send failed");
+        emit PlatformFeeForwarded(amount);
     }
 
     /**

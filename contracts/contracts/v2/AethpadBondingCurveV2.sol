@@ -237,12 +237,16 @@ contract AethpadBondingCurveV2 is ReentrancyGuard {
             pair = uniswapFactory.createPair(address(token), weth);
         }
 
-        // Add liquidity, LP goes to DEAD (burned forever)
+        // Add liquidity, LP goes to DEAD (burned forever).
+        // Use 99% minimums to prevent sandwich attacks at graduation
+        // while tolerating minor Uniswap rounding.
+        uint256 minTokensForLp = (tokensForLp * 99) / 100;
+        uint256 minEthForLp    = (ethForLp * 99) / 100;
         uniswapRouter.addLiquidityETH{value: ethForLp}(
             address(token),
             tokensForLp,
-            0,
-            0,
+            minTokensForLp,
+            minEthForLp,
             0x000000000000000000000000000000000000dEaD,
             block.timestamp + 300
         );

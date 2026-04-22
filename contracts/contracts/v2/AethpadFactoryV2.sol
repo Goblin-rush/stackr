@@ -185,6 +185,16 @@ contract AethpadFactoryV2 is Ownable, ReentrancyGuard {
         AethpadTokenV2(payable(r.token)).setKeeper(newKeeper);
     }
 
+    /**
+     * @notice Flush any platform ETH that the token contract was unable to
+     *         forward (e.g., if factory receive() temporarily failed).
+     */
+    function flushTokenPlatformEth(address tokenAddr) external onlyOwner {
+        TokenRecord storage r = records[tokenAddr];
+        require(r.token != address(0), "Unknown token");
+        AethpadTokenV2(payable(r.token)).withdrawPendingPlatform();
+    }
+
     // ═════════════════════════════════════════════════════════════
     //  VIEWS
     // ═════════════════════════════════════════════════════════════
