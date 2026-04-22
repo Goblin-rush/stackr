@@ -5,12 +5,24 @@ import { useCurveConstants } from '@/hooks/use-curve-constants';
 interface BondingCurveProgressProps {
   realEthRaised: bigint | undefined;
   graduated: boolean | undefined;
+  /** progressBps from contract getProgress() — 0..10000. If provided, used directly instead of recomputing. */
+  progressBps?: bigint | undefined;
+  /** Live ETH raised as number (from event-tracked state). Preferred over realEthRaised when present. */
+  liveRaisedEth?: number;
 }
 
-export function BondingCurveProgress({ realEthRaised, graduated }: BondingCurveProgressProps) {
+export function BondingCurveProgress({ realEthRaised, graduated, progressBps, liveRaisedEth }: BondingCurveProgressProps) {
   const { targetEth } = useCurveConstants();
-  const raised = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
-  const progress = Math.min((raised / targetEth) * 100, 100);
+
+  const raised = liveRaisedEth !== undefined
+    ? liveRaisedEth
+    : realEthRaised ? Number(formatEther(realEthRaised)) : 0;
+
+  const progress = graduated
+    ? 100
+    : progressBps !== undefined
+      ? Math.min(Number(progressBps) / 100, 100)   // bps → percent
+      : Math.min((raised / targetEth) * 100, 100);
 
   const [displayed, setDisplayed] = useState(0);
   const rafRef = useRef<number | null>(null);

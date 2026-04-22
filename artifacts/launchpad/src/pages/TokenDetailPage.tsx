@@ -14,7 +14,7 @@ import { HoldersList } from '@/components/token/HoldersList';
 import { type Timeframe } from '@/components/token/PriceChart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI } from '@/lib/contracts';
-import { Copy, ExternalLink, Globe, Send } from 'lucide-react';
+import { Copy, ExternalLink, Globe, Send, AlertTriangle } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
@@ -48,7 +48,7 @@ export default function TokenDetailPage() {
   });
   const curveAddress = (record as any)?.curve as `0x${string}` | undefined;
 
-  const { name, symbol, realEthRaised, graduated, currentPrice, isLoading, refetch } = useToken(address, curveAddress);
+  const { name, symbol, realEthRaised, graduated, currentPrice, progress, forceClosed, uniswapPair, isLoading, refetch } = useToken(address, curveAddress);
   const { data: ethPrice } = useEthPrice();
   const live = useChainTokenLive(address, curveAddress);
   const meta = useTokenMetadata(address);
@@ -215,6 +215,16 @@ export default function TokenDetailPage() {
                           <ExternalLink className="h-3 w-3" /> Curve
                         </a>
                       )}
+                      {graduated && uniswapPair && uniswapPair !== '0x0000000000000000000000000000000000000000' && (
+                        <a
+                          href={`https://app.uniswap.org/explore/pools/base/${uniswapPair}`}
+                          target="_blank"
+                          rel="noreferrer noopener"
+                          className="flex items-center gap-1 text-primary hover:text-primary/80 transition-colors"
+                        >
+                          <ExternalLink className="h-3 w-3" /> Uniswap
+                        </a>
+                      )}
                     </div>
 
                     {(() => {
@@ -285,9 +295,28 @@ export default function TokenDetailPage() {
               </div>
             </div>
 
+            {/* Force-closed banner */}
+            {forceClosed && (
+              <div className="flex items-start gap-3 bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3">
+                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-semibold text-destructive">Curve force-closed</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    This bonding curve has been closed by the protocol admin. New buys are disabled.
+                    You can still sell any tokens you hold.
+                  </p>
+                </div>
+              </div>
+            )}
+
             {/* Bonding Curve */}
             <div className="p-6 border border-border/50 bg-card">
-              <BondingCurveProgress realEthRaised={realEthRaised} graduated={graduated} />
+              <BondingCurveProgress
+                realEthRaised={realEthRaised}
+                graduated={graduated}
+                progressBps={progress}
+                liveRaisedEth={live.realEthRaised > 0 ? live.realEthRaised : undefined}
+              />
             </div>
 
             {/* Chart / Trades / Holders */}
