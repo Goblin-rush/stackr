@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
 import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, ExternalLink } from 'lucide-react';
 import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
+import { SlippageSettings } from '@/components/token/SlippageSettings';
 
 interface DemoToken {
   symbol: string;
@@ -467,6 +468,10 @@ export default function DemoTokenPage() {
           {/* RIGHT — trade widget only */}
           <div className="lg:col-span-4">
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden sticky top-4">
+              <div className="flex items-center justify-between px-3 pt-3 pb-1">
+                <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Trade</span>
+                <SlippageSettings />
+              </div>
               <div className="grid grid-cols-2 p-1.5 gap-1.5 border-b border-border/40">
                 {(['buy', 'sell'] as const).map((s) => (
                   <button key={s} onClick={() => setSide(s)}
