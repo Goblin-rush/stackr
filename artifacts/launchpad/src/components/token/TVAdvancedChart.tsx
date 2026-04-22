@@ -36,8 +36,10 @@ function mulberry32(seed: number) {
   };
 }
 
-function priceFromEthReserve(e: number): number {
-  return e / (K / e);
+// Returns market cap in USD: price_per_token_eth * total_supply * eth_price_usd
+function mcFromEthReserve(e: number, ethPrice: number): number {
+  const pricePerTokenEth = (e * e) / K;
+  return pricePerTokenEth * VIRTUAL_TOKENS * ethPrice;
 }
 
 const TF_SECONDS: Record<string, number> = {
@@ -85,17 +87,18 @@ function generateAllBars(
     if (ethReserve + delta < minR) delta = minR - ethReserve;
 
     const newReserve = ethReserve + delta;
-    const price = priceFromEthReserve(newReserve) * ethPrice;
+    // Use market cap in USD as the "price" value — gives readable Y-axis ($9K range)
+    const mc = mcFromEthReserve(newReserve, ethPrice);
 
     if (pendingOpen === null) {
-      pendingOpen = priceFromEthReserve(ethReserve) * ethPrice;
+      pendingOpen = mcFromEthReserve(ethReserve, ethPrice);
       pendingHigh = pendingOpen;
       pendingLow = pendingOpen;
       pendingVol = 0;
     }
-    pendingHigh = Math.max(pendingHigh, price);
-    pendingLow = Math.min(pendingLow, price);
-    pendingClose = price;
+    pendingHigh = Math.max(pendingHigh, mc);
+    pendingLow = Math.min(pendingLow, mc);
+    pendingClose = mc;
     pendingVol += Math.abs(delta) * ethPrice;
     ethReserve = newReserve;
 
@@ -140,11 +143,11 @@ function makeDemoDatasource(seed: string, baseEthRaised: number, graduated: bool
           exchange: 'STACKR',
           listed_exchange: 'STACKR',
           minmov: 1,
-          pricescale: 1000000000,
+          pricescale: 1,          // Integer USD market cap values ($9000, $9100, …)
           has_intraday: true,
           has_daily: true,
           supported_resolutions: supportedResolutions,
-          volume_precision: 4,
+          volume_precision: 2,
           data_status: 'streaming',
         });
       }, 0);
@@ -207,8 +210,9 @@ export function TVAdvancedChart({
     if (!containerRef.current) return;
     if (!window.TradingView?.widget) return;
 
+    const resolvedEthPrice = ethPrice > 0 ? ethPrice : 3000;
     const displaySymbol = symbol ?? seed;
-    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, ethPrice);
+    const datafeed = makeDemoDatasource(seed, baseEthRaised, graduated, resolvedEthPrice);
 
     widgetRef.current = new window.TradingView.widget({
       symbol: displaySymbol,
