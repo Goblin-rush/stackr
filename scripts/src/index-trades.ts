@@ -30,7 +30,7 @@ const publicClient = createPublicClient({ chain: base, transport: http(RPC_URL) 
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 const CURSOR_ID = 'trades_v2';
-const STEP = 50_000n;
+const STEP = 9_999n;
 
 const FACTORY_ABI = [
   { name: 'getAllTokens', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address[]' }] },
@@ -73,7 +73,7 @@ async function ensureTables(client: pg.PoolClient): Promise<void> {
 
 async function getCursor(client: pg.PoolClient): Promise<bigint> {
   const res = await client.query('SELECT last_block FROM indexer_cursors WHERE id = $1', [CURSOR_ID]);
-  if (res.rows.length === 0) return 0n;
+  if (res.rows.length === 0) return 28_000_000n;
   return BigInt(res.rows[0].last_block);
 }
 
