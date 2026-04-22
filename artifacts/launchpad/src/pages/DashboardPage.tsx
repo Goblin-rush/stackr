@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useAccount, usePublicClient } from 'wagmi';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useAccount, usePublicClient, useBlockNumber } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { Link } from 'wouter';
 import { formatEther, formatUnits } from 'viem';
@@ -11,7 +11,7 @@ import {
   TOKEN_V2_ABI,
   CURVE_V2_ABI,
 } from '@/lib/contracts';
-import { Wallet, PieChart, Coins, RefreshCw, ExternalLink, TrendingUp } from 'lucide-react';
+import { Wallet, PieChart, Coins, ExternalLink, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface Holding {
@@ -54,6 +54,16 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+
+  // Auto-refresh every ~6 blocks (≈12s on Base)
+  const { data: blockNumber } = useBlockNumber({ watch: true });
+  const lastFetchBlock = useRef<bigint>(0n);
+  useEffect(() => {
+    if (!blockNumber) return;
+    if (blockNumber - lastFetchBlock.current < 6n) return;
+    lastFetchBlock.current = blockNumber;
+    setRefreshKey((k) => k + 1);
+  }, [blockNumber]);
 
   useEffect(() => {
     if (!isConnected || !address || !client || !FACTORY_V2_ADDRESS) {
@@ -179,7 +189,7 @@ export default function DashboardPage() {
 
   if (!FACTORY_V2_ADDRESS) {
     return (
-      <Shell loading={false} onRefresh={() => {}}>
+      <Shell>
         <EmptyState
           icon={<TrendingUp className="h-8 w-8 text-muted-foreground" />}
           title="Dashboard not yet active"
@@ -191,7 +201,7 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <Shell loading={false} onRefresh={() => {}}>
+      <Shell>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-14 h-14 rounded-full bg-muted/30 border border-border flex items-center justify-center mb-5">
             <Wallet className="h-6 w-6 text-muted-foreground" />
@@ -213,7 +223,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Shell loading={loading} onRefresh={() => setRefreshKey((k) => k + 1)}>
+    <Shell>
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
         <SummaryCard
@@ -356,34 +366,13 @@ export default function DashboardPage() {
   );
 }
 
-function Shell({
-  children,
-  loading,
-  onRefresh,
-}: {
-  children: React.ReactNode;
-  loading: boolean;
-  onRefresh: () => void;
-}) {
+function Shell({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       <main className="flex-1 container max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2.5">
-            <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
-            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
-              v2
-            </span>
-          </div>
-          <button
-            onClick={onRefresh}
-            disabled={loading}
-            className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
-          >
-            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-            Refresh
-          </button>
+        <div className="mb-8">
+          <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
         </div>
         {children}
       </main>
