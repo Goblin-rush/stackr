@@ -14,7 +14,7 @@ import { HoldersList } from '@/components/token/HoldersList';
 import { type Timeframe } from '@/components/token/PriceChart';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI } from '@/lib/contracts';
-import { Copy, ExternalLink, Globe, Send, AlertTriangle } from 'lucide-react';
+import { Copy, ExternalLink, Globe, Send } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram } from '@/lib/token-metadata';
@@ -294,20 +294,6 @@ export default function TokenDetailPage() {
                 </div>
               </div>
             </div>
-
-            {/* Force-closed banner */}
-            {forceClosed && (
-              <div className="flex items-start gap-3 bg-destructive/10 border border-destructive/30 rounded-lg px-4 py-3">
-                <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-destructive">Curve force-closed</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    This bonding curve has been closed by the protocol admin. New buys are disabled.
-                    You can still sell any tokens you hold.
-                  </p>
-                </div>
-              </div>
-            )}
 
             {/* Bonding Curve */}
             <div className="p-6 border border-border/50 bg-card">

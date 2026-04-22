@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAccount, usePublicClient, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { usePrivy } from '@privy-io/react-auth';
 import { Link } from 'wouter';
-import { formatEther } from 'viem';
+import { formatEther, formatUnits } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import {
@@ -11,7 +11,7 @@ import {
   TOKEN_V2_ABI,
   CURVE_V2_ABI,
 } from '@/lib/contracts';
-import { Wallet, Sparkles, PieChart, Coins, RefreshCw, Loader2 } from 'lucide-react';
+import { Wallet, Sparkles, PieChart, Coins, RefreshCw, Loader2, ExternalLink } from 'lucide-react';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -29,10 +29,16 @@ interface Holding {
   curvePriceEth: bigint;
 }
 
-/** User's share of the reward pool as a percentage (0–100). */
 function poolSharePct(h: Holding): number {
   if (h.totalLiveScore === 0n) return 0;
   return (Number(h.holdScore) / Number(h.totalLiveScore)) * 100;
+}
+
+function formatCompact(n: number): string {
+  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
+  return n.toFixed(2);
 }
 
 export default function DashboardPage() {
@@ -120,8 +126,6 @@ export default function DashboardPage() {
           return;
         }
 
-        // 8 calls per candidate: name, symbol, holdScore, totalHoldScoreLive,
-        //                        pendingRewards, graduated, realEthRaised, currentPrice
         const detailCalls = candidates.flatMap((c) => [
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'name' as const },
           { address: c.token, abi: TOKEN_V2_ABI, functionName: 'symbol' as const },
@@ -176,7 +180,6 @@ export default function DashboardPage() {
     if (!holdings) return null;
     let pendingEth = 0n;
     let portfolioEth = 0n;
-    // Weighted avg pool share across all holdings
     let totalShareWeighted = 0;
     for (const h of holdings) {
       pendingEth += h.pendingRewards;
@@ -201,10 +204,11 @@ export default function DashboardPage() {
 
   if (!FACTORY_V2_ADDRESS) {
     return (
-      <Shell>
-        <EmptyCard
+      <Shell loading={false} onRefresh={() => {}}>
+        <EmptyState
+          icon={<Sparkles className="h-8 w-8 text-muted-foreground" />}
           title="Dashboard not yet active"
-          body="Contracts are not yet deployed. Once the factory address is set, your holdings, pool share, and ETH rewards will appear here."
+          body="Contracts not deployed yet. Once live, your holdings, pool share, and ETH rewards will appear here."
         />
       </Shell>
     );
@@ -212,17 +216,19 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <Shell>
-        <div className="border border-border rounded-md bg-card p-10 text-center">
-          <Wallet className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-          <h2 className="text-lg font-bold mb-1">Connect your wallet</h2>
-          <p className="text-sm text-muted-foreground mb-5 font-mono">
-            Tingnan ang pool share mo at claimable ETH rewards.
+      <Shell loading={false} onRefresh={() => {}}>
+        <div className="flex flex-col items-center justify-center py-24 text-center">
+          <div className="w-14 h-14 rounded-full bg-muted/30 border border-border flex items-center justify-center mb-5">
+            <Wallet className="h-6 w-6 text-muted-foreground" />
+          </div>
+          <h2 className="text-lg font-bold mb-2">Connect your wallet</h2>
+          <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
+            See your token holdings, reward pool share, and claimable ETH.
           </p>
           <button
             onClick={() => login()}
             disabled={!ready}
-            className="text-sm font-bold px-5 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
+            className="text-sm font-bold px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
           >
             Connect wallet
           </button>
@@ -232,148 +238,144 @@ export default function DashboardPage() {
   }
 
   return (
-    <Shell>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <StatCard
+    <Shell loading={loading} onRefresh={() => setRefreshKey((k) => k + 1)}>
+      {/* Summary stats */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+        <SummaryCard
           icon={<Coins className="h-3.5 w-3.5" />}
           label="Holdings"
-          value={loading ? <Skeleton className="h-5 w-12 bg-muted/40" /> : (totals?.count ?? 0).toString()}
-          sub="tokens"
+          value={loading ? null : String(totals?.count ?? 0)}
+          sub="tokens held"
         />
-        <StatCard
+        <SummaryCard
           icon={<Wallet className="h-3.5 w-3.5" />}
           label="Portfolio"
-          value={
-            loading ? (
-              <Skeleton className="h-5 w-16 bg-muted/40" />
-            ) : (
-              <>{totals ? Number(formatEther(totals.portfolioEth)).toFixed(4) : '0'} <span className="text-xs text-muted-foreground">ETH</span></>
-            )
-          }
+          value={loading ? null : `${Number(formatEther(totals?.portfolioEth ?? 0n)).toFixed(4)} ETH`}
           sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.portfolioEth)) * ethPrice).toFixed(2)}` : '—'}
         />
-        <StatCard
+        <SummaryCard
           icon={<PieChart className="h-3.5 w-3.5" />}
-          label="Pool weight"
-          value={
-            loading ? (
-              <Skeleton className="h-5 w-12 bg-muted/40" />
-            ) : (
-              <>
-                {totals ? totals.totalShareWeighted.toFixed(2) : '0.00'}
-                <span className="text-xs text-muted-foreground">%</span>
-              </>
-            )
-          }
-          sub="of total reward pool"
+          label="Avg Pool Weight"
+          value={loading ? null : `${totals ? totals.totalShareWeighted.toFixed(2) : '0.00'}%`}
+          sub="across all holdings"
         />
-        <StatCard
+        <SummaryCard
           icon={<Sparkles className="h-3.5 w-3.5 text-primary" />}
-          label="Claimable"
-          value={
-            loading ? (
-              <Skeleton className="h-5 w-16 bg-muted/40" />
-            ) : (
-              <span className="text-primary">
-                {totals ? Number(formatEther(totals.pendingEth)).toFixed(6) : '0'}{' '}
-                <span className="text-xs text-muted-foreground">ETH</span>
-              </span>
-            )
-          }
+          label="Total Claimable"
+          value={loading ? null : `${Number(formatEther(totals?.pendingEth ?? 0n)).toFixed(6)} ETH`}
           sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.pendingEth)) * ethPrice).toFixed(2)}` : '—'}
+          highlight={!!totals && totals.pendingEth > 0n}
         />
       </div>
 
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">Your Holdings</h2>
-        <button
-          onClick={() => setRefreshKey((k) => k + 1)}
-          disabled={loading}
-          className="text-[11px] font-mono uppercase text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 disabled:opacity-50"
-        >
-          <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
-          refresh
-        </button>
-      </div>
-
+      {/* Error */}
       {error && (
-        <div className="border-2 border-primary bg-primary/5 text-primary text-sm font-mono p-3 mb-4">
+        <div className="border border-destructive/30 bg-destructive/10 text-destructive text-sm font-mono px-4 py-3 rounded-lg mb-4">
           {error}
         </div>
       )}
 
+      {/* Holdings list */}
+      <div className="mb-3">
+        <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Holdings</h2>
+      </div>
+
       {loading && !holdings && (
-        <div className="space-y-2">
-          {[0, 1, 2].map((i) => <Skeleton key={i} className="h-20 w-full bg-muted/40" />)}
+        <div className="space-y-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-[100px] w-full bg-muted/30 rounded-xl" />
+          ))}
         </div>
       )}
 
       {holdings && holdings.length === 0 && !loading && (
-        <EmptyCard
-          title="Wala ka pang hawak"
-          body="Bumili ng kahit isang token sa Launchpad. Pag-may balance ka na, lalabas dito ang pool share mo at ang ETH rewards mo."
+        <EmptyState
+          icon={<Coins className="h-8 w-8 text-muted-foreground" />}
+          title="No holdings yet"
+          body="Buy a token on the Launchpad. Once you hold a balance, your pool share and ETH rewards will appear here."
         />
       )}
 
       {holdings && holdings.length > 0 && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {holdings.map((h) => {
             const share = poolSharePct(h);
             const valEth = Number(formatEther((h.balance * h.curvePriceEth) / 10n ** 18n));
-            const balanceK = Number(formatEther(h.balance));
+            const balFormatted = formatCompact(Number(formatUnits(h.balance, 18)));
+            const pendingEth = Number(formatEther(h.pendingRewards));
+            const hasPending = h.pendingRewards > 0n;
             const isClaiming = claimingRef.current === h.token && (isClaimConfirming || !!claimHash);
-            const canClaim = h.pendingRewards > 0n;
+            const isOtherClaiming = !!claimingRef.current && claimingRef.current !== h.token;
+
             return (
               <div
                 key={h.token}
-                className="border border-border rounded-md bg-card p-3 md:p-4 hover:border-primary/40 transition-colors"
+                className={`rounded-xl border bg-card overflow-hidden transition-colors ${
+                  hasPending ? 'border-primary/30 hover:border-primary/50' : 'border-border/60 hover:border-border'
+                }`}
               >
-                <div className="grid grid-cols-12 gap-3 items-center">
+                {/* Token header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
                   <Link href={`/token/${h.token}`}>
-                    <div className="col-span-12 md:col-span-3 cursor-pointer min-w-0">
-                      <div className="font-bold text-sm truncate hover:text-primary transition-colors">
-                        ${h.symbol}
-                        {h.graduated && (
-                          <span className="ml-1.5 text-[9px] font-black uppercase tracking-widest text-primary border-2 border-primary px-1 py-0.5">
-                            grad
+                    <div className="flex items-center gap-2.5 cursor-pointer group">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-bold group-hover:text-primary transition-colors">
+                            ${h.symbol}
                           </span>
-                        )}
+                          {h.graduated && (
+                            <span className="text-[9px] font-black uppercase tracking-widest text-primary border border-primary/50 bg-primary/10 px-1.5 py-0.5 rounded">
+                              DEX
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[11px] text-muted-foreground font-mono">{h.name}</span>
                       </div>
-                      <div className="text-xs text-muted-foreground truncate font-mono">{h.name}</div>
                     </div>
                   </Link>
+                  <a
+                    href={`https://basescan.org/address/${h.token}`}
+                    target="_blank"
+                    rel="noreferrer noopener"
+                    className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                </div>
 
-                  <Stat label="Balance" value={`${formatCompact(balanceK)} ${h.symbol}`} />
-                  <Stat label="Value" value={`${valEth.toFixed(5)} ETH`} />
-                  <Stat
-                    label="Pool share"
-                    value={
-                      <span className="text-foreground">
-                        {share.toFixed(2)}<span className="text-xs text-muted-foreground">%</span>
-                      </span>
-                    }
-                  />
-                  <Stat
-                    label="Pending"
-                    value={
-                      h.pendingRewards > 0n ? (
-                        <span className="text-primary font-bold">
-                          {Number(formatEther(h.pendingRewards)).toFixed(6)} ETH
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">—</span>
-                      )
-                    }
-                  />
+                {/* Stats + Claim */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-0 sm:gap-0 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+                  {/* Stats grid */}
+                  <div className="flex-1 grid grid-cols-3 divide-x divide-border/40">
+                    <StatCell label="Balance" value={`${balFormatted} ${h.symbol}`} />
+                    <StatCell label="Value" value={`${valEth.toFixed(5)} ETH`} />
+                    <StatCell label="Pool share" value={`${share.toFixed(2)}%`} />
+                  </div>
 
-                  <div className="col-span-12 md:col-span-2 md:text-right">
+                  {/* Claimable + button */}
+                  <div className="flex items-center justify-between sm:justify-end gap-4 px-4 py-3 sm:min-w-[200px]">
+                    <div>
+                      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-0.5">
+                        Claimable
+                      </div>
+                      <div className={`text-sm font-bold tabular-nums ${hasPending ? 'text-primary' : 'text-muted-foreground/50'}`}>
+                        {hasPending ? `${pendingEth.toFixed(6)} ETH` : '—'}
+                      </div>
+                    </div>
                     <button
                       onClick={() => handleClaim(h.token)}
-                      disabled={!canClaim || isClaiming || !!claimingRef.current}
-                      className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed"
+                      disabled={!hasPending || isClaiming || isOtherClaiming}
+                      className={`flex items-center gap-1.5 text-xs font-bold px-4 py-2 rounded-lg transition-all ${
+                        hasPending && !isClaiming && !isOtherClaiming
+                          ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm shadow-primary/20'
+                          : 'bg-muted/40 text-muted-foreground/50 cursor-not-allowed'
+                      }`}
                     >
-                      {isClaiming ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
-                      {isClaiming ? 'claiming…' : 'Claim'}
+                      {isClaiming ? (
+                        <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Claiming…</>
+                      ) : (
+                        <><Sparkles className="h-3.5 w-3.5" /> Claim</>
+                      )}
                     </button>
                   </div>
                 </div>
@@ -383,25 +385,43 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <p className="text-[11px] font-mono text-muted-foreground mt-6 leading-relaxed">
-        Pool share = your time-weighted hold score ÷ total score across all holders. Every buy and sell
-        deposits 2% ETH into the reward pool. Your share of that pool grows the longer you hold without selling.
-        Auto-accrues. No staking required.
+      <p className="text-[11px] font-mono text-muted-foreground/50 mt-8 leading-relaxed max-w-2xl">
+        Pool share = time-weighted holdScore ÷ total holdScore across all holders.
+        Every trade deposits 2% ETH into the reward pool. Longer you hold without selling, the larger your share.
+        No staking required — accrues automatically.
       </p>
     </Shell>
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({
+  children,
+  loading,
+  onRefresh,
+}: {
+  children: React.ReactNode;
+  loading: boolean;
+  onRefresh: () => void;
+}) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
-      <main className="flex-1 container max-w-6xl mx-auto px-4 py-6 md:px-8 md:py-10">
-        <div className="flex items-center gap-2 mb-6">
-          <h1 className="text-2xl font-black tracking-tight">My Dashboard</h1>
-          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
-            v2
-          </span>
+      <main className="flex-1 container max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-2xl font-black tracking-tight">Dashboard</h1>
+            <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
+              v2
+            </span>
+          </div>
+          <button
+            onClick={onRefresh}
+            disabled={loading}
+            className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted-foreground hover:text-foreground disabled:opacity-40 transition-colors"
+          >
+            <RefreshCw className={`h-3 w-3 ${loading ? 'animate-spin' : ''}`} />
+            Refresh
+          </button>
         </div>
         {children}
       </main>
@@ -409,41 +429,54 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatCard({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub: React.ReactNode }) {
+function SummaryCard({
+  icon,
+  label,
+  value,
+  sub,
+  highlight,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | null;
+  sub: React.ReactNode;
+  highlight?: boolean;
+}) {
   return (
-    <div className="border border-border rounded-md bg-card p-3 md:p-4">
-      <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-1.5">
+    <div className={`rounded-xl border bg-card p-4 transition-colors ${highlight ? 'border-primary/30 bg-primary/5' : 'border-border/60'}`}>
+      <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
         {icon}
         {label}
       </div>
-      <div className="text-lg md:text-xl font-bold tabular-nums leading-none">{value}</div>
-      <div className="text-[11px] font-mono text-muted-foreground mt-1.5">{sub}</div>
+      {value === null ? (
+        <Skeleton className="h-6 w-24 bg-muted/40 mb-1" />
+      ) : (
+        <div className={`text-lg font-bold tabular-nums leading-tight ${highlight ? 'text-primary' : 'text-foreground'}`}>
+          {value}
+        </div>
+      )}
+      <div className="text-[11px] font-mono text-muted-foreground/60 mt-1">{sub}</div>
     </div>
   );
 }
 
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+function StatCell({ label, value }: { label: string; value: string }) {
   return (
-    <div className="col-span-6 md:col-span-2">
-      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">{label}</div>
-      <div className="text-sm font-medium tabular-nums">{value}</div>
+    <div className="px-4 py-3">
+      <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 mb-0.5">{label}</div>
+      <div className="text-[13px] font-semibold tabular-nums text-foreground/90 truncate">{value}</div>
     </div>
   );
 }
 
-function EmptyCard({ title, body }: { title: string; body: string }) {
+function EmptyState({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <div className="border border-border rounded-md bg-card p-10 text-center">
-      <Sparkles className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-      <h2 className="text-lg font-bold mb-1">{title}</h2>
-      <p className="text-sm text-muted-foreground font-mono max-w-md mx-auto leading-relaxed">{body}</p>
+    <div className="flex flex-col items-center justify-center py-20 text-center">
+      <div className="w-14 h-14 rounded-full bg-muted/30 border border-border flex items-center justify-center mb-4">
+        {icon}
+      </div>
+      <h2 className="text-base font-bold mb-2">{title}</h2>
+      <p className="text-sm text-muted-foreground max-w-sm leading-relaxed">{body}</p>
     </div>
   );
-}
-
-function formatCompact(n: number): string {
-  if (n >= 1e9) return (n / 1e9).toFixed(2) + 'B';
-  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
-  if (n >= 1e3) return (n / 1e3).toFixed(2) + 'K';
-  return n.toFixed(2);
 }
