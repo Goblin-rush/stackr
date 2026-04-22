@@ -384,6 +384,14 @@ export default function HomeFeedPage() {
         {/* Search + sort + new token */}
         <div className="flex flex-col gap-2.5 mb-4">
           <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+              <span className="hidden sm:inline">New Token</span>
+              <span className="sm:hidden">New</span>
+            </button>
             <div className="relative flex-1 md:max-w-xs">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none" />
               <input
@@ -402,14 +410,6 @@ export default function HomeFeedPage() {
                 </button>
               )}
             </div>
-            <button
-              onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-2 text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary shrink-0"
-            >
-              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-              <span className="hidden sm:inline">New Token</span>
-              <span className="sm:hidden">New</span>
-            </button>
           </div>
 
           <div className="flex items-center bg-white/4 border border-border/50 rounded-lg overflow-hidden self-start">

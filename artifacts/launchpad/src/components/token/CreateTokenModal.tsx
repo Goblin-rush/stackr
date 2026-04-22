@@ -2,25 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useCreateToken } from '@/hooks/use-launchpad';
 import { useLocation } from 'wouter';
 import { useWatchContractEvent } from 'wagmi';
 import { FACTORY_V2_ADDRESS, FACTORY_V2_ABI } from '@/lib/contracts';
 import { saveTokenMetadata } from '@/lib/token-metadata';
-import { Loader2, Upload, X } from 'lucide-react';
+import { Loader2, Upload, X, Rocket } from 'lucide-react';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
 import { toast } from 'sonner';
 import { uploadImage } from '@/lib/upload';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Name is required').max(32, 'Name too long'),
-  symbol: z.string().min(1, 'Symbol is required').max(8, 'Symbol too long').regex(/^[a-zA-Z0-9]+$/, 'Alphanumeric only'),
-  description: z.string().max(280, 'Max 280 characters').optional(),
+  name: z.string().min(1, 'Required').max(32, 'Too long'),
+  symbol: z.string().min(1, 'Required').max(8, 'Max 8 chars').regex(/^[a-zA-Z0-9]+$/, 'Letters & numbers only'),
+  description: z.string().max(280, 'Max 280 chars').optional(),
   website: z.string().url('Must be a valid URL').or(z.literal('')).optional(),
   twitter: z.string().optional(),
   telegram: z.string().optional(),
@@ -36,6 +33,8 @@ interface CreateTokenModalProps {
 
 type Step = 'idle' | 'deploying' | 'confirming' | 'done';
 
+const fieldClass = 'w-full bg-white/4 border border-border/60 rounded-lg px-3 py-2.5 text-[13px] font-medium text-foreground placeholder:text-muted-foreground/40 focus:outline-none focus:border-primary/50 focus:bg-white/6 transition-all font-mono disabled:opacity-50';
+
 export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) {
   const [, setLocation] = useLocation();
   const { createToken, isPending, isConfirming, error, hash: deployHash } = useCreateToken();
@@ -43,7 +42,6 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   const [newTokenAddress, setNewTokenAddress] = useState<`0x${string}` | null>(null);
 
   const deployToastId = useRef<string | number | null>(null);
-
   const [imageUri, setImageUri] = useState<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
@@ -54,11 +52,11 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(URL.createObjectURL(file));
     setImageUploading(true);
-    const tid = toast.loading('Uploading image to IPFS...');
+    const tid = toast.loading('Uploading to IPFS...');
     try {
       const r = await uploadImage(file);
       setImageUri(r.url);
-      toast.success('Image pinned to IPFS', { id: tid, description: r.cid.slice(0, 12) + '…' });
+      toast.success('Image pinned', { id: tid, description: r.cid.slice(0, 12) + '…' });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Upload failed';
       toast.error(msg, { id: tid });
@@ -87,9 +85,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   }, [open]);
 
   useEffect(() => {
-    return () => {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
-    };
+    return () => { if (imagePreview) URL.revokeObjectURL(imagePreview); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -98,14 +94,12 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     defaultValues: { name: '', symbol: '', description: '', website: '', twitter: '', telegram: '', initialBuy: '' },
   });
 
-  // Swap pending → submitted toast when tx hash arrives
   useEffect(() => {
     if (deployHash && deployToastId.current) {
       txSubmittedToast(deployToastId.current, deployHash, 'Deploying token');
     }
   }, [deployHash]);
 
-  // Navigate on done
   useEffect(() => {
     if (step === 'done' && newTokenAddress) {
       const addr = newTokenAddress;
@@ -117,7 +111,6 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     }
   }, [step, newTokenAddress]);
 
-  // V2: watch TokenDeployed event on factory — single tx handles both deploy + dev buy
   useWatchContractEvent({
     address: FACTORY_V2_ADDRESS ?? undefined,
     abi: FACTORY_V2_ABI,
@@ -128,12 +121,10 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
       if (!log?.args?.token) return;
       const tokenAddr = log.args.token as `0x${string}`;
       setNewTokenAddress(tokenAddr);
-
       if (deployToastId.current && deployHash) {
         txSuccessToast(deployToastId.current, deployHash, `${(log.args.symbol as string) || 'Token'} deployed!`);
         deployToastId.current = null;
       }
-
       const vals = form.getValues();
       saveTokenMetadata(tokenAddr, {
         description: vals.description || undefined,
@@ -142,23 +133,17 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
         telegram: vals.telegram || undefined,
         image: imageUri || undefined,
       });
-
       setStep('done');
     },
   });
 
   async function onSubmit(data: FormValues) {
-    if (!FACTORY_V2_ADDRESS) {
-      toast.error('Factory contract not configured.');
-      return;
-    }
+    if (!FACTORY_V2_ADDRESS) { toast.error('Factory contract not configured.'); return; }
     setStep('deploying');
     const id = txPendingToast(`Deploying ${data.symbol.toUpperCase()}`);
     deployToastId.current = id;
-    // Build metadataURI: use IPFS image URI if available, else empty string
     const metadataURI = imageUri || '';
     try {
-      // V2: createToken handles deploy + optional dev buy in a single transaction
       await createToken(data.name, data.symbol.toUpperCase(), metadataURI, data.initialBuy);
       setStep('confirming');
     } catch (err) {
@@ -170,219 +155,210 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   const isLoading = step !== 'idle';
   const initialBuyVal = parseFloat(form.watch('initialBuy') || '0');
+  const descLen = form.watch('description')?.length ?? 0;
 
-  const stepLabel = () => {
-    if (step === 'deploying') return 'Confirm in wallet...';
-    if (step === 'confirming') return 'Deploying + buying...';
-    return 'Deploy Contract';
+  const btnLabel = () => {
+    if (step === 'deploying') return 'Confirm in wallet…';
+    if (step === 'confirming') return 'Deploying…';
+    return 'Launch Token';
   };
 
   return (
-    <Dialog open={open} onOpenChange={(val) => !isLoading && onOpenChange(val)}>
-      <DialogContent className="w-[calc(100vw-1rem)] sm:w-full sm:max-w-[500px] bg-background border-border shadow-2xl max-h-[90vh] overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-        <DialogHeader>
-          <DialogTitle className="text-xl font-bold tracking-tight">Initialize Token</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
-            Deploy a new bonding curve token to Base mainnet.
-            {initialBuyVal > 0 && ' Dev buy is included in the same transaction.'}
-          </DialogDescription>
-        </DialogHeader>
+    <Dialog open={open} onOpenChange={(v) => !isLoading && onOpenChange(v)}>
+      <DialogContent className="w-[calc(100vw-1rem)] sm:max-w-[460px] p-0 bg-card border-border/60 shadow-2xl overflow-hidden max-h-[92vh] overflow-y-auto">
+        {/* Header bar */}
+        <div className="h-0.5 w-full bg-gradient-to-r from-primary via-primary/50 to-transparent" />
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
+          <div className="flex items-center gap-2.5">
+            <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 border border-primary/20">
+              <Rocket className="h-3.5 w-3.5 text-primary" />
+            </div>
+            <div>
+              <h2 className="text-[14px] font-black tracking-tight text-foreground leading-none">Launch Token</h2>
+              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Base Mainnet · Bonding Curve V2</p>
+            </div>
+          </div>
+          <button
+            onClick={() => !isLoading && onOpenChange(false)}
+            className="p-1.5 text-muted-foreground hover:text-foreground hover:bg-white/5 rounded-md transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 pt-2">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="px-5 py-4 space-y-4">
 
-            <div>
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Token Image</p>
-              <div className="flex items-center gap-3">
-                <div className="relative w-20 h-20 rounded-md border border-border/50 bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
-                  {imagePreview ? (
-                    <>
-                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
-                      {imageUploading && (
-                        <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                          <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <Upload className="h-5 w-5 text-muted-foreground" />
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 min-w-0 flex-1">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
-                    className="hidden"
-                    onChange={(e) => handleImagePick(e.target.files?.[0] ?? null)}
-                    disabled={isLoading || imageUploading}
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="font-mono text-xs"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={isLoading || imageUploading}
-                    >
-                      {imageUri ? 'Change Image' : 'Upload Image'}
-                    </Button>
-                    {imageUri && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="font-mono text-xs"
-                        onClick={clearImage}
-                        disabled={isLoading || imageUploading}
-                      >
-                        <X className="h-3 w-3 mr-1" /> Remove
-                      </Button>
+            {/* Image upload */}
+            <div className="flex items-center gap-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => handleImagePick(e.target.files?.[0] ?? null)}
+                disabled={isLoading || imageUploading}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isLoading || imageUploading}
+                className="relative w-16 h-16 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/40 bg-white/3 flex items-center justify-center overflow-hidden shrink-0 transition-all group"
+              >
+                {imagePreview ? (
+                  <>
+                    <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
+                    {imageUploading && (
+                      <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                      </div>
                     )}
-                  </div>
-                  <p className="text-[10px] text-muted-foreground font-mono truncate">
-                    {imageUri ? `Pinned · ${imageUri.replace('ipfs://', '').slice(0, 20)}…` : 'PNG / JPG / GIF / WEBP · max 5MB · stored on IPFS'}
-                  </p>
-                </div>
+                  </>
+                ) : (
+                  <Upload className="h-4 w-4 text-muted-foreground/50 group-hover:text-primary/60 transition-colors" />
+                )}
+              </button>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-foreground mb-0.5">Token Image</p>
+                <p className="text-[10px] text-muted-foreground font-mono">
+                  {imageUri
+                    ? `Pinned · ipfs://${imageUri.replace('ipfs://', '').slice(0, 16)}…`
+                    : 'PNG · JPG · GIF · WEBP · max 5MB'}
+                </p>
+                {imageUri && (
+                  <button
+                    type="button"
+                    onClick={clearImage}
+                    disabled={isLoading}
+                    className="mt-1 text-[10px] text-muted-foreground hover:text-primary font-mono transition-colors"
+                  >
+                    Remove
+                  </button>
+                )}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            {/* Name + Symbol */}
+            <div className="grid grid-cols-5 gap-2.5">
               <FormField control={form.control} name="name" render={({ field }) => (
-                <FormItem className="col-span-2 sm:col-span-1">
-                  <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">Token Name</FormLabel>
+                <FormItem className="col-span-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Name</p>
                   <FormControl>
-                    <Input placeholder="e.g. Terminal Protocol" className="font-mono bg-muted/50" {...field} disabled={isLoading} />
+                    <input placeholder="Asteroid Shiba" className={fieldClass} {...field} disabled={isLoading} />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )} />
-
               <FormField control={form.control} name="symbol" render={({ field }) => (
-                <FormItem className="col-span-2 sm:col-span-1">
-                  <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">Ticker Symbol</FormLabel>
+                <FormItem className="col-span-2">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Symbol</p>
                   <FormControl>
-                    <Input placeholder="TRM" className="font-mono bg-muted/50 uppercase" {...field} disabled={isLoading} />
+                    <input placeholder="STR" className={`${fieldClass} uppercase`} {...field} onChange={(e) => field.onChange(e.target.value.toUpperCase())} disabled={isLoading} />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )} />
             </div>
 
+            {/* Description */}
             <FormField control={form.control} name="description" render={({ field }) => (
               <FormItem>
-                <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">Description</FormLabel>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Description <span className="normal-case font-normal tracking-normal">(optional)</span></p>
                 <FormControl>
-                  <Textarea
-                    placeholder="Describe your token in a few words..."
-                    className="font-mono bg-muted/50 resize-none text-sm"
+                  <textarea
+                    placeholder="What is this token about?"
                     rows={3}
+                    className={`${fieldClass} resize-none`}
                     {...field}
                     disabled={isLoading}
                   />
                 </FormControl>
-                <div className="flex justify-between">
-                  <FormMessage />
-                  <span className="text-xs text-muted-foreground ml-auto">{(field.value?.length ?? 0)}/280</span>
+                <div className="flex justify-between items-center mt-1">
+                  <FormMessage className="text-[10px]" />
+                  <span className={`text-[10px] font-mono ml-auto ${descLen > 250 ? 'text-amber-400' : 'text-muted-foreground/50'}`}>{descLen}/280</span>
                 </div>
               </FormItem>
             )} />
 
-            <div className="border-t border-border/50 pt-3">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground mb-3">Socials (optional)</p>
+            {/* Socials */}
+            <div>
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Socials <span className="normal-case font-normal tracking-normal">(optional)</span></p>
               <div className="space-y-2">
-                <FormField control={form.control} name="website" render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono w-16">Website</span>
-                        <Input placeholder="https://..." className="font-mono bg-muted/50 pl-20 text-sm" {...field} disabled={isLoading} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                <FormField control={form.control} name="twitter" render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono w-16">Twitter</span>
-                        <Input placeholder="@handle" className="font-mono bg-muted/50 pl-20 text-sm" {...field} disabled={isLoading} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-
-                <FormField control={form.control} name="telegram" render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono w-16">Telegram</span>
-                        <Input placeholder="@group or t.me/link" className="font-mono bg-muted/50 pl-20 text-sm" {...field} disabled={isLoading} />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
+                {[
+                  { name: 'website' as const, label: 'Site', placeholder: 'https://…' },
+                  { name: 'twitter' as const, label: 'X', placeholder: '@handle' },
+                  { name: 'telegram' as const, label: 'TG', placeholder: 't.me/group' },
+                ].map(({ name, label, placeholder }) => (
+                  <FormField key={name} control={form.control} name={name} render={({ field }) => (
+                    <FormItem>
+                      <FormControl>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-mono font-semibold text-muted-foreground/50 w-7 shrink-0">{label}</span>
+                          <input placeholder={placeholder} className={`${fieldClass} pl-10`} {...field} disabled={isLoading} />
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-[10px]" />
+                    </FormItem>
+                  )} />
+                ))}
               </div>
             </div>
 
-            <div className="border-t border-border/50 pt-3">
+            {/* Dev buy */}
+            <div className="border-t border-border/40 pt-3">
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Dev Buy <span className="normal-case font-normal tracking-normal">(optional — included in deploy tx)</span></p>
               <FormField control={form.control} name="initialBuy" render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                    Dev Buy (optional) — included in deploy tx
-                  </FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input
+                      <input
                         type="number"
                         min="0"
                         step="0.001"
                         placeholder="0.0"
-                        className="font-mono bg-muted/50 pr-14"
+                        className={`${fieldClass} pr-12`}
                         {...field}
                         disabled={isLoading}
                       />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-mono">ETH</span>
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground font-mono">ETH</span>
                     </div>
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-[10px]" />
                 </FormItem>
               )} />
+
+              {initialBuyVal > 0 && (
+                <div className="mt-2 rounded-lg bg-primary/8 border border-primary/15 px-3 py-2 space-y-1">
+                  {[
+                    { label: 'Dev buy (5% tax)', val: initialBuyVal },
+                    { label: 'Platform fee (1.5%)', val: initialBuyVal * 0.015 },
+                    { label: 'Burn (1.5%)', val: initialBuyVal * 0.015 },
+                  ].map((row) => (
+                    <div key={row.label} className="flex justify-between text-[11px] font-mono">
+                      <span className="text-muted-foreground">{row.label}</span>
+                      <span className="text-primary">{row.val.toFixed(4)} ETH</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {initialBuyVal > 0 && (
-              <div className="bg-primary/10 p-3 rounded border border-primary/20 text-xs font-mono text-primary space-y-1">
-                <div className="flex justify-between">
-                  <span>Dev Buy (5% tax)</span>
-                  <span>{initialBuyVal.toFixed(4)} ETH</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Platform fee (1.5%)</span>
-                  <span>{(initialBuyVal * 0.015).toFixed(4)} ETH</span>
-                </div>
-                <div className="flex justify-between text-muted-foreground">
-                  <span>Burn (1.5%)</span>
-                  <span>{(initialBuyVal * 0.015).toFixed(4)} ETH</span>
-                </div>
-              </div>
-            )}
-
             {error && (
-              <p className="text-sm text-destructive break-words">{error.message || 'An error occurred'}</p>
+              <p className="text-[11px] text-destructive font-mono break-words">{error.message || 'An error occurred'}</p>
             )}
 
-            <Button type="submit" className="w-full font-bold tracking-wide" disabled={isLoading || !FACTORY_V2_ADDRESS}>
+            <button
+              type="submit"
+              disabled={isLoading || !FACTORY_V2_ADDRESS}
+              className="w-full py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed enabled:bg-primary enabled:text-primary-foreground enabled:hover:bg-primary/90 enabled:glow-primary flex items-center justify-center gap-2"
+            >
               {isLoading
-                ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />{stepLabel()}</>
-                : !FACTORY_V2_ADDRESS ? 'Factory not configured'
-                : 'Deploy Contract'
+                ? <><Loader2 className="h-4 w-4 animate-spin" />{btnLabel()}</>
+                : !FACTORY_V2_ADDRESS ? 'Not configured'
+                : <><Rocket className="h-4 w-4" />Launch Token</>
               }
-            </Button>
+            </button>
+
           </form>
         </Form>
       </DialogContent>
