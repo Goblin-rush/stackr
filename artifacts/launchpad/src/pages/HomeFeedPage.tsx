@@ -13,11 +13,11 @@ type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade'
 
 const SORT_TABS: { id: FeedSort; label: string }[] = [
   { id: 'new', label: 'New' },
-  { id: 'movers', label: 'Movers' },
+  { id: 'movers', label: 'Top' },
   { id: 'graduated', label: 'Graduated' },
-  { id: 'mcap', label: 'Market cap' },
-  { id: 'oldest', label: 'Oldest' },
-  { id: 'lasttrade', label: 'Last trade' },
+  { id: 'mcap', label: 'Mcap' },
+  { id: 'oldest', label: 'Old' },
+  { id: 'lasttrade', label: 'Recent' },
 ];
 
 const TARGET_ETH_NUM = Number(formatEther(TARGET_ETH));
@@ -223,10 +223,10 @@ export default function HomeFeedPage() {
         <div className="flex items-end justify-between mb-4 border-b-2 border-border pb-3">
           <div>
             <p className="text-[10px] font-black uppercase tracking-widest text-primary">
-              MARKET FEED
+              BASE
             </p>
             <h1 className="text-2xl md:text-3xl font-black tracking-tighter text-foreground leading-none mt-1">
-              All Tokens
+              Tokens
             </h1>
           </div>
           <button
@@ -234,7 +234,7 @@ export default function HomeFeedPage() {
             className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-3 py-2 hover:bg-primary/85 transition-colors whitespace-nowrap border-2 border-primary"
           >
             <Plus className="h-3 w-3" strokeWidth={3} />
-            Launch
+            New token
           </button>
         </div>
 
@@ -246,7 +246,7 @@ export default function HomeFeedPage() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="search name / symbol / address…"
+              placeholder="search…"
               className="w-full pl-8 pr-8 py-2 bg-card border-2 border-border text-xs font-mono text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
             />
             {query && (
@@ -287,7 +287,7 @@ export default function HomeFeedPage() {
           <div className="col-span-3">Token</div>
           <div className="col-span-2 text-right">Price</div>
           <div className="col-span-2 text-right">Mcap</div>
-          <div className="col-span-3">Bonding</div>
+          <div className="col-span-3">Progress</div>
           <div className="col-span-2 text-right">Age</div>
         </div>
 
@@ -306,20 +306,20 @@ export default function HomeFeedPage() {
           </div>
         ) : tokens.length === 0 && !query.trim() ? (
           <div className="text-center py-20 border-b border-border">
-            <p className="text-sm text-foreground font-mono mb-2">No tokens launched yet</p>
-            <p className="text-xs text-muted-foreground font-mono mb-4">Be the first to deploy on Aethpad</p>
+            <p className="text-sm font-bold text-foreground mb-2">No tokens yet.</p>
+            <p className="text-xs text-muted-foreground font-mono mb-5">Be first.</p>
             <button
               onClick={() => setIsCreateOpen(true)}
-              className="inline-flex items-center gap-1.5 text-xs font-bold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-colors"
+              className="inline-flex items-center gap-1.5 text-[11px] font-black uppercase tracking-widest bg-primary text-primary-foreground px-4 py-2.5 hover:bg-primary/85 transition-colors border-2 border-primary"
             >
-              <Plus className="h-3.5 w-3.5" />
-              Launch the first token
+              <Plus className="h-3.5 w-3.5" strokeWidth={3} />
+              Deploy
             </button>
           </div>
         ) : (
           <div className="text-center py-20 border-b border-border">
             <p className="text-xs text-muted-foreground font-mono">
-              No tokens match "{query}"
+              No matches for "{query}".
             </p>
           </div>
         )}
