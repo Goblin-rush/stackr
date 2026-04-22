@@ -8,7 +8,7 @@ export function Footer() {
             <span className="text-foreground/70">Base</span>
           </span>
         </div>
-        <span className="text-muted-foreground/40 text-[10px]">© Aethpad 2025</span>
+        <span className="text-muted-foreground/40 text-[10px]">© Aethpad 2026</span>
       </div>
     </footer>
   );
