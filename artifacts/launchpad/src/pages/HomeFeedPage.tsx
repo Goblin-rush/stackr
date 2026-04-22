@@ -25,7 +25,7 @@ const SORT_TABS: { id: FeedSort; label: string }[] = [
   { id: 'movers', label: 'Top' },
   { id: 'graduated', label: 'Graduated' },
   { id: 'mcap', label: 'Mcap' },
-  { id: 'oldest', label: 'Old' },
+  { id: 'oldest', label: 'Oldest' },
   { id: 'lasttrade', label: 'Recent' },
 ];
 
@@ -206,12 +206,11 @@ function FeaturedRow({ d }: { d: RowDisplay }) {
     <Link href={d.href}>
       <div className="relative rounded-xl border border-primary/30 bg-gradient-to-br from-primary/8 via-card to-card mb-3 cursor-pointer group card-hover overflow-hidden">
         {/* Top badge */}
-        <div className="flex items-center justify-between px-4 py-2.5 border-b border-border/60">
+        <div className="flex items-center px-4 py-2.5 border-b border-border/60">
           <span className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-primary">
             <Flame className="h-3 w-3" />
-            Top Mover · 24h
+            Featured
           </span>
-          <span className="text-[11px] font-semibold text-emerald-400 tabular-nums">+18.4%</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5">
@@ -382,39 +381,38 @@ export default function HomeFeedPage() {
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-6 md:px-8">
 
-        {/* Page header */}
-        <div className="flex items-center justify-end mb-6">
-          <button
-            onClick={() => setIsCreateOpen(true)}
-            className="inline-flex items-center gap-2 text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary"
-          >
-            <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
-            New Token
-          </button>
-        </div>
-
-        {/* Search + sort */}
-        <div className="flex flex-col md:flex-row md:items-center gap-2.5 mb-4">
-          <div className="relative md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search tokens…"
-              className="w-full pl-9 pr-8 py-2.5 bg-white/5 border border-border/60 rounded-lg text-[12px] font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:bg-white/7 transition-all"
-            />
-            {query && (
-              <button
-                onClick={() => setQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/60 hover:text-foreground"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
+        {/* Search + sort + new token */}
+        <div className="flex flex-col gap-2.5 mb-4">
+          <div className="flex items-center gap-2.5">
+            <div className="relative flex-1 md:max-w-xs">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/60 pointer-events-none" />
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search tokens…"
+                className="w-full pl-9 pr-8 py-2.5 bg-white/5 border border-border/60 rounded-lg text-[12px] font-medium text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:bg-white/7 transition-all"
+              />
+              {query && (
+                <button
+                  onClick={() => setQuery('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-muted-foreground/60 hover:text-foreground"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              )}
+            </div>
+            <button
+              onClick={() => setIsCreateOpen(true)}
+              className="inline-flex items-center gap-2 text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2.5 rounded-lg hover:bg-primary/90 transition-all glow-primary shrink-0"
+            >
+              <Plus className="h-3.5 w-3.5" strokeWidth={2.5} />
+              <span className="hidden sm:inline">New Token</span>
+              <span className="sm:hidden">New</span>
+            </button>
           </div>
 
-          <div className="flex items-center bg-white/4 border border-border/50 rounded-lg overflow-hidden">
+          <div className="flex items-center bg-white/4 border border-border/50 rounded-lg overflow-hidden self-start">
             {SORT_TABS.map((t) => {
               const active = sort === t.id;
               return (
