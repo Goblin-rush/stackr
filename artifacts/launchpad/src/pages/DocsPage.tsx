@@ -26,7 +26,7 @@ export default function DocsPage() {
         <div className="border-b-4 border-foreground pb-4 mb-8">
           <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
             <span>Protocol Spec</span>
-            <span>v2.0</span>
+            <span>v1.0</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight mt-2 text-foreground">
             How It Works
@@ -170,13 +170,13 @@ export default function DocsPage() {
           4.3 Auto-Distribution — No Claim Button
         </h3>
         <P>
-          In Stackr V2, rewards are <span className="font-bold">pushed automatically</span> to holders. There is no
+          On Stackr, rewards are <span className="font-bold">pushed automatically</span> to holders. There is no
           manual "claim" transaction required. Here is exactly when ETH lands in your wallet:
         </P>
         <ul className="space-y-1.5 text-[14px] text-foreground/90 list-none pl-0 mb-3">
           {[
-            ['On every buy',      'The buyer's pending rewards are settled and sent before their new balance is recorded.'],
-            ['On every sell',     'The seller's pending rewards are settled and sent before their balance decreases.'],
+            ['On every buy',      "The buyer's pending rewards are settled and sent before their new balance is recorded."],
+            ['On every sell',     "The seller's pending rewards are settled and sent before their balance decreases."],
             ['On every transfer', 'Both sender and receiver are settled before balances change.'],
           ].map(([k, v], i) => (
             <li key={i} className="flex gap-3">
@@ -309,7 +309,7 @@ export default function DocsPage() {
         </P>
         <ul className="space-y-1 text-[13px] text-foreground/90 list-none pl-0 mb-3">
           {[
-            ['Bonding curve contract', 'holds the curve's token reserve'],
+            ['Bonding curve contract', "holds the curve's token reserve"],
             ['DEX liquidity pair',     'liquidity pool tokens, not real holders'],
             ['0xdead burn address',    'burned supply'],
             ['Factory contract',       'protocol-owned'],
@@ -415,7 +415,7 @@ export default function DocsPage() {
             <thead>
               <tr className="bg-foreground text-background uppercase tracking-widest text-[11px] font-mono">
                 <th className="text-left px-3 py-2 font-bold">Failure mode in most launchpads</th>
-                <th className="text-left px-3 py-2 font-bold">Stackr V2</th>
+                <th className="text-left px-3 py-2 font-bold">Stackr</th>
               </tr>
             </thead>
             <tbody>
@@ -455,7 +455,7 @@ export default function DocsPage() {
 
         {/* Colophon */}
         <div className="mt-16 pt-4 border-t-2 border-border flex items-center justify-between text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
-          <span>Stackr V2 — Base Mainnet</span>
+          <span>Stackr — Base Mainnet</span>
           <span>Read in ~4 min</span>
         </div>
       </main>
