@@ -39,11 +39,14 @@ const LOOKBACK_BLOCKS = 9_000n; // publicnode free RPC limit is ~10k blocks per 
 const MULTICALL_CHUNK = 30; // tokens per multicall batch (5 reads each = 150 calls)
 const TOTAL_SUPPLY_NUM = Number(formatEther(TOTAL_SUPPLY));
 
+// V1 (Ethereum) feed disabled — V2 launchpad on Base will repopulate this once deployed.
+const V1_FEED_DISABLED = true;
+
 export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
   const client = usePublicClient();
   const [state, setState] = useState<LaunchpadFeedState>({
     tokens: [],
-    isLoading: true,
+    isLoading: V1_FEED_DISABLED ? false : true,
     loadError: null,
     refresh: () => {},
   });
@@ -79,6 +82,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
   }, []);
 
   useEffect(() => {
+    if (V1_FEED_DISABLED) return;
     if (!client) return;
     let cancelled = false;
     let unwatchCreated: (() => void) | undefined;

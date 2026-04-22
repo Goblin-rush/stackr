@@ -1,6 +1,5 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { Footer } from '@/components/layout/Footer';
-import { TrustBanner } from '@/components/layout/TrustBanner';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -218,7 +217,6 @@ export default function HomeFeedPage() {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar onCreate={() => setIsCreateOpen(true)} />
-      <TrustBanner />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-5 md:px-8">
         {/* Header: title + actions */}
