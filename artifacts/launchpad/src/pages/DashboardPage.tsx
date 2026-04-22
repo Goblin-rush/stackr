@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAccount, usePublicClient, useBlockNumber } from 'wagmi';
-import { usePrivy } from '@privy-io/react-auth';
+import { useAppKit } from '@reown/appkit/react';
 import { Link } from 'wouter';
 import { formatEther, formatUnits } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
@@ -43,7 +43,7 @@ function formatCompact(n: number): string {
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
-  const { login, ready } = usePrivy();
+  const { open } = useAppKit();
   const client = usePublicClient();
   const { data: ethPrice } = useEthPrice();
   const [holdings, setHoldings] = useState<Holding[] | null>(null);
@@ -208,9 +208,8 @@ export default function DashboardPage() {
             See your token holdings and ETH rewards received.
           </p>
           <button
-            onClick={() => login()}
-            disabled={!ready}
-            className="text-sm font-bold px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 transition-colors"
+            onClick={() => open()}
+            className="text-sm font-bold px-6 py-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             Connect wallet
           </button>
