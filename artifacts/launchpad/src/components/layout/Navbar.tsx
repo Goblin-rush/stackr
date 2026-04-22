@@ -1,8 +1,7 @@
 import { Link } from 'wouter';
-import { usePrivy, useWallets } from '@privy-io/react-auth';
-import { useSetActiveWallet } from '@privy-io/wagmi';
-import { useAccount } from 'wagmi';
-import { Plus, Menu, X, Wallet, LogOut } from 'lucide-react';
+import { useAccount, useDisconnect } from 'wagmi';
+import { useAppKit } from '@reown/appkit/react';
+import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface NavbarProps {
@@ -20,17 +19,10 @@ export function XIcon({ className }: { className?: string }) {
 }
 
 export function Navbar({ onCreate }: NavbarProps) {
-  const { ready, authenticated, login, logout, user } = usePrivy();
-  const { wallets } = useWallets();
-  const { setActiveWallet } = useSetActiveWallet();
-  const { address } = useAccount();
+  const { address, isConnected } = useAccount();
+  const { disconnect } = useDisconnect();
+  const { open } = useAppKit();
   const [menuOpen, setMenuOpen] = useState(false);
-  useEffect(() => {
-    if (!ready || !authenticated || !wallets.length) return;
-    const injected = wallets.find((w) => w.walletClientType === 'metamask' || w.connectorType === 'injected');
-    const target = injected ?? wallets[0];
-    if (target) setActiveWallet(target).catch(() => {});
-  }, [ready, authenticated, wallets, setActiveWallet]);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -38,8 +30,6 @@ export function Navbar({ onCreate }: NavbarProps) {
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [menuOpen]);
-
-  const displayAddr = address ?? (user?.wallet?.address as `0x${string}` | undefined);
 
   return (
     <>
@@ -77,13 +67,13 @@ export function Navbar({ onCreate }: NavbarProps) {
           </div>
 
           <div className="flex items-center gap-2 ml-auto">
-            {authenticated && displayAddr ? (
+            {isConnected && address ? (
               <>
                 <span className="hidden sm:block text-[11px] font-mono text-muted-foreground bg-white/5 border border-border/60 rounded-md px-2.5 py-1.5">
-                  {displayAddr.slice(0, 6)}··{displayAddr.slice(-4)}
+                  {address.slice(0, 6)}··{address.slice(-4)}
                 </span>
                 <button
-                  onClick={() => logout()}
+                  onClick={() => disconnect()}
                   className="text-[11px] font-medium text-muted-foreground hover:text-destructive px-2.5 py-1.5 rounded-md transition-colors hover:bg-destructive/8"
                 >
                   Disconnect
@@ -91,11 +81,10 @@ export function Navbar({ onCreate }: NavbarProps) {
               </>
             ) : (
               <button
-                onClick={() => login()}
-                disabled={!ready}
-                className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all disabled:opacity-50 glow-primary"
+                onClick={() => open()}
+                className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all glow-primary"
               >
-                {ready ? 'Connect' : '…'}
+                Connect
               </button>
             )}
             <button
@@ -127,19 +116,18 @@ export function Navbar({ onCreate }: NavbarProps) {
 
             {/* Wallet row */}
             <div className="px-4 py-3 border-b border-white/8 shrink-0">
-              {authenticated && displayAddr ? (
+              {isConnected && address ? (
                 <div className="flex items-center gap-2">
                   <span className="h-2 w-2 rounded-full bg-emerald-400 shrink-0" />
-                  <span className="text-[12px] font-mono text-foreground/70 flex-1 truncate">{displayAddr.slice(0, 6)}···{displayAddr.slice(-4)}</span>
-                  <button onClick={() => { logout(); setMenuOpen(false); }} className="text-muted-foreground/50 hover:text-foreground transition-colors">
+                  <span className="text-[12px] font-mono text-foreground/70 flex-1 truncate">{address.slice(0, 6)}···{address.slice(-4)}</span>
+                  <button onClick={() => { disconnect(); setMenuOpen(false); }} className="text-muted-foreground/50 hover:text-foreground transition-colors">
                     <LogOut className="h-3.5 w-3.5" />
                   </button>
                 </div>
               ) : (
                 <button
-                  onClick={() => { login(); setMenuOpen(false); }}
-                  disabled={!ready}
-                  className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors disabled:opacity-40"
+                  onClick={() => { open(); setMenuOpen(false); }}
+                  className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
                   Connect Wallet
                 </button>
