@@ -306,8 +306,8 @@ export default function DemoTokenPage() {
                       className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
                     >
                       {copied
-                        ? <><Check className="h-3.5 w-3.5 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
-                        : <><Copy className="h-3.5 w-3.5" /><span>Copy</span></>
+                        ? <Check className="h-3.5 w-3.5 text-emerald-400" />
+                        : <Copy className="h-3.5 w-3.5" />
                       }
                     </button>
                   </div>
