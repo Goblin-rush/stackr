@@ -2,18 +2,21 @@ require("@nomicfoundation/hardhat-ethers");
 require("@nomicfoundation/hardhat-chai-matchers");
 
 const networks = {};
-if (process.env.Private_key && process.env.Private_key.length === 64) {
+const rawKey = process.env.Private_key || "";
+// Accept with or without 0x prefix
+const deployerKey = rawKey.startsWith("0x") ? rawKey : rawKey.length === 64 ? `0x${rawKey}` : null;
+if (deployerKey) {
   networks.mainnet = {
     url: "https://ethereum.publicnode.com",
-    accounts: [process.env.Private_key],
+    accounts: [deployerKey],
   };
   networks.base = {
     url: "https://mainnet.base.org",
-    accounts: [process.env.Private_key],
+    accounts: [deployerKey],
   };
   networks.baseSepolia = {
     url: "https://sepolia.base.org",
-    accounts: [process.env.Private_key],
+    accounts: [deployerKey],
   };
 }
 

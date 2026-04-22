@@ -1,19 +1,22 @@
 // Deploys Aethpad v2 contracts on Base (or Base Sepolia).
 // Required env:
-//   Private_key      — deployer key (64 hex chars, no 0x)
+//   Private_key      — deployer key (with or without 0x prefix)
+//   FACTORY_ADDR     — (optional) skip factory deploy if already deployed
 // Usage:
-//   npx hardhat run scripts/deployV2.js --network baseSepolia
 //   npx hardhat run scripts/deployV2.js --network base
+//   npx hardhat run scripts/deployV2.js --network baseSepolia
 
 const { ethers, network } = require("hardhat");
 
-// Uniswap V2 router addresses
-// Base mainnet:   0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24 (BaseSwap / Uniswap V2 fork)
-// Base Sepolia:   0x1689E7B1F10000AE47eBfE339a4f69dECd19F602 (Uniswap V2 router, fallback addr)
-// Adjust per actual deployment target
 const ROUTERS = {
   base: "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24",
   baseSepolia: "0x1689E7B1F10000AE47eBfE339a4f69dECd19F602",
+};
+
+// Explicit gas override to avoid "replacement transaction underpriced" on Base
+const GAS_OVERRIDES = {
+  maxFeePerGas: ethers.parseUnits("0.1", "gwei"),
+  maxPriorityFeePerGas: ethers.parseUnits("0.01", "gwei"),
 };
 
 async function main() {
@@ -26,22 +29,29 @@ async function main() {
   if (!router) throw new Error(`No router configured for network: ${network.name}`);
   console.log("Router:  ", router);
 
-  // 1. Deploy Factory
-  const Factory = await ethers.getContractFactory("AethpadFactoryV2");
-  const factory = await Factory.deploy(router);
-  await factory.waitForDeployment();
-  const factoryAddr = await factory.getAddress();
-  console.log("Factory: ", factoryAddr);
+  let factoryAddr = process.env.FACTORY_ADDR;
 
-  // 2. Deploy Deployer (needs factory address)
+  // 1. Deploy Factory (skip if already deployed)
+  if (factoryAddr) {
+    console.log("Factory: ", factoryAddr, "(reusing existing)");
+  } else {
+    const Factory = await ethers.getContractFactory("AethpadFactoryV2");
+    const factory = await Factory.deploy(router, GAS_OVERRIDES);
+    await factory.waitForDeployment();
+    factoryAddr = await factory.getAddress();
+    console.log("Factory: ", factoryAddr);
+  }
+
+  // 2. Deploy Deployer helper
   const Deployer = await ethers.getContractFactory("AethpadDeployer");
-  const helper = await Deployer.deploy(factoryAddr, router);
+  const helper = await Deployer.deploy(factoryAddr, router, GAS_OVERRIDES);
   await helper.waitForDeployment();
   const helperAddr = await helper.getAddress();
   console.log("Deployer:", helperAddr);
 
   // 3. Wire factory → deployer
-  const tx = await factory.setDeployer(helperAddr);
+  const factory = await ethers.getContractAt("AethpadFactoryV2", factoryAddr);
+  const tx = await factory.setDeployer(helperAddr, GAS_OVERRIDES);
   await tx.wait();
   console.log("Factory.setDeployer() done");
 
