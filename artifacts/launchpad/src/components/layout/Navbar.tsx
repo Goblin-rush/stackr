@@ -68,17 +68,19 @@ export function Navbar({ onCreate }: NavbarProps) {
 
           <div className="flex items-center gap-2 ml-auto">
             {isConnected && address ? (
-              <>
-                <span className="hidden sm:block text-[11px] font-mono text-muted-foreground bg-white/5 border border-border/60 rounded-md px-2.5 py-1.5">
+              <div className="flex items-center gap-1.5 bg-white/5 border border-border/60 rounded-md pl-2.5 pr-1.5 py-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                <span className="text-[11px] font-mono text-foreground/80">
                   {address.slice(0, 6)}··{address.slice(-4)}
                 </span>
                 <button
                   onClick={() => disconnect()}
-                  className="text-[11px] font-medium text-muted-foreground hover:text-destructive px-2.5 py-1.5 rounded-md transition-colors hover:bg-destructive/8"
+                  title="Disconnect"
+                  className="ml-1 p-0.5 text-muted-foreground/50 hover:text-destructive rounded transition-colors"
                 >
-                  Disconnect
+                  <LogOut className="h-3.5 w-3.5" />
                 </button>
-              </>
+              </div>
             ) : (
               <button
                 onClick={() => open()}
