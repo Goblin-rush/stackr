@@ -12,13 +12,6 @@ interface NavbarProps {
 
 const X_URL = 'https://x.com/stackr?s=21';
 
-export function XIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <path d="M18.244 2H21l-6.52 7.45L22 22h-6.81l-4.78-6.27L4.8 22H2l7-8L2 2h6.92l4.32 5.74L18.244 2Zm-1.19 18h1.86L7.07 4h-2L17.054 20Z" />
-    </svg>
-  );
-}
 
 export function Navbar({ onCreate }: NavbarProps) {
   const { ready, authenticated, login, logout, user } = usePrivy();
@@ -184,8 +177,7 @@ export function Navbar({ onCreate }: NavbarProps) {
 
             {/* Footer */}
             <div className="border-t border-white/8 px-5 py-3 flex items-center justify-between shrink-0">
-              <a href={X_URL} target="_blank" rel="noreferrer noopener" className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors">
-                <XIcon className="h-3 w-3" />
+              <a href={X_URL} target="_blank" rel="noreferrer noopener" className="text-[11px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors">
                 @stackr
               </a>
               {ethPrice && (
