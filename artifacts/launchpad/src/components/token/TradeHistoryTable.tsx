@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { LiveTrade } from '@/types/live';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface TradeHistoryTableProps {
   trades: LiveTrade[];
@@ -88,26 +88,31 @@ export function TradeHistoryTable({ trades, symbol, pageSize = 20 }: TradeHistor
       </div>
 
       {trades.length > 0 && (
-        <div className="flex items-center justify-center gap-4 px-3 py-2.5 border-t border-border/40">
-          <button
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            disabled={page === 0}
-            className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            <ChevronLeft className="h-3.5 w-3.5" />
-            Prev
-          </button>
-          <span className="text-[11px] font-mono text-muted-foreground/60">
-            {page + 1} / {totalPages}
+        <div className="flex items-center justify-between px-3 py-2 border-t border-border/40">
+          <span className="text-[11px] font-mono text-muted-foreground/50">
+            {trades.length} {trades.length === 1 ? 'swap' : 'swaps'}
           </span>
-          <button
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            disabled={page === totalPages - 1}
-            className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
-          >
-            Next
-            <ChevronRight className="h-3.5 w-3.5" />
-          </button>
+          <div className="flex items-center gap-1">
+            <button onClick={() => setPage(0)} disabled={page === 0}
+              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
+              <ChevronFirst className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}
+              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            <span className="text-[11px] font-mono text-muted-foreground/70 px-2">
+              Page {page + 1} of {totalPages}
+            </span>
+            <button onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))} disabled={page === totalPages - 1}
+              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
+            <button onClick={() => setPage(totalPages - 1)} disabled={page === totalPages - 1}
+              className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors">
+              <ChevronLast className="h-3.5 w-3.5" />
+            </button>
+          </div>
         </div>
       )}
     </div>

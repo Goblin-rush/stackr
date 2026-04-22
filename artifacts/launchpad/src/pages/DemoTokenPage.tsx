@@ -1,7 +1,7 @@
 import { useParams, Link } from 'wouter';
 import { useState } from 'react';
 import { Navbar } from '@/components/layout/Navbar';
-import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, ExternalLink } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, ArrowDownRight, Globe, Send, Copy, Check, ExternalLink, ChevronFirst, ChevronLast, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { SlippageSettings } from '@/components/token/SlippageSettings';
 
@@ -481,16 +481,15 @@ export default function DemoTokenPage() {
                       </div>
                     ))}
                     {pageTrades.length > 0 && (
-                      <div className="flex items-center justify-center gap-4 px-5 py-2.5 border-t border-border/40">
-                        <button onClick={() => setTradePage((p) => Math.max(0, p - 1))} disabled={tradePage === 0}
-                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                          ← Prev
-                        </button>
-                        <span className="text-[11px] font-mono text-muted-foreground/60">{tradePage + 1} / {totalTradePages}</span>
-                        <button onClick={() => setTradePage((p) => Math.min(totalTradePages - 1, p + 1))} disabled={tradePage === totalTradePages - 1}
-                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                          Next →
-                        </button>
+                      <div className="flex items-center justify-between px-5 py-2 border-t border-border/40">
+                        <span className="text-[11px] font-mono text-muted-foreground/50">{t.trades.length} swaps</span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setTradePage(0)} disabled={tradePage === 0} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronFirst className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setTradePage((p) => Math.max(0, p - 1))} disabled={tradePage === 0} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                          <span className="text-[11px] font-mono text-muted-foreground/70 px-2">Page {tradePage + 1} of {totalTradePages}</span>
+                          <button onClick={() => setTradePage((p) => Math.min(totalTradePages - 1, p + 1))} disabled={tradePage === totalTradePages - 1} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronRight className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setTradePage(totalTradePages - 1)} disabled={tradePage === totalTradePages - 1} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronLast className="h-3.5 w-3.5" /></button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -512,16 +511,15 @@ export default function DemoTokenPage() {
                       </div>
                     ))}
                     {pageHolders.length > 0 && (
-                      <div className="flex items-center justify-center gap-4 px-5 py-2.5 border-t border-border/40">
-                        <button onClick={() => setHolderPage((p) => Math.max(0, p - 1))} disabled={holderPage === 0}
-                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                          ← Prev
-                        </button>
-                        <span className="text-[11px] font-mono text-muted-foreground/60">{holderPage + 1} / {totalHolderPages}</span>
-                        <button onClick={() => setHolderPage((p) => Math.min(totalHolderPages - 1, p + 1))} disabled={holderPage === totalHolderPages - 1}
-                          className="flex items-center gap-1 text-[11px] font-mono text-muted-foreground hover:text-foreground disabled:opacity-30 disabled:cursor-not-allowed transition-colors">
-                          Next →
-                        </button>
+                      <div className="flex items-center justify-between px-5 py-2 border-t border-border/40">
+                        <span className="text-[11px] font-mono text-muted-foreground/50">{t.topHolders.length} holders</span>
+                        <div className="flex items-center gap-1">
+                          <button onClick={() => setHolderPage(0)} disabled={holderPage === 0} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronFirst className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setHolderPage((p) => Math.max(0, p - 1))} disabled={holderPage === 0} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronLeft className="h-3.5 w-3.5" /></button>
+                          <span className="text-[11px] font-mono text-muted-foreground/70 px-2">Page {holderPage + 1} of {totalHolderPages}</span>
+                          <button onClick={() => setHolderPage((p) => Math.min(totalHolderPages - 1, p + 1))} disabled={holderPage === totalHolderPages - 1} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronRight className="h-3.5 w-3.5" /></button>
+                          <button onClick={() => setHolderPage(totalHolderPages - 1)} disabled={holderPage === totalHolderPages - 1} className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed transition-colors"><ChevronLast className="h-3.5 w-3.5" /></button>
+                        </div>
                       </div>
                     )}
                   </div>
