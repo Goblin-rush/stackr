@@ -26,13 +26,13 @@ export default function DocsPage() {
         <div className="border-b-4 border-foreground pb-4 mb-8">
           <div className="flex items-center justify-between text-[10px] font-mono font-bold uppercase tracking-widest text-muted-foreground">
             <span>Protocol Spec</span>
-            <span>v1.0 · Base Mainnet</span>
+            <span>v1.0</span>
           </div>
           <h1 className="text-4xl md:text-5xl font-black tracking-tight mt-2 text-foreground">
             How It Works
           </h1>
           <p className="text-[14px] text-muted-foreground mt-3 max-w-xl">
-            A fair-launch token protocol on Base. Bonding curve → automatic graduation to Uniswap V2 with permanently
+            A fair-launch token protocol. Bonding curve → automatic graduation to a DEX with permanently
             burned LP. Designed to neutralize creator rugs, sniper extraction, and dead liquidity.
           </p>
         </div>
@@ -40,14 +40,14 @@ export default function DocsPage() {
         {/* §1 Lifecycle */}
         <H2 n="01">Token Lifecycle</H2>
         <pre className="font-mono text-[12px] bg-secondary border-2 border-border p-4 mb-4 overflow-x-auto leading-relaxed">
-{`  CREATE  →  BONDING CURVE  →  GRADUATION  →  UNISWAP V2
+{`  CREATE  →  BONDING CURVE  →  GRADUATION  →  DEX
   (anyone)   (5 ETH target)    (auto on-chain)   (LP burned forever)`}
         </pre>
         <ol className="space-y-2 text-[14px] text-foreground/90 list-none pl-0">
           {[
             ['Create', 'Anyone deploys a token through the factory. Fixed 1B supply. No premint to the creator.'],
             ['Bonding curve', 'Buyers and sellers trade against the curve until it raises 5 ETH real (a 3 ETH virtual reserve smooths the early curve).'],
-            ['Graduation', 'When the target hits, the contract automatically pairs remaining tokens + raised ETH on Uniswap V2 and burns the LP to 0xdead.'],
+            ['Graduation', 'When the target hits, the contract automatically pairs remaining tokens + raised ETH on a DEX and burns the LP to 0xdead.'],
             ['DEX trading', 'The token becomes a normal ERC-20. The curve is closed forever.'],
           ].map(([k, v], i) => (
             <li key={i} className="flex gap-3">
@@ -306,7 +306,7 @@ export default function DocsPage() {
         <ul className="space-y-1 text-[13px] text-foreground/90 list-none pl-0 mb-3">
           {[
             ['Bonding curve contract', 'holds the curve\'s token reserve'],
-            ['Uniswap V2 pair', 'liquidity pool tokens, not real holders'],
+            ['DEX liquidity pair', 'liquidity pool tokens, not real holders'],
             ['0xdead burn address', 'burned supply'],
             ['Factory contract', 'protocol-owned'],
             ['Token contract itself', 'self-held buffer'],
@@ -332,7 +332,7 @@ export default function DocsPage() {
           {[
             ['Zero holders', 'If a reward arrives when totalScore is 0 (e.g. only the curve holds tokens), the ETH sits in the contract and gets rolled into the next distribution. Nothing is lost.'],
             ['Transfers between wallets', 'Both sender and receiver have their pending settled before balances move. Your earned ETH cannot be stolen by a transfer.'],
-            ['Post-graduation', 'The 5% tax on Uniswap trades flows back into the same reward pool (4/7 share). Holders keep earning forever, not just on the curve.'],
+            ['Post-graduation', 'The 5% tax on DEX trades flows back into the same reward pool (4/7 share). Holders keep earning forever, not just on the curve.'],
             ['Re-entrancy', 'claim() is nonReentrant. ETH sent via low-level call after pending is zeroed — checks-effects-interactions.'],
             ['Precision', 'cumulativeEthPerScore is scaled by 1e18 to avoid integer truncation. Dust losses are sub-wei.'],
           ].map(([k, v], i) => (

@@ -1,6 +1,6 @@
 # How It Works
 
-A fair-launch token protocol on Base. Bonding curve → automatic graduation to Uniswap V2 with permanently burned LP. Designed to neutralize the three things that ruin most launchpads: creator rugs, sniper extraction, and dead liquidity.
+A fair-launch token protocol. Bonding curve → automatic graduation to a DEX with permanently burned LP. Designed to neutralize the three things that ruin most launchpads: creator rugs, sniper extraction, and dead liquidity.
 
 ---
 
@@ -15,7 +15,7 @@ A fair-launch token protocol on Base. Bonding curve → automatic graduation to 
 2. **Bonding curve** — Buyers and sellers trade against the curve until it raises **5 ETH real** (a 3 ETH virtual reserve smooths the early curve so the first buyer doesn't get an absurd discount).
 3. **Graduation** — When the target hits, the contract automatically:
    - Closes the curve
-   - Pairs remaining tokens + raised ETH on Uniswap V2
+   - Pairs remaining tokens + raised ETH on a DEX
    - **Burns the LP tokens** (sent to `0xdead`) — liquidity locked permanently
    - Emits a `Graduated` event
 4. **DEX trading** — The token becomes a normal ERC-20. The curve is closed forever.
