@@ -13,6 +13,7 @@ import TokenDetailPage from "@/pages/TokenDetailPage";
 import AdminPage from "@/pages/AdminPage";
 import DashboardPage from "@/pages/DashboardPage";
 import DemoTokenPage from "@/pages/DemoTokenPage";
+import DocsPage from "@/pages/DocsPage";
 
 const queryClient = new QueryClient();
 
@@ -25,6 +26,7 @@ function Router() {
       <Route path="/dashboard" component={DashboardPage} />
       <Route path="/token/:address" component={TokenDetailPage} />
       <Route path="/demo/:symbol" component={DemoTokenPage} />
+      <Route path="/docs" component={DocsPage} />
       <Route path="/admin" component={AdminPage} />
       <Route component={NotFound} />
     </Switch>

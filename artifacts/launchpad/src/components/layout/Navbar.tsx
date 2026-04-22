@@ -76,6 +76,11 @@ export function Navbar({ onCreate }: NavbarProps) {
               Dashboard
             </span>
           </Link>
+          <Link href="/docs">
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground hover:bg-secondary px-2.5 py-1.5 cursor-pointer transition-colors">
+              Docs
+            </span>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2 ml-auto">
@@ -147,6 +152,15 @@ export function Navbar({ onCreate }: NavbarProps) {
                 >
                   <LayoutDashboard className="h-3.5 w-3.5 text-muted-foreground" />
                   My Dashboard
+                </div>
+              </Link>
+              <Link href="/docs">
+                <div
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2.5 px-4 py-3 text-[11px] font-bold uppercase tracking-widest text-foreground hover:bg-secondary transition-colors cursor-pointer border-l-2 border-transparent hover:border-primary"
+                >
+                  <span className="font-mono text-[10px] text-muted-foreground w-3.5 text-center">§</span>
+                  Docs
                 </div>
               </Link>
               {onCreate && (
