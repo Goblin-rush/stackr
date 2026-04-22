@@ -30,7 +30,10 @@ const publicClient = createPublicClient({ chain: base, transport: http(RPC_URL) 
 const pool = new Pool({ connectionString: DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
 const CURSOR_ID = 'trades_v2';
+// Public Base RPC limits eth_getLogs to 10,000 block range
 const STEP = 9_999n;
+// Factory V2 deploy block — skip scanning genesis
+const GENESIS_BLOCK = 28_000_000n;
 
 const FACTORY_ABI = [
   { name: 'getAllTokens', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address[]' }] },
@@ -43,6 +46,27 @@ const BUY_EVENT = parseAbiItem(
 const SELL_EVENT = parseAbiItem(
   'event Sell(address indexed seller, uint256 tokensIn, uint256 ethOutGross, uint256 ethToUser, uint256 progressBps)'
 );
+
+// Retry wrapper for transient RPC errors
+async function withRetry<T>(fn: () => Promise<T>, retries = 3, delayMs = 6000): Promise<T> {
+  for (let attempt = 0; attempt < retries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: unknown) {
+      const msg = String((err as { message?: string })?.message ?? '');
+      const isTransient =
+        msg.includes('healthy') || msg.includes('timeout') ||
+        msg.includes('502') || msg.includes('503') || msg.includes('ECONNRESET');
+      if (isTransient && attempt < retries - 1) {
+        console.log(`  Transient RPC error (attempt ${attempt + 1}/${retries}), retrying in ${delayMs}ms...`);
+        await new Promise((r) => setTimeout(r, delayMs));
+      } else {
+        throw err;
+      }
+    }
+  }
+  throw new Error('unreachable');
+}
 
 async function ensureTables(client: pg.PoolClient): Promise<void> {
   await client.query(`
@@ -73,7 +97,7 @@ async function ensureTables(client: pg.PoolClient): Promise<void> {
 
 async function getCursor(client: pg.PoolClient): Promise<bigint> {
   const res = await client.query('SELECT last_block FROM indexer_cursors WHERE id = $1', [CURSOR_ID]);
-  if (res.rows.length === 0) return 28_000_000n;
+  if (res.rows.length === 0) return GENESIS_BLOCK;
   return BigInt(res.rows[0].last_block);
 }
 
@@ -131,16 +155,21 @@ async function main() {
           functionName: 'records',
           args: [t],
         }) as { curve: Address };
-        curveByToken.set(t.toLowerCase(), rec.curve.toLowerCase());
+        if (rec.curve) curveByToken.set(t.toLowerCase(), rec.curve.toLowerCase());
       } catch {}
     }
 
     const curveAddresses = Array.from(curveByToken.values()) as Address[];
+    if (curveAddresses.length === 0) {
+      console.log('No curve addresses found.');
+      return;
+    }
+
     const tip = await publicClient.getBlockNumber();
-    let fromBlock = (await getCursor(client)) + 1n;
+    const fromBlock = (await getCursor(client)) + 1n;
 
     if (fromBlock > tip) {
-      console.log('Already up to date.');
+      console.log('Already up to date at block', tip.toString());
       return;
     }
 
@@ -152,10 +181,22 @@ async function main() {
       const to = from + STEP - 1n > tip ? tip : from + STEP - 1n;
       console.log(`  Fetching ${from} → ${to}...`);
 
-      const [buyLogs, sellLogs] = await Promise.all([
-        publicClient.getLogs({ address: curveAddresses, event: BUY_EVENT, fromBlock: from, toBlock: to }),
-        publicClient.getLogs({ address: curveAddresses, event: SELL_EVENT, fromBlock: from, toBlock: to }),
-      ]);
+      let buyLogs: Awaited<ReturnType<typeof publicClient.getLogs>> = [];
+      let sellLogs: Awaited<ReturnType<typeof publicClient.getLogs>> = [];
+
+      try {
+        const results = await withRetry(() => Promise.all([
+          publicClient.getLogs({ address: curveAddresses, event: BUY_EVENT, fromBlock: from, toBlock: to }),
+          publicClient.getLogs({ address: curveAddresses, event: SELL_EVENT, fromBlock: from, toBlock: to }),
+        ]));
+        buyLogs = results[0];
+        sellLogs = results[1];
+      } catch (err) {
+        console.warn(`  Skipping chunk ${from}–${to} after retries: ${(err as Error).message?.slice(0,80)}`);
+        // Advance cursor to just before this chunk so next run retries from here
+        if (from > fromBlock) await setCursor(client, from - 1n);
+        break;
+      }
 
       const allLogs = [...buyLogs, ...sellLogs] as Array<{
         blockNumber: bigint;
@@ -165,65 +206,67 @@ async function main() {
         args: Record<string, unknown>;
       }>;
 
-      if (allLogs.length === 0) continue;
+      if (allLogs.length > 0) {
+        const blockNums = Array.from(new Set(allLogs.map((l) => l.blockNumber)));
+        const timestamps = await getBlockTimestamps(blockNums);
 
-      const blockNums = Array.from(new Set(allLogs.map((l) => l.blockNumber)));
-      const timestamps = await getBlockTimestamps(blockNums);
+        const curveToToken = new Map<string, string>();
+        for (const [tok, crv] of curveByToken.entries()) curveToToken.set(crv, tok);
 
-      const curveToToken = new Map<string, string>();
-      for (const [tok, crv] of curveByToken.entries()) curveToToken.set(crv, tok);
+        for (const log of allLogs) {
+          const ts = timestamps.get(log.blockNumber);
+          if (!ts) continue;
 
-      for (const log of allLogs) {
-        const ts = timestamps.get(log.blockNumber);
-        if (!ts) continue;
+          const curveAddr = log.address.toLowerCase();
+          const tokenAddr = curveToToken.get(curveAddr) || '';
+          const isBuy = 'buyer' in log.args;
 
-        const curveAddr = log.address.toLowerCase();
-        const tokenAddr = curveToToken.get(curveAddr) || '';
-        const isBuy = 'buyer' in log.args;
+          const trader = isBuy
+            ? (log.args.buyer as string).toLowerCase()
+            : (log.args.seller as string).toLowerCase();
 
-        const trader = isBuy
-          ? (log.args.buyer as string).toLowerCase()
-          : (log.args.seller as string).toLowerCase();
+          const ethAmount = isBuy
+            ? String(log.args.ethIn as bigint)
+            : String(log.args.ethToUser as bigint);
 
-        const ethAmount = isBuy
-          ? String(log.args.ethIn as bigint)
-          : String(log.args.ethToUser as bigint);
+          const ethForPrice = isBuy
+            ? String(log.args.ethForCurve as bigint)
+            : String(log.args.ethOutGross as bigint);
 
-        const ethForPrice = isBuy
-          ? String(log.args.ethForCurve as bigint)
-          : String(log.args.ethOutGross as bigint);
+          const tokenAmount = isBuy
+            ? String(log.args.tokensOut as bigint)
+            : String(log.args.tokensIn as bigint);
 
-        const tokenAmount = isBuy
-          ? String(log.args.tokensOut as bigint)
-          : String(log.args.tokensIn as bigint);
-
-        try {
-          await client.query(`
-            INSERT INTO trades
-              (token_address, curve_address, trader, type, eth_amount, eth_for_price, token_amount, progress_bps, tx_hash, block_number, log_index, timestamp)
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-            ON CONFLICT (tx_hash, log_index) DO NOTHING
-          `, [
-            tokenAddr,
-            curveAddr,
-            trader,
-            isBuy ? 'buy' : 'sell',
-            ethAmount,
-            ethForPrice,
-            tokenAmount,
-            Number(log.args.progressBps as bigint),
-            log.transactionHash.toLowerCase(),
-            String(log.blockNumber),
-            log.logIndex,
-            ts,
-          ]);
-          totalInserted++;
-        } catch {}
+          try {
+            await client.query(`
+              INSERT INTO trades
+                (token_address, curve_address, trader, type, eth_amount, eth_for_price, token_amount, progress_bps, tx_hash, block_number, log_index, timestamp)
+              VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+              ON CONFLICT (tx_hash, log_index) DO NOTHING
+            `, [
+              tokenAddr,
+              curveAddr,
+              trader,
+              isBuy ? 'buy' : 'sell',
+              ethAmount,
+              ethForPrice,
+              tokenAmount,
+              Number(log.args.progressBps as bigint),
+              log.transactionHash.toLowerCase(),
+              String(log.blockNumber),
+              log.logIndex,
+              ts,
+            ]);
+            totalInserted++;
+          } catch {}
+        }
       }
+
+      // Save cursor after every chunk — transient failures don't lose progress
+      await setCursor(client, to);
     }
 
-    await setCursor(client, tip);
-    console.log(`\nInserted ${totalInserted} trades. Cursor updated to block ${tip}.`);
+    console.log(`Done. Inserted ${totalInserted} trades.`);
   } finally {
     client.release();
     await pool.end();
