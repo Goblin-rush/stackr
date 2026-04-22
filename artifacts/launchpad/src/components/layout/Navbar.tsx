@@ -158,25 +158,10 @@ export function Navbar({ onCreate }: NavbarProps) {
                 </button>
               )}
             </nav>
-            <div className="border-t border-border/60 px-5 py-3 space-y-2">
-              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-                <span>Chain</span>
-                <span className="flex items-center gap-1.5 text-primary font-semibold">
-                  <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" /> Base
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-                <span>ETH</span>
-                <span className="text-foreground font-semibold tabular-nums">
-                  {ethPrice ? `$${ethPrice.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : '—'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-[11px] font-mono text-muted-foreground pt-1 border-t border-border/40">
-                <Link href="/docs">
-                  <span onClick={() => setMenuOpen(false)} className="hover:text-primary transition-colors cursor-pointer">Docs</span>
-                </Link>
-                <span className="opacity-40">§</span>
-              </div>
+            <div className="border-t border-border/60 px-5 py-3">
+              <Link href="/docs">
+                <span onClick={() => setMenuOpen(false)} className="text-[11px] font-mono text-muted-foreground hover:text-primary transition-colors cursor-pointer">Docs</span>
+              </Link>
             </div>
           </div>
         </>
