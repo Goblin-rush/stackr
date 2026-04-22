@@ -41,10 +41,10 @@ function formatCompact(n: number): string {
 
 const REWARD_CLAIMED_EVENT = {
   type: 'event' as const,
-  name: 'RewardClaimed' as const,
+  name: 'RewardsClaimed' as const,
   inputs: [
-    { type: 'address' as const, name: 'holder' as const, indexed: true as const },
-    { type: 'uint256' as const, name: 'amount' as const, indexed: false as const },
+    { type: 'address' as const, name: 'user' as const, indexed: true as const },
+    { type: 'uint256' as const, name: 'ethAmount' as const, indexed: false as const },
   ],
 };
 
@@ -133,15 +133,15 @@ export default function DashboardPage() {
           { address: c.curve, abi: CURVE_V2_ABI, functionName: 'currentPrice' as const },
         ]);
 
-        // Query RewardClaimed events for user — exact on-chain receipts
+        // Query RewardsClaimed events for user — exact on-chain receipts
         const rewardLogsPromises = candidates.map((c) =>
           client.getLogs({
             address: c.token,
             event: REWARD_CLAIMED_EVENT,
-            args: { holder: address },
+            args: { user: address },
             fromBlock: 'earliest',
             toBlock: 'latest',
-          }).catch(() => [] as { args: { amount?: bigint } }[])
+          }).catch(() => [] as { args: { ethAmount?: bigint } }[])
         );
 
         const [detailResults, rewardLogsAll] = await Promise.all([
@@ -157,7 +157,7 @@ export default function DashboardPage() {
           };
           const logs = rewardLogsAll[i];
           const actualReceived = logs.reduce(
-            (sum, log) => sum + ((log.args as { amount?: bigint }).amount ?? 0n),
+            (sum, log) => sum + ((log.args as { ethAmount?: bigint }).ethAmount ?? 0n),
             0n
           );
           return {

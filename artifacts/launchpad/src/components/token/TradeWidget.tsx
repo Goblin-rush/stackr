@@ -38,7 +38,7 @@ export function TradeWidget({ tokenAddress, curveAddress }: TradeWidgetProps) {
   const sellAmountWei = sellAmount && !isNaN(Number(sellAmount)) ? parseUnits(sellAmount, 18)              : 0n;
 
   const { data: previewTokensOut } = useTokenPreviewBuy(curveAddress, buyAmountWei);
-  const { data: previewEthOut }    = useTokenPreviewSell(curveAddress, sellAmountWei);
+  const { data: previewEthOut }    = useTokenPreviewSell(curveAddress, sellAmountWei, userAddress);
 
   // Allowance check — avoid re-approving if already sufficient
   const { allowance, refetch: refetchAllowance } = useTokenAllowance(tokenAddress, userAddress, curveAddress);

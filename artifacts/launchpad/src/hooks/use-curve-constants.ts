@@ -55,9 +55,9 @@ export function useCurveConstants(): CurveConstants {
 
         const results = await client.multicall({
           contracts: [
-            { address: curveAddr, abi: CURVE_V2_ABI, functionName: 'virtualEthReserve' },
+            { address: curveAddr, abi: CURVE_V2_ABI, functionName: 'VIRTUAL_ETH' },
             { address: curveAddr, abi: CURVE_V2_ABI, functionName: 'virtualTokenReserve' },
-            { address: curveAddr, abi: CURVE_V2_ABI, functionName: 'targetEth' },
+            { address: curveAddr, abi: CURVE_V2_ABI, functionName: 'TARGET_REAL_ETH' },
           ],
           allowFailure: true,
         });

@@ -157,7 +157,7 @@ export default function TokenDetailPage() {
                         </span>
                       )}
                     </div>
-                    {((record as any)?.creator || (record as any)?.createdAt) && (
+                    {((record as any)?.creator || (record as any)?.deployedAt) && (
                       <p className="text-[11px] text-muted-foreground font-mono mt-2">
                         {(record as any)?.creator && (
                           <>
@@ -173,8 +173,8 @@ export default function TokenDetailPage() {
                             {' '}·{' '}
                           </>
                         )}
-                        {(record as any)?.createdAt
-                          ? timeAgo(Number((record as any).createdAt) * 1000)
+                        {(record as any)?.deployedAt
+                          ? timeAgo(Number((record as any).deployedAt) * 1000)
                           : ''}
                       </p>
                     )}

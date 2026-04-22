@@ -215,20 +215,46 @@ export const FACTORY_V2_ABI = [
     outputs: [{ type: 'address' }],
   },
   {
+    name: 'getAllTokens',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'address[]' }],
+  },
+  {
+    // TokenRecord: token, curve, creator, deployedAt, metadataURI, initialDevBuyEth, initialDevBuyTokens
     name: 'getRecord',
     type: 'function',
     stateMutability: 'view',
-    inputs: [{ name: 'token', type: 'address' }],
+    inputs: [{ name: 'tokenAddr', type: 'address' }],
     outputs: [
       {
         type: 'tuple',
         components: [
-          { name: 'creator', type: 'address' },
+          { name: 'token', type: 'address' },
           { name: 'curve', type: 'address' },
-          { name: 'createdAt', type: 'uint64' },
+          { name: 'creator', type: 'address' },
+          { name: 'deployedAt', type: 'uint256' },
           { name: 'metadataURI', type: 'string' },
+          { name: 'initialDevBuyEth', type: 'uint256' },
+          { name: 'initialDevBuyTokens', type: 'uint256' },
         ],
       },
+    ],
+  },
+  {
+    name: 'records',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [{ name: 'tokenAddr', type: 'address' }],
+    outputs: [
+      { name: 'token', type: 'address' },
+      { name: 'curve', type: 'address' },
+      { name: 'creator', type: 'address' },
+      { name: 'deployedAt', type: 'uint256' },
+      { name: 'metadataURI', type: 'string' },
+      { name: 'initialDevBuyEth', type: 'uint256' },
+      { name: 'initialDevBuyTokens', type: 'uint256' },
     ],
   },
   {
@@ -246,6 +272,13 @@ export const FACTORY_V2_ABI = [
     outputs: [{ type: 'uint256' }],
   },
   {
+    name: 'totalPlatformFeesWithdrawn',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
     name: 'withdrawPlatformFees',
     type: 'function',
     stateMutability: 'nonpayable',
@@ -257,8 +290,25 @@ export const FACTORY_V2_ABI = [
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [
-      { name: 'token', type: 'address' },
+      { name: 'tokenAddr', type: 'address' },
       { name: 'to', type: 'address' },
+    ],
+    outputs: [],
+  },
+  {
+    name: 'flushTokenPlatformEth',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [{ name: 'tokenAddr', type: 'address' }],
+    outputs: [],
+  },
+  {
+    name: 'updateMetadataURI',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'tokenAddr', type: 'address' },
+      { name: 'newURI', type: 'string' },
     ],
     outputs: [],
   },
@@ -276,26 +326,56 @@ export const FACTORY_V2_ABI = [
       { name: 'devBuyTokens', type: 'uint256', indexed: false },
     ],
   },
+  {
+    name: 'MetadataUpdated',
+    type: 'event',
+    inputs: [
+      { name: 'token', type: 'address', indexed: true },
+      { name: 'newURI', type: 'string', indexed: false },
+    ],
+  },
+  {
+    name: 'PlatformFeeReceived',
+    type: 'event',
+    inputs: [
+      { name: 'fromToken', type: 'address', indexed: true },
+      { name: 'amount', type: 'uint256', indexed: false },
+    ],
+  },
 ] as const;
 
 export const TOKEN_V2_ABI = [
   { name: 'name', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] },
   { name: 'symbol', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] },
   { name: 'totalSupply', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'decimals', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint8' }] },
   { name: 'balanceOf', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
   { name: 'graduated', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] },
   { name: 'uniswapPair', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { name: 'curve', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { name: 'factory', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   { name: 'pendingRewards', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
   { name: 'holdScore', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
   { name: 'totalHoldScoreLive', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'totalRewardPool', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'rewardIndex', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { name: 'antiSnipeBpsFor', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
-  { name: 'totalRewardsDistributed', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'pendingPlatformEth', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'totalReceivedByHolder', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint256' }] },
+  { name: 'tokenURI', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'string' }] },
   {
     name: 'claim',
     type: 'function',
     stateMutability: 'nonpayable',
     inputs: [],
-    outputs: [{ name: 'amount', type: 'uint256' }],
+    outputs: [],
+  },
+  {
+    name: 'withdrawPendingPlatform',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [],
+    outputs: [],
   },
   {
     name: 'approve',
@@ -308,27 +388,69 @@ export const TOKEN_V2_ABI = [
     outputs: [{ type: 'bool' }],
   },
   {
-    name: 'RewardClaimed',
+    name: 'transfer',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'to', type: 'address' },
+      { name: 'amount', type: 'uint256' },
+    ],
+    outputs: [{ type: 'bool' }],
+  },
+  {
+    name: 'allowance',
+    type: 'function',
+    stateMutability: 'view',
+    inputs: [
+      { name: 'owner', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+    outputs: [{ type: 'uint256' }],
+  },
+  {
+    // event RewardsClaimed(address indexed user, uint256 ethAmount)
+    name: 'RewardsClaimed',
     type: 'event',
     inputs: [
-      { name: 'holder', type: 'address', indexed: true },
-      { name: 'amount', type: 'uint256', indexed: false },
+      { name: 'user', type: 'address', indexed: true },
+      { name: 'ethAmount', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'Transfer',
+    type: 'event',
+    inputs: [
+      { name: 'from', type: 'address', indexed: true },
+      { name: 'to', type: 'address', indexed: true },
+      { name: 'value', type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'Graduated',
+    type: 'event',
+    inputs: [
+      { name: 'pair', type: 'address', indexed: true },
     ],
   },
 ] as const;
 
 export const CURVE_V2_ABI = [
   { name: 'realEthRaised', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
-  { name: 'virtualEthReserve', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { name: 'virtualTokenReserve', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
-  { name: 'targetEth', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'TOKEN_SUPPLY', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'TARGET_REAL_ETH', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  { name: 'VIRTUAL_ETH', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { name: 'graduated', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] },
   { name: 'forceClosed', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'bool' }] },
-  { name: 'getProgress', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
+  // progressBps: bonding curve progress in basis points (0–10000)
+  { name: 'progressBps', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
   { name: 'currentPrice', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'uint256' }] },
-  { name: 'getBuyAmount', type: 'function', stateMutability: 'view', inputs: [{ name: 'eth', type: 'uint256' }], outputs: [{ type: 'uint256' }] },
-  { name: 'getSellAmount', type: 'function', stateMutability: 'view', inputs: [{ name: 'tok', type: 'uint256' }], outputs: [{ type: 'uint256' }] },
+  { name: 'getBuyAmount', type: 'function', stateMutability: 'view', inputs: [{ name: 'ethIn', type: 'uint256' }], outputs: [{ type: 'uint256' }] },
+  // getSellAmount(tokenAmount, seller) — seller needed for anti-snipe tax calc
+  { name: 'getSellAmount', type: 'function', stateMutability: 'view', inputs: [{ name: 'tokenAmount', type: 'uint256' }, { name: 'seller', type: 'address' }], outputs: [{ type: 'uint256' }] },
   { name: 'lastBuyAt', type: 'function', stateMutability: 'view', inputs: [{ name: 'a', type: 'address' }], outputs: [{ type: 'uint64' }] },
+  { name: 'token', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
+  { name: 'factory', type: 'function', stateMutability: 'view', inputs: [], outputs: [{ type: 'address' }] },
   {
     name: 'buy',
     type: 'function',

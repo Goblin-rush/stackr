@@ -10,7 +10,7 @@ export function useToken(tokenAddress: `0x${string}`, curveAddress?: `0x${string
       { address: tokenAddress,  abi: TOKEN_V2_ABI,  functionName: 'totalSupply' },
       { address: curveAddress,  abi: CURVE_V2_ABI,  functionName: 'realEthRaised' },
       { address: tokenAddress,  abi: TOKEN_V2_ABI,  functionName: 'graduated' },
-      { address: curveAddress,  abi: CURVE_V2_ABI,  functionName: 'getProgress' },
+      { address: curveAddress,  abi: CURVE_V2_ABI,  functionName: 'progressBps' },
       { address: curveAddress,  abi: CURVE_V2_ABI,  functionName: 'currentPrice' },
       { address: curveAddress,  abi: CURVE_V2_ABI,  functionName: 'forceClosed' },
       { address: tokenAddress,  abi: TOKEN_V2_ABI,  functionName: 'uniswapPair' },
@@ -59,10 +59,16 @@ export function useTokenPreviewBuy(curveAddress: `0x${string}` | undefined, ethA
   return { data: data?.[0]?.result as bigint | undefined };
 }
 
-export function useTokenPreviewSell(curveAddress: `0x${string}` | undefined, tokenAmount: bigint) {
+export function useTokenPreviewSell(
+  curveAddress: `0x${string}` | undefined,
+  tokenAmount: bigint,
+  sellerAddress?: `0x${string}`,
+) {
+  const zeroAddr = '0x0000000000000000000000000000000000000000' as `0x${string}`;
+  const seller = sellerAddress ?? zeroAddr;
   const { data } = useReadContracts({
     contracts: [
-      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'getSellAmount', args: [tokenAmount] },
+      { address: curveAddress, abi: CURVE_V2_ABI, functionName: 'getSellAmount', args: [tokenAmount, seller] },
     ],
     query: { enabled: !!curveAddress && tokenAmount > 0n },
   });

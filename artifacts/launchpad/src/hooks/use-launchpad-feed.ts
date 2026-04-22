@@ -139,7 +139,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
           const recordResults = await client.multicall({ contracts: recordCalls, allowFailure: true });
           if (cancelled) return;
 
-          type RecordTuple = { creator: `0x${string}`; curve: `0x${string}`; createdAt: bigint; metadataURI: string };
+          type RecordTuple = { token: `0x${string}`; curve: `0x${string}`; creator: `0x${string}`; deployedAt: bigint; metadataURI: string; initialDevBuyEth: bigint; initialDevBuyTokens: bigint };
           const records: (RecordTuple | null)[] = recordResults.map((r) =>
             r.status === 'success' ? (r.result as unknown as RecordTuple) : null
           );
@@ -177,7 +177,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
               const graduated = res[base + 3]?.status === 'success' ? !!res[base + 3].result : false;
               const priceBI = res[base + 4]?.status === 'success' ? (res[base + 4].result as bigint) : 0n;
               const currentPriceEth = Number(formatEther(priceBI));
-              const createdAtMs = rec ? Number(rec.createdAt) * 1000 : null;
+              const createdAtMs = rec ? Number(rec.deployedAt) * 1000 : null;
 
               const feedToken: FeedToken = {
                 address: tokenAddress,
