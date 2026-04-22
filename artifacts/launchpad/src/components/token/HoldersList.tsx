@@ -62,7 +62,7 @@ export function HoldersList({ holders, symbol, pageSize = 20 }: HoldersListProps
       </ul>
 
       {holders.length > 0 && (
-        <div className="flex items-center justify-between px-3 py-2.5 border-t border-border/40">
+        <div className="flex items-center justify-center gap-4 px-3 py-2.5 border-t border-border/40">
           <button
             onClick={() => setPage((p) => Math.max(0, p - 1))}
             disabled={page === 0}
