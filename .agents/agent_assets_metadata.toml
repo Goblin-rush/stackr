@@ -198,6 +198,18 @@ uri = "file://attached_assets/generated_images/stackr-favicon-barS.png"
 type = "image"
 title = "S favicon made of horizontal bars"
 
+[[generated]]
+id = "3kwQ2TSyIK5h39Lxf__4G"
+uri = "file://attached_assets/generated_images/stackr-favicon-v5.png"
+type = "image"
+title = "striped stacked bars favicon v5"
+
+[[generated]]
+id = "5JJUJf2eXh0Uj1g-0Tfgb"
+uri = "file://attached_assets/generated_images/stackr-favicon-v6.png"
+type = "image"
+title = "chevron bars favicon v6"
+
 [[outputs]]
 id = "_3nAqEDgL_1UsXFwCLI1n"
 uri = "file://artifacts/asteroid-shiba-presale/public/banner.jpg"
