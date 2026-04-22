@@ -262,8 +262,18 @@ export default function DashboardPage() {
         <SummaryCard
           icon={<Sparkles className="h-3.5 w-3.5 text-primary" />}
           label="Total Claimable"
-          value={loading ? null : `${Number(formatEther(totals?.pendingEth ?? 0n)).toFixed(6)} ETH`}
-          sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.pendingEth)) * ethPrice).toFixed(2)}` : '—'}
+          value={
+            loading
+              ? null
+              : totals && totals.pendingEth > 0n
+                ? `${Number(formatEther(totals.pendingEth)).toFixed(6)} ETH`
+                : '—'
+          }
+          sub={
+            ethPrice && totals && totals.pendingEth > 0n
+              ? `≈ $${(Number(formatEther(totals.pendingEth)) * ethPrice).toFixed(2)}`
+              : 'no pending rewards'
+          }
           highlight={!!totals && totals.pendingEth > 0n}
         />
       </div>
