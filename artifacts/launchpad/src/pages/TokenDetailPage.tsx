@@ -1,4 +1,4 @@
-import { useParams, Link } from 'wouter';
+import { useParams } from 'wouter';
 import { useState, useEffect, useRef } from 'react';
 import { useReadContract, useWatchContractEvent, useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
@@ -10,7 +10,7 @@ import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI, V2_TARGET_REAL_ETH } from '@/lib/contracts';
-import { ArrowLeft, Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
+import { Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
 import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata } from '@/lib/token-metadata';
@@ -180,16 +180,6 @@ export default function TokenDetailPage() {
       <Navbar />
 
       <main className="flex-1 container max-w-7xl mx-auto px-4 py-5 md:px-8">
-        {/* Back link */}
-        <div className="flex items-center justify-between mb-5">
-          <Link href="/">
-            <button className="inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground hover:text-foreground transition-colors">
-              <ArrowLeft className="h-3 w-3" strokeWidth={2.5} />
-              All tokens
-            </button>
-          </Link>
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
 
           {/* LEFT — 8 cols */}
