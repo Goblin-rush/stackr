@@ -282,33 +282,35 @@ export default function DemoTokenPage() {
                 </div>
 
                 {/* CA row */}
-                <div className="flex items-center gap-2 mb-4 font-mono">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4 font-mono">
                   <span className="text-[9px] font-semibold tracking-wider text-muted-foreground/50 uppercase shrink-0">CA</span>
                   <a
                     href={`https://basescan.org/address/${t.address}`}
                     target="_blank"
                     rel="noreferrer noopener"
-                    className="text-[11px] text-muted-foreground/70 hover:text-primary transition-colors truncate flex-1"
+                    className="text-[11px] text-muted-foreground/70 hover:text-primary transition-colors break-all"
                   >
-                    {t.address.slice(0, 6)}…{t.address.slice(-4)}
+                    {t.address}
                   </a>
-                  <a
-                    href={`https://basescan.org/address/${t.address}`}
-                    target="_blank"
-                    rel="noreferrer noopener"
-                    className="shrink-0 text-muted-foreground/40 hover:text-primary transition-colors"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                  </a>
-                  <button
-                    onClick={copyCA}
-                    className="shrink-0 inline-flex items-center gap-1 text-[10px] text-muted-foreground/50 hover:text-primary transition-colors"
-                  >
-                    {copied
-                      ? <><Check className="h-3 w-3 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
-                      : <><Copy className="h-3 w-3" /><span>Copy</span></>
-                    }
-                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <a
+                      href={`https://basescan.org/address/${t.address}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                    <button
+                      onClick={copyCA}
+                      className="inline-flex items-center gap-1 text-[10px] text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      {copied
+                        ? <><Check className="h-3.5 w-3.5 text-emerald-400" /><span className="text-emerald-400">Copied</span></>
+                        : <><Copy className="h-3.5 w-3.5" /><span>Copy</span></>
+                      }
+                    </button>
+                  </div>
                 </div>
 
                 {/* Stats — flat, thin vertical dividers only */}
