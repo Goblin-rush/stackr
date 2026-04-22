@@ -11,6 +11,7 @@ interface DemoToken {
   address: string;
   description: string;
   creator: string;
+  creatorAddress: string;
   age: string;
   graduated: boolean;
   priceUsd: string;
@@ -35,6 +36,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     description:
       'The degen dog that survived the asteroid. Community-driven memecoin launched on the Aethpad bonding curve.',
     creator: '0x9f12…21Ab',
+    creatorAddress: '0x9f1234567890ABcDEF1234567890aBcDeF1221Ab',
     age: '2h',
     graduated: false,
     priceUsd: '$0.0000142',
@@ -68,6 +70,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     address: '0xBe12cC3344aBEF77Dc9012345678901CdEF23456',
     description: 'Fully bonded. Liquidity migrated to Uniswap V2 with LP tokens burned forever.',
     creator: '0x33ab…be12',
+    creatorAddress: '0x33Ab4567890ABcDEF1234567890abcdef33bE12',
     age: '6d',
     graduated: true,
     priceUsd: '$0.0001231',
@@ -96,6 +99,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     address: '0xF244aB00Cc9087fedCBA987654321DEF34567890',
     description: 'Lab-grown memetics. Fresh bond, early entry zone.',
     creator: '0xf244…00cc',
+    creatorAddress: '0xF2441234567890ABcDEF1234567890abcD00Cc',
     age: '11m',
     graduated: false,
     priceUsd: '$0.00000091',
@@ -121,6 +125,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     address: '0xAb77F100Ef2345678901234567890abcDEF45678',
     description: 'For the based, by the based. Ship code, hold bags.',
     creator: '0xab77…77f1',
+    creatorAddress: '0xAb771234567890ABcDEF1234567890abcD77F1',
     age: '4h',
     graduated: false,
     priceUsd: '$0.0000087',
@@ -148,6 +153,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     address: '0x7D1144AbCDef5678901234567890abcDEF56789a',
     description: 'Pretending to be a blue chip until it actually is.',
     creator: '0x7d11…1144',
+    creatorAddress: '0x7D111234567890ABcDEF1234567890abcD1144',
     age: '38m',
     graduated: false,
     priceUsd: '$0.000003',
@@ -269,7 +275,16 @@ export default function DemoTokenPage() {
                       </h1>
                     </div>
                     <p className="text-[11px] text-muted-foreground font-mono mt-1.5">
-                      by {t.creator} · {t.age} ago
+                      by{' '}
+                      <a
+                        href={`https://basescan.org/address/${t.creatorAddress}`}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="hover:text-primary transition-colors underline-offset-2 hover:underline"
+                      >
+                        {t.creator}
+                      </a>
+                      {' '}· {t.age} ago
                     </p>
                   </div>
                   <span className={`shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border ${
