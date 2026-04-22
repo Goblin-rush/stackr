@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 
-const STORAGE_KEY = 'aethpad:slippage-bps';
+const STORAGE_KEY = 'stackr:slippage-bps';
 const DEFAULT_BPS = 100;
 const MIN_BPS = 10;
 const MAX_BPS = 5000;

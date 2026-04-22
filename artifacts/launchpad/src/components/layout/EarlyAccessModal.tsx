@@ -21,7 +21,7 @@ export function EarlyAccessModal({ onContinue }: Props) {
             </div>
             <div>
               <h2 className="text-[14px] font-black tracking-tight text-foreground leading-none">Early Access Warning</h2>
-              <p className="text-[10px] text-primary font-semibold mt-0.5">Aethpad is under active development</p>
+              <p className="text-[10px] text-primary font-semibold mt-0.5">Stackr is under active development</p>
             </div>
           </div>
 
@@ -64,7 +64,7 @@ export function EarlyAccessModal({ onContinue }: Props) {
             disabled={!checked}
             className="w-full py-2.5 rounded-xl text-[12px] font-bold tracking-wide transition-all disabled:opacity-30 disabled:cursor-not-allowed enabled:bg-primary enabled:text-primary-foreground enabled:hover:bg-primary/90 enabled:glow-primary"
           >
-            Continue to Aethpad
+            Continue to Stackr
           </button>
         </div>
       </div>

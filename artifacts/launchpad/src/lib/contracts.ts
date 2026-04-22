@@ -11,7 +11,7 @@ export function isHiddenToken(address: string): boolean {
 export const TOTAL_SUPPLY = BigInt('1000000000000000000000000000'); // 1B tokens
 
 // ═══════════════════════════════════════════════════════════════════
-//  AETHPAD V2 — Base mainnet, holder rewards + anti-snipe + dev buy
+//  STACKR V2 — Base mainnet, holder rewards + anti-snipe + dev buy
 // ═══════════════════════════════════════════════════════════════════
 
 export const FACTORY_V2_ADDRESS =

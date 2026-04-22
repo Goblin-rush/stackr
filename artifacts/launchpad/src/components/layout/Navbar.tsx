@@ -10,7 +10,7 @@ interface NavbarProps {
   onCreate?: () => void;
 }
 
-const X_URL = 'https://x.com/aethpad?s=21';
+const X_URL = 'https://x.com/stackr?s=21';
 
 export function XIcon({ className }: { className?: string }) {
   return (
@@ -52,15 +52,13 @@ export function Navbar({ onCreate }: NavbarProps) {
           <Link href="/">
             <div className="flex items-center gap-2 cursor-pointer select-none whitespace-nowrap group">
               <span className="font-black text-base tracking-tight text-foreground group-hover:text-primary transition-colors">
-                AETHPAD
+                STACKR
               </span>
-              <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
             </div>
           </Link>
 
           {/* BASE chip */}
           <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest rounded-full border border-primary/40 text-primary px-2.5 py-1 leading-none bg-primary/8">
-            <span className="h-1.5 w-1.5 bg-primary rounded-full dot-live" />
             Base
           </span>
 
@@ -121,8 +119,7 @@ export function Navbar({ onCreate }: NavbarProps) {
             {/* Top bar */}
             <div className="flex items-center justify-between px-5 h-14 border-b border-white/8 shrink-0">
               <div className="flex items-center gap-2">
-                <span className="font-black text-[14px] tracking-tight text-foreground">AETHPAD</span>
-                <span className="h-1.5 w-1.5 rounded-full bg-primary dot-live" />
+                <span className="font-black text-[14px] tracking-tight text-foreground">STACKR</span>
               </div>
               <button onClick={() => setMenuOpen(false)} className="text-muted-foreground hover:text-foreground transition-colors p-1">
                 <X className="h-4 w-4" />
@@ -185,7 +182,7 @@ export function Navbar({ onCreate }: NavbarProps) {
             <div className="border-t border-white/8 px-5 py-3 flex items-center justify-between shrink-0">
               <a href={X_URL} target="_blank" rel="noreferrer noopener" className="flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground/40 hover:text-muted-foreground transition-colors">
                 <XIcon className="h-3 w-3" />
-                @aethpad
+                @stackr
               </a>
               {ethPrice && (
                 <span className="text-[11px] font-mono text-muted-foreground/40">

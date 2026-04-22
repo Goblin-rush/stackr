@@ -45,7 +45,7 @@ const DEMO_TOKENS: Record<string, DemoToken> = {
     image: genAvatarUri('STR'),
     address: '0xA1d4F83bE802345Cc1234567890abCDEF12345AB',
     description:
-      'The degen dog that survived the asteroid. Community-driven memecoin launched on the Aethpad bonding curve.',
+      'The degen dog that survived the asteroid. Community-driven memecoin launched on the Stackr bonding curve.',
     creator: '0x9f12…21Ab',
     creatorAddress: '0x9f1234567890ABcDEF1234567890aBcDeF1221Ab',
     age: '2h',
