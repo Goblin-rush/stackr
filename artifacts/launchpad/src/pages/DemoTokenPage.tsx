@@ -212,6 +212,7 @@ export default function DemoTokenPage() {
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
+  const DEMO_TOKEN_BALANCE = 985_420;
   const [copied, setCopied] = useState(false);
 
   const copyCA = () => {
@@ -503,9 +504,16 @@ export default function DemoTokenPage() {
               </div>
               <div className="p-4 space-y-3">
                 <div>
-                  <label className="block text-[10px] font-semibold tracking-wider text-muted-foreground/60 mb-1.5 uppercase">
-                    Amount ({side === 'buy' ? 'ETH' : t.symbol})
-                  </label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">
+                      Amount ({side === 'buy' ? 'ETH' : t.symbol})
+                    </label>
+                    {side === 'sell' && (
+                      <span className="text-[10px] font-mono text-muted-foreground/50">
+                        Bal: {DEMO_TOKEN_BALANCE.toLocaleString()} {t.symbol}
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="text"
                     value={amount}
@@ -514,14 +522,31 @@ export default function DemoTokenPage() {
                     className="w-full bg-background/60 border border-border/60 rounded-lg px-3 py-2.5 text-base font-mono tabular-nums focus:outline-none focus:border-primary/60 transition-all"
                   />
                 </div>
-                <div className="grid grid-cols-4 gap-1.5">
-                  {['0.01','0.05','0.1','0.5'].map((v) => (
-                    <button key={v} onClick={() => setAmount(v)}
-                      className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
-                      {v}
+                {side === 'buy' ? (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {['0.01','0.05','0.1','0.5'].map((v) => (
+                      <button key={v} onClick={() => setAmount(v)}
+                        className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-1.5">
+                    {[25, 50, 75].map((pct) => (
+                      <button key={pct}
+                        onClick={() => setAmount(Math.floor(DEMO_TOKEN_BALANCE * pct / 100).toString())}
+                        className="text-[10px] font-mono py-1.5 rounded-md border border-border/50 bg-white/3 hover:border-primary/50 hover:text-primary hover:bg-primary/5 transition-all">
+                        {pct}%
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => setAmount(DEMO_TOKEN_BALANCE.toString())}
+                      className="text-[10px] font-semibold py-1.5 rounded-md border border-primary/40 bg-primary/5 text-primary hover:bg-primary/10 transition-all">
+                      MAX
                     </button>
-                  ))}
-                </div>
+                  </div>
+                )}
                 <button
                   className={`w-full text-[12px] font-semibold uppercase tracking-wider py-3 rounded-lg transition-all ${
                     side === 'buy'
