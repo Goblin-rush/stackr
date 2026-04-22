@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PrivyProvider } from "@privy-io/react-auth";
@@ -17,7 +16,6 @@ import DemoTokenPage from "@/pages/DemoTokenPage";
 import DocsPage from "@/pages/DocsPage";
 import FaqPage from "@/pages/FaqPage";
 import DisclaimerPage from "@/pages/DisclaimerPage";
-import { EarlyAccessModal } from "@/components/layout/EarlyAccessModal";
 
 const queryClient = new QueryClient();
 
@@ -40,8 +38,6 @@ function Router() {
 }
 
 function App() {
-  const [accepted, setAccepted] = useState(false);
-
   return (
     <PrivyProvider
       appId={PRIVY_APP_ID}
@@ -70,7 +66,6 @@ function App() {
             </WouterRouter>
             <Toaster />
             <SonnerToaster position="top-right" theme="dark" richColors closeButton />
-            {!accepted && <EarlyAccessModal onContinue={() => setAccepted(true)} />}
           </TooltipProvider>
         </WagmiProvider>
       </QueryClientProvider>
