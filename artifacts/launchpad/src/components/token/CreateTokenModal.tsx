@@ -48,6 +48,8 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageUploading, setImageUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [imageUrlMode, setImageUrlMode] = useState(false);
+  const [pastedUrl, setPastedUrl] = useState('');
 
   const handleImagePick = async (file: File | null) => {
     if (!file) return;
@@ -69,21 +71,35 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     }
   };
 
+  const handlePastedUrl = (url: string) => {
+    setPastedUrl(url);
+    const trimmed = url.trim();
+    if (!trimmed) { clearImage(); return; }
+    try { new URL(trimmed); } catch { return; }
+    if (imagePreview && !imagePreview.startsWith('blob:')) { /* no revoke needed */ }
+    else if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
+    setImagePreview(trimmed);
+    setImageUri(trimmed);
+    imageUriRef.current = trimmed;
+  };
+
   const clearImage = () => {
-    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
     setImageUri(null);
     imageUriRef.current = null;
     setImagePreview(null);
+    setPastedUrl('');
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   useEffect(() => {
     if (!open) {
-      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      if (imagePreview?.startsWith('blob:')) URL.revokeObjectURL(imagePreview);
       setImageUri(null);
       imageUriRef.current = null;
       setImagePreview(null);
       setImageUploading(false);
+      setPastedUrl('');
       if (fileInputRef.current) fileInputRef.current.value = '';
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -195,68 +211,92 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
           <form onSubmit={form.handleSubmit(onSubmit)} className="px-5 py-4 space-y-4">
 
             {/* Image upload */}
-            <div className="flex items-center gap-4">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
-                className="hidden"
-                onChange={(e) => handleImagePick(e.target.files?.[0] ?? null)}
-                disabled={isLoading || imageUploading}
-              />
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading || imageUploading}
-                className={`relative w-16 h-16 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden shrink-0 transition-all group ${
-                  imagePreview
-                    ? 'border-primary/40 bg-white/3'
-                    : 'border-destructive/50 hover:border-destructive/80 bg-destructive/5 hover:bg-destructive/8'
-                }`}
-              >
-                {imagePreview ? (
-                  <>
-                    <img src={imagePreview} alt="preview" className="w-full h-full object-cover" />
-                    {imageUploading && (
-                      <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
-                        <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                      </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                  className="hidden"
+                  onChange={(e) => handleImagePick(e.target.files?.[0] ?? null)}
+                  disabled={isLoading || imageUploading}
+                />
+                <button
+                  type="button"
+                  onClick={() => { if (!imageUrlMode) fileInputRef.current?.click(); }}
+                  disabled={isLoading || imageUploading || imageUrlMode}
+                  className={`relative w-16 h-16 rounded-xl border-2 border-dashed flex items-center justify-center overflow-hidden shrink-0 transition-all group ${
+                    imagePreview
+                      ? 'border-primary/40 bg-white/3'
+                      : 'border-destructive/50 hover:border-destructive/80 bg-destructive/5 hover:bg-destructive/8'
+                  }`}
+                >
+                  {imagePreview ? (
+                    <>
+                      <img src={imagePreview} alt="preview" className="w-full h-full object-cover" onError={() => setImagePreview(null)} />
+                      {imageUploading && (
+                        <div className="absolute inset-0 bg-background/70 flex items-center justify-center">
+                          <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Upload className="h-4 w-4 text-destructive/60 group-hover:text-destructive transition-colors" />
+                  )}
+                </button>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <p className="text-[12px] font-semibold text-foreground">Token Image</p>
+                    {!imageUri && (
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 border border-destructive/20 rounded px-1.5 py-0.5">
+                        Required
+                      </span>
                     )}
-                  </>
-                ) : (
-                  <Upload className="h-4 w-4 text-destructive/60 group-hover:text-destructive transition-colors" />
-                )}
-              </button>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <p className="text-[12px] font-semibold text-foreground">Token Image</p>
-                  {!imageUri && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-destructive bg-destructive/10 border border-destructive/20 rounded px-1.5 py-0.5">
-                      Required
-                    </span>
-                  )}
-                  {imageUri && (
-                    <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded px-1.5 py-0.5">
-                      ✓ Pinned
-                    </span>
-                  )}
+                    {imageUri && (
+                      <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 rounded px-1.5 py-0.5">
+                        ✓ Ready
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-muted-foreground font-mono">
+                    {imageUri
+                      ? imageUri.length > 32 ? imageUri.slice(0, 32) + '…' : imageUri
+                      : 'PNG · JPG · GIF · WEBP · max 5MB'}
+                  </p>
+                  <div className="flex items-center gap-2 mt-1">
+                    {imageUri ? (
+                      <button
+                        type="button"
+                        onClick={clearImage}
+                        disabled={isLoading}
+                        className="text-[10px] text-muted-foreground hover:text-destructive font-mono transition-colors"
+                      >
+                        Remove
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => { setImageUrlMode((m) => !m); clearImage(); }}
+                        disabled={isLoading}
+                        className="text-[10px] text-primary/70 hover:text-primary font-mono transition-colors"
+                      >
+                        {imageUrlMode ? '← upload file' : 'or paste URL →'}
+                      </button>
+                    )}
+                  </div>
                 </div>
-                <p className="text-[10px] text-muted-foreground font-mono">
-                  {imageUri
-                    ? `ipfs://${imageUri.replace('ipfs://', '').slice(0, 16)}…`
-                    : 'PNG · JPG · GIF · WEBP · max 5MB'}
-                </p>
-                {imageUri && (
-                  <button
-                    type="button"
-                    onClick={clearImage}
-                    disabled={isLoading}
-                    className="mt-1 text-[10px] text-muted-foreground hover:text-destructive font-mono transition-colors"
-                  >
-                    Remove
-                  </button>
-                )}
               </div>
+              {/* URL paste input */}
+              {imageUrlMode && !imageUri && (
+                <input
+                  type="url"
+                  placeholder="https://i.imgur.com/… or any image URL"
+                  value={pastedUrl}
+                  onChange={(e) => handlePastedUrl(e.target.value)}
+                  disabled={isLoading}
+                  className={`${fieldClass} text-[12px]`}
+                />
+              )}
             </div>
 
             {/* Name + Symbol */}
