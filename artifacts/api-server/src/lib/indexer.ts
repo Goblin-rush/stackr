@@ -18,7 +18,7 @@ import { db, tokenRecordsV3, indexerCursors } from '@workspace/db';
 import { eq } from 'drizzle-orm';
 import { logger } from './logger';
 
-const FACTORY_V3 = '0x77a29992f609A90d7d911B056145fF95Ca7e7e73' as Address;
+const FACTORY_V3 = '0x2CA2fe3ce3a1d8B6876e36c7a7a546FBF80d933e' as Address;
 const CURSOR_ID  = 'v3-token-indexer';
 const BATCH           = 9_000n;
 // On first run (no cursor), look back this many blocks to catch historical tokens.
