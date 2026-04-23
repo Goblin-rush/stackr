@@ -12,12 +12,14 @@ export function useCreateToken() {
     name: string,
     symbol: string,
     metadataURI: string,
+    devBuyEth?: bigint,
   ) => {
     return writeContractAsync({
       address: FACTORY_V3_ADDRESS,
       abi: FACTORY_V3_ABI,
       functionName: 'createToken',
       args: [name, symbol, metadataURI],
+      value: devBuyEth ?? 0n,
     });
   };
 
