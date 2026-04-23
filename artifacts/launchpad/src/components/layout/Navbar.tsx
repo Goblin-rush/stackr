@@ -8,7 +8,7 @@ interface NavbarProps {
   onCreate?: () => void;
 }
 
-const X_URL = 'https://x.com/stakr_?s=21';
+const X_URL = 'https://x.com/_stackr?s=21';
 
 export function XIcon({ className }: { className?: string }) {
   return (
