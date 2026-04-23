@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { parseEther } from 'viem';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '@/components/ui/form';
 import { useCreateToken } from '@/hooks/use-launchpad';
@@ -41,6 +42,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   const [newTokenAddress, setNewTokenAddress] = useState<`0x${string}` | null>(null);
 
   const deployToastId = useRef<string | number | null>(null);
+  const [devBuyInput, setDevBuyInput] = useState('');
   const [imageUri, setImageUri] = useState<string | null>(null);
   const imageUriRef = useRef<string | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -150,8 +152,11 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     const id = txPendingToast(`Deploying ${data.symbol.toUpperCase()}`);
     deployToastId.current = id;
     const metadataURI = imageUri || '';
+    const devBuyWei = devBuyInput && parseFloat(devBuyInput) > 0
+      ? parseEther(devBuyInput)
+      : undefined;
     try {
-      await createToken(data.name, data.symbol.toUpperCase(), metadataURI);
+      await createToken(data.name, data.symbol.toUpperCase(), metadataURI, devBuyWei);
       setStep('confirming');
     } catch (err) {
       txErrorToast(id, err);
@@ -317,6 +322,29 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
                     </FormItem>
                   )} />
                 ))}
+              </div>
+            </div>
+
+            {/* Optional dev buy */}
+            <div className="rounded-lg bg-white/3 border border-border/40 px-3 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <div>
+                  <p className="text-[11px] font-semibold text-foreground">Dev Buy <span className="text-muted-foreground font-normal">(optional)</span></p>
+                  <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Buy tokens at launch in the same tx · 3% tax applies</p>
+                </div>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  placeholder="0.00"
+                  value={devBuyInput}
+                  onChange={(e) => setDevBuyInput(e.target.value)}
+                  disabled={isLoading}
+                  className={`${fieldClass} pr-14`}
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-mono font-semibold text-muted-foreground/60">ETH</span>
               </div>
             </div>
 
