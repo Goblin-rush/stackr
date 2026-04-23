@@ -142,6 +142,7 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         uint160  sqrtPriceX96;
         uint256  tokenAmount;
         address  tokenContract;
+        int24    currentTick;   // tick returned by poolManager.initialize (called before unlock)
     }
 
     struct RemoveLiquidityPayload {
@@ -563,8 +564,9 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
      *       unexpected ETH debt, the unlock will revert with "currency not settled".
      */
     function _handleAddLiquidity(AddLiquidityPayload memory p) internal {
-        // 1. Initialize pool at the virtual floor price. Returns the current tick.
-        int24 currentTick = poolManager.initialize(p.key, p.sqrtPriceX96);
+        // 1. Pool was already initialized in initPoolAndAddLiquidity() before unlock.
+        //    Use the currentTick returned by initialize (passed via payload).
+        int24 currentTick = p.currentTick;
 
         // 2. Single-sided token-only LP: position from MIN_TICK up to currentTick.
         //
@@ -576,10 +578,14 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         //    As buys happen (zeroForOne=true, tick decreases below tickUpper):
         //      tokens flow OUT of LP to buyers, ETH flows IN → bonding curve works ✓
         //
-        //    tickUpper = currentTick rounded DOWN to tickSpacing alignment.
+        //    tickUpper = first aligned tick ABOVE currentTick (one step up).
+        //    This ensures currentTick < tickUpper so the position is IN RANGE.
+        //    In-range at initialization: LP holds almost all tokens + a tiny ETH amount.
+        //    The tiny ETH (~0.00001 ETH per token launch) is covered by the hook's
+        //    pre-funded ETH balance (send 0.01 ETH to hook once after deploy).
         //    tickLower = -887220 (minimum valid tick for tickSpacing 60).
         int24 tickSpacing = p.key.tickSpacing;
-        int24 tickUpper   = (currentTick / tickSpacing) * tickSpacing;
+        int24 tickUpper   = _nextTickAbove(currentTick, tickSpacing);
         int24 tickLower   = -887220;
 
         // 3. Compute liquidity from token amount.
@@ -609,26 +615,34 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         lpLiquidity[pid]  = uint128(liquidity);
         lpTickUpper[pid]  = tickUpper;
 
-        // 4. Settle token debt (currency1 = the Stackr token).
+        // 4. Settle ETH debt (currency0).
+        //    Native ETH: call settle{value}() with NO prior sync().
+        //    V4 uses transient storage: if no sync() was called, settle() operates
+        //    in native-ETH mode (credits msg.value to the caller's delta).
+        int128 eth0Delta = callerDelta.amount0();
+        if (eth0Delta < 0) {
+            uint256 ethDebt = uint256(uint128(-eth0Delta));
+            require(address(this).balance >= ethDebt, "Insufficient ETH for LP");
+            poolManager.settle{value: ethDebt}();
+        }
+
+        // 5. Settle token debt (currency1 = the Stackr token).
+        //    ERC-20: sync() snapshots the balance BEFORE the transfer, then
+        //    transfer the tokens, then call settle() with NO msg.value.
+        //    V4 reads transient storage set by sync() and computes
+        //    paid = currentBalance - snapshotBalance, then credits the delta.
+        //
+        //    Order matters:
+        //      sync()     → snapshot old balance into TSTORE
+        //      transfer() → increase PM's token balance
+        //      settle()   → diff = new - old = tokenDebt  ← closes delta
         int128 token1Delta = callerDelta.amount1();
         if (token1Delta < 0) {
             uint256 tokenDebt = uint256(uint128(-token1Delta));
             IERC20 tkn = IERC20(Currency.unwrap(p.key.currency1));
-            // Transfer tokens to PoolManager then sync to close the debt.
+            poolManager.sync(p.key.currency1);           // 1. snapshot old balance
             require(tkn.transfer(address(poolManager), tokenDebt), "Token transfer failed");
-            poolManager.sync(p.key.currency1);
-        }
-
-        // 5. Settle ETH debt (currency0).
-        //    For a pool initialised with 0 real ETH, amount0 should be 0.
-        //    Included defensively — if unexpected ETH debt arises, it reverts
-        //    here rather than leaving the unlock in an unsettled state.
-        int128 eth0Delta = callerDelta.amount0();
-        if (eth0Delta < 0) {
-            uint256 ethDebt = uint256(uint128(-eth0Delta));
-            // ETH must already be in this hook for this to succeed.
-            require(address(this).balance >= ethDebt, "Insufficient ETH for LP");
-            poolManager.settle{value: ethDebt}();
+            poolManager.settle();                         // 2. credit the diff (no ETH!)
         }
     }
 
@@ -659,12 +673,17 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
             "Hook missing tokens"
         );
 
+        // Initialize the V4 pool BEFORE unlock (initialize does not require the lock).
+        // This avoids any PoolManager restriction on calling initialize inside unlockCallback.
+        int24 currentTick = poolManager.initialize(key, sqrtPriceX96);
+
         AddLiquidityPayload memory payload = AddLiquidityPayload({
             action:        Action.ADD_LIQUIDITY,
             key:           key,
             sqrtPriceX96:  sqrtPriceX96,
             tokenAmount:   tokenAmount,
-            tokenContract: token
+            tokenContract: token,
+            currentTick:   currentTick
         });
         poolManager.unlock(abi.encode(payload));
     }
@@ -771,13 +790,15 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
 
         BalanceDelta swapDelta = poolManager.swap(p.key, swapParams, hookData);
 
-        // amount1 is negative (we owe tokens to pool); settle by transfer + sync.
+        // amount1 is negative (we owe tokens to pool).
+        // V4 ERC-20 settlement: sync() snapshots BEFORE transfer, settle() credits diff.
         int128 tokenDelta = swapDelta.amount1();
         if (tokenDelta < 0) {
             uint256 tokenDebt = uint256(int256(-tokenDelta));
             IERC20 tkn = IERC20(Currency.unwrap(p.key.currency1));
-            require(tkn.transfer(address(poolManager), tokenDebt), "Token settle failed");
             poolManager.sync(p.key.currency1);
+            require(tkn.transfer(address(poolManager), tokenDebt), "Token settle failed");
+            poolManager.settle();
         }
 
         // amount0 is positive (pool owes net ETH to hook after tax); take for recipient.
