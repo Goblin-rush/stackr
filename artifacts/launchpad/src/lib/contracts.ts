@@ -8,6 +8,10 @@ export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   '0xe56f88d278fc312cf4a4734d72adb7e3b97ddd67', // Last test (dev test token)
   '0xec1c2f9638471a8123889371d51f4e0052cada11', // 1more (dev test token)
   '0x9a50755b3df55429f7c1f33b50c93b0c0238659e', // Last (dev test token)
+  // V4 factory test tokens
+  '0xa3b9648cf0cf4c6b5ea2c2f3f56a339ffa62f771',
+  '0xcf9467c2ffb6a9449b9ae5d44c5748cf0681b5e5',
+  '0x8fab3c308e641402e53d39aa4f7abfa7f633fa34',
 ]);
 
 export function isHiddenToken(address: string): boolean {
