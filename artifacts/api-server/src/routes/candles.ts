@@ -14,7 +14,7 @@ const router = Router();
 
 // V3 / V4 constants
 const POOL_MANAGER_V4 = '0x498581ff718922c3f8e6a244956af099b2652b2b' as Address;
-const HOOK_V3         = '0xe88D16864cAD90E9d6e0731D67a8946bc30700cc' as Address;
+const HOOK_V3         = '0xF10b1c50281fDb01111515cc1b2Ab92D70fB40cC' as Address;
 const ETH_ADDR        = '0x0000000000000000000000000000000000000000' as Address;
 const V3_POOL_FEE     = 3000;
 const V3_TICK_SPACING = 60;
