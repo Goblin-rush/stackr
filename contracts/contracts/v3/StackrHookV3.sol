@@ -119,9 +119,10 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
     event TaxDistributed(bytes32 indexed poolId, uint256 rewardEth, uint256 platformEth);
     event LPWithdrawn(bytes32 indexed poolId, address indexed to, uint256 ethReceived, uint256 tokensReceived);
     event DevBuyExecuted(bytes32 indexed poolId, address indexed recipient, uint256 ethIn, uint256 tokensOut);
+    event SellExecuted(bytes32 indexed poolId, address indexed seller, uint256 tokensIn, uint256 ethOut);
 
     // ─── Unlock callback action discriminator ─────────────────────
-    enum Action { COLLECT, ADD_LIQUIDITY, REMOVE_LIQUIDITY, DEV_BUY }
+    enum Action { COLLECT, ADD_LIQUIDITY, REMOVE_LIQUIDITY, DEV_BUY, SELL }
 
     struct CollectPayload {
         Action   action;
@@ -152,6 +153,13 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         PoolKey key;
         address recipient;  // who receives the purchased tokens
         uint256 ethAmount;  // ETH to spend (gross, incl. 3% tax)
+    }
+
+    struct SellPayload {
+        Action  action;
+        PoolKey key;
+        address recipient;   // who receives the ETH output
+        uint256 tokenAmount; // exact token input amount
     }
 
     // ─── Constructor ─────────────────────────────────────────────
@@ -250,6 +258,60 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
             key:       key,
             recipient: recipient,
             ethAmount: msg.value
+        });
+        poolManager.unlock(abi.encode(payload));
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  PUBLIC SWAP: BUY & SELL
+    // ═════════════════════════════════════════════════════════════
+
+    /**
+     * @notice Buy tokens with ETH.  Open to any address.
+     *         Send ETH as msg.value — 3% swap tax still applies.
+     *         Tokens are delivered to msg.sender.
+     *
+     * @param key  Pool key of the token to buy.
+     */
+    function buy(PoolKey calldata key) external payable nonReentrant {
+        require(msg.value > 0, "No ETH sent");
+        require(poolToken[_poolId(key)] != address(0), "Not registered");
+
+        DevBuyPayload memory payload = DevBuyPayload({
+            action:    Action.DEV_BUY,
+            key:       key,
+            recipient: msg.sender,
+            ethAmount: msg.value
+        });
+        poolManager.unlock(abi.encode(payload));
+    }
+
+    /**
+     * @notice Sell tokens for ETH.  Open to any address.
+     *         Caller must have approved this hook for at least `tokenAmount`.
+     *         ETH (after 3% tax) is delivered to msg.sender.
+     *         Anti-snipe surcharge applies if selling soon after buying.
+     *
+     * @param key         Pool key of the token to sell.
+     * @param tokenAmount Exact number of tokens to sell (18 decimals).
+     */
+    function sell(PoolKey calldata key, uint256 tokenAmount) external nonReentrant {
+        bytes32 poolId = _poolId(key);
+        require(poolToken[poolId] != address(0), "Not registered");
+        require(tokenAmount > 0, "No tokens");
+
+        // Pull tokens from seller into this hook before the unlock.
+        address tokenContract = poolToken[poolId];
+        require(
+            IERC20(tokenContract).transferFrom(msg.sender, address(this), tokenAmount),
+            "transferFrom failed"
+        );
+
+        SellPayload memory payload = SellPayload({
+            action:      Action.SELL,
+            key:         key,
+            recipient:   msg.sender,
+            tokenAmount: tokenAmount
         });
         poolManager.unlock(abi.encode(payload));
     }
@@ -442,6 +504,9 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         } else if (action == Action.DEV_BUY) {
             DevBuyPayload memory p = abi.decode(data, (DevBuyPayload));
             _handleDevBuy(p);
+        } else if (action == Action.SELL) {
+            SellPayload memory p = abi.decode(data, (SellPayload));
+            _handleSell(p);
         }
         // Note: invalid enum values panic in Solidity 0.8.x before reaching here.
 
@@ -660,6 +725,56 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         }
 
         emit LPWithdrawn(poolId, p.to, ethOut, tokenOut);
+    }
+
+    // ─── Sell: swap token → ETH ───────────────────────────────────
+
+    /**
+     * @notice Execute a token→ETH sell inside the PoolManager's unlock callback.
+     *
+     *  Flow:
+     *   1. Swap tokenAmount of tokens (zeroForOne=false, exact-input) via PoolManager.
+     *   2. afterSwap fires → hook takes (3% + anti-snipe) tax from ETH output as claims.
+     *   3. Settle token debt: transfer tokens to PoolManager + sync.
+     *   4. Take net ETH (after tax) for recipient.
+     *
+     *  V4 BalanceDelta after swap (from locker/hook perspective):
+     *   delta.amount0() = +(ethOut − taxEth)   → PoolManager owes net ETH to hook
+     *   delta.amount1() = −tokenAmount          → hook owes tokens to PoolManager
+     */
+    function _handleSell(SellPayload memory p) internal {
+        bytes32 poolId = _poolId(p.key);
+
+        // Exact-input token→ETH swap.
+        // amountSpecified < 0 = exact input of the specified currency (currency1 = tokens).
+        // sqrtPriceLimitX96 = MAX_SQRT_PRICE−1 allows any price movement.
+        IPoolManager.SwapParams memory swapParams = IPoolManager.SwapParams({
+            zeroForOne:        false,
+            amountSpecified:   -int256(p.tokenAmount),
+            sqrtPriceLimitX96: uint160(SQRT_PRICE_AT_MAX_TICK - 1)
+        });
+
+        // hookData = abi.encode(recipient) so afterSwap can apply anti-snipe.
+        bytes memory hookData = abi.encode(p.recipient);
+
+        BalanceDelta swapDelta = poolManager.swap(p.key, swapParams, hookData);
+
+        // amount1 is negative (we owe tokens to pool); settle by transfer + sync.
+        int128 tokenDelta = swapDelta.amount1();
+        if (tokenDelta < 0) {
+            uint256 tokenDebt = uint256(int256(-tokenDelta));
+            IERC20 tkn = IERC20(Currency.unwrap(p.key.currency1));
+            require(tkn.transfer(address(poolManager), tokenDebt), "Token settle failed");
+            poolManager.sync(p.key.currency1);
+        }
+
+        // amount0 is positive (pool owes net ETH to hook after tax); take for recipient.
+        int128 ethDelta = swapDelta.amount0();
+        if (ethDelta > 0) {
+            uint256 ethOut = uint256(int256(ethDelta));
+            poolManager.take(p.key.currency0, p.recipient, ethOut);
+            emit SellExecuted(poolId, p.recipient, p.tokenAmount, ethOut);
+        }
     }
 
     // ─── Dev buy: swap ETH → token for the token creator ─────────
