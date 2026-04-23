@@ -8,15 +8,14 @@ import {
   useWaitForTransactionReceipt,
 } from 'wagmi';
 import { metaMask } from 'wagmi/connectors';
-import { formatEther } from 'viem';
+import { formatEther, parseEther } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
 import {
-  FACTORY_V2_ADDRESS,
-  FACTORY_V2_ABI,
-  TOKEN_V2_ABI,
-  CURVE_V2_ABI,
+  FACTORY_V3_ADDRESS,
+  FACTORY_V3_ABI,
+  TOKEN_V3_ABI,
 } from '@/lib/contracts';
-import { Shield, AlertTriangle, ExternalLink, DollarSign, Zap } from 'lucide-react';
+import { Shield, AlertTriangle, ExternalLink, DollarSign, Database } from 'lucide-react';
 import NotFound from '@/pages/not-found';
 
 function shortAddr(a: string) {
@@ -28,10 +27,10 @@ export default function AdminPage() {
   const { connect } = useConnect();
 
   const { data: factoryOwner, isLoading: ownerLoading } = useReadContract({
-    address: FACTORY_V2_ADDRESS ?? undefined,
-    abi: FACTORY_V2_ABI,
+    address: FACTORY_V3_ADDRESS ?? undefined,
+    abi: FACTORY_V3_ABI,
     functionName: 'owner',
-    query: { enabled: !!FACTORY_V2_ADDRESS },
+    query: { enabled: !!FACTORY_V3_ADDRESS },
   });
 
   const isAdmin =
@@ -50,16 +49,16 @@ export default function AdminPage() {
         <div className="flex items-center gap-2 mb-6">
           <Shield className="h-5 w-5 text-primary" />
           <h1 className="text-2xl font-black tracking-tight">Admin Console</h1>
-          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded">
-            V2 · restricted
+          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
+            V3 · Uniswap V4
           </span>
         </div>
 
-        {!FACTORY_V2_ADDRESS ? (
+        {!FACTORY_V3_ADDRESS ? (
           <div className="border border-amber-500/20 bg-amber-500/5 rounded-md p-6 text-center">
             <AlertTriangle className="h-8 w-8 text-amber-400 mx-auto mb-2" />
             <p className="text-sm text-amber-200 font-mono">
-              VITE_FACTORY_V2_ADDRESS not configured.
+              FACTORY_V3_ADDRESS not configured.
             </p>
           </div>
         ) : !isConnected ? (
@@ -88,24 +87,22 @@ export default function AdminPage() {
 }
 
 function AdminDashboard({ adminAddress }: { adminAddress: string }) {
-  const factory = FACTORY_V2_ADDRESS!;
+  const factory = FACTORY_V3_ADDRESS!;
 
   const { data: statsData, refetch: refetchStats } = useReadContracts({
     contracts: [
-      { address: factory, abi: FACTORY_V2_ABI, functionName: 'allTokensLength' },
-      { address: factory, abi: FACTORY_V2_ABI, functionName: 'accumulatedPlatformFees' },
-      { address: factory, abi: FACTORY_V2_ABI, functionName: 'totalPlatformFeesWithdrawn' },
+      { address: factory, abi: FACTORY_V3_ABI, functionName: 'totalTokens' },
+      { address: factory, abi: FACTORY_V3_ABI, functionName: 'accumulatedPlatformFees' },
     ],
   });
 
-  const total         = statsData?.[0]?.status === 'success' ? Number(statsData[0].result as bigint) : 0;
-  const pendingFees   = statsData?.[1]?.status === 'success' ? (statsData[1].result as bigint) : 0n;
-  const withdrawnFees = statsData?.[2]?.status === 'success' ? (statsData[2].result as bigint) : 0n;
+  const total       = statsData?.[0]?.status === 'success' ? Number(statsData[0].result as bigint) : 0;
+  const pendingFees = statsData?.[1]?.status === 'success' ? (statsData[1].result as bigint) : 0n;
 
   const { data: tokenSlots } = useReadContracts({
     contracts: Array.from({ length: total }, (_, i) => ({
       address: factory,
-      abi: FACTORY_V2_ABI,
+      abi: FACTORY_V3_ABI,
       functionName: 'allTokens' as const,
       args: [BigInt(i)] as [bigint],
     })),
@@ -115,10 +112,11 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
   const tokenAddresses = (tokenSlots ?? [])
     .map((r) => (r?.status === 'success' ? (r.result as `0x${string}`) : null))
     .filter((a): a is `0x${string}` => !!a)
-    .reverse(); // newest first
+    .reverse();
 
   const { writeContractAsync, data: txHash, isPending } = useWriteContract();
   const { isLoading: isMining, isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
+  const [withdrawAmount, setWithdrawAmount] = useState('');
   const [withdrawError, setWithdrawError] = useState<string | null>(null);
   const [withdrawDone, setWithdrawDone] = useState(false);
 
@@ -133,11 +131,12 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
     setWithdrawError(null);
     setWithdrawDone(false);
     try {
+      const amount = withdrawAmount ? parseEther(withdrawAmount as `${number}`) : pendingFees;
       await writeContractAsync({
         address: factory,
-        abi: FACTORY_V2_ABI,
+        abi: FACTORY_V3_ABI,
         functionName: 'withdrawPlatformFees',
-        args: [adminAddress as `0x${string}`],
+        args: [adminAddress as `0x${string}`, amount],
       });
     } catch (e: any) {
       setWithdrawError(e?.shortMessage || e?.message || 'Transaction failed');
@@ -148,7 +147,7 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Connected as" value={shortAddr(adminAddress)} />
-        <StatCard label="Factory V2" value={shortAddr(factory)} link={`https://basescan.org/address/${factory}`} />
+        <StatCard label="Factory V3" value={shortAddr(factory)} link={`https://basescan.org/address/${factory}`} />
         <StatCard label="Tokens deployed" value={total.toString()} />
         <StatCard label="Platform fees (ETH)" value={Number(formatEther(pendingFees)).toFixed(4)} highlight />
       </div>
@@ -161,25 +160,29 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
             Platform Fees
           </h2>
         </div>
-        <div className="flex items-center gap-6 flex-wrap">
+        <div className="flex items-center gap-4 flex-wrap">
           <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Pending</p>
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Accumulated</p>
             <p className="font-mono text-base tabular-nums text-primary font-bold">
               {Number(formatEther(pendingFees)).toFixed(6)} ETH
             </p>
           </div>
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Total Withdrawn</p>
-            <p className="font-mono text-sm tabular-nums text-muted-foreground">
-              {Number(formatEther(withdrawnFees)).toFixed(6)} ETH
-            </p>
+          <div className="flex-1 min-w-[140px]">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground mb-1">Amount to withdraw</p>
+            <input
+              type="number"
+              placeholder={Number(formatEther(pendingFees)).toFixed(6)}
+              value={withdrawAmount}
+              onChange={(e) => setWithdrawAmount(e.target.value)}
+              className="w-full text-xs font-mono px-2 py-1.5 bg-background border border-border rounded text-foreground"
+            />
           </div>
           <button
             onClick={handleWithdrawFees}
             disabled={pendingFees === 0n || isPending || isMining}
             className="ml-auto text-xs font-bold px-4 py-2 bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            {isPending ? 'Sign…' : isMining ? 'Mining…' : `Withdraw ${Number(formatEther(pendingFees)).toFixed(4)} ETH`}
+            {isPending ? 'Sign…' : isMining ? 'Mining…' : 'Withdraw'}
           </button>
         </div>
         {withdrawError && (
@@ -187,7 +190,7 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
         )}
         {withdrawDone && (
           <p className="mt-2 text-[11px] text-emerald-400 font-mono">
-            ✓ Withdrawn.{' '}
+            Withdrawn.{' '}
             <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline">
               View tx
             </a>
@@ -195,19 +198,13 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
         )}
       </div>
 
-      <div className="border border-amber-500/20 bg-amber-500/5 rounded-md p-3 flex items-start gap-2.5">
-        <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
-        <div className="text-xs text-amber-200/90 font-mono leading-relaxed">
-          <strong className="text-amber-400">Force-close warning:</strong> Calling force-close on a
-          non-graduated token will <strong>permanently disable trading</strong> and return remaining ETH to the factory.
-          Burned tokens are sent to the zero address. Use only for emergency intervention.
-        </div>
-      </div>
-
       <div>
-        <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-3">
-          Deployed tokens ({total})
-        </h2>
+        <div className="flex items-center gap-2 mb-3">
+          <Database className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
+            Deployed tokens ({total})
+          </h2>
+        </div>
         {total === 0 ? (
           <div className="border border-border rounded-md bg-card p-8 text-center text-sm text-muted-foreground font-mono">
             No tokens deployed via this factory yet.
@@ -253,101 +250,65 @@ function AdminTokenRow({
   tokenAddress: `0x${string}`;
   adminAddress: `0x${string}`;
 }) {
-  const factory = FACTORY_V2_ADDRESS!;
+  const factory = FACTORY_V3_ADDRESS!;
 
   const { data: recordData } = useReadContract({
     address: factory,
-    abi: FACTORY_V2_ABI,
+    abi: FACTORY_V3_ABI,
     functionName: 'getRecord',
     args: [tokenAddress],
   });
   const record = recordData as {
     token: `0x${string}`;
-    curve: `0x${string}`;
     creator: `0x${string}`;
     deployedAt: bigint;
     metadataURI: string;
-    initialDevBuyEth: bigint;
-    initialDevBuyTokens: bigint;
+    poolKey: {
+      currency0: `0x${string}`;
+      currency1: `0x${string}`;
+      fee: number;
+      tickSpacing: number;
+      hooks: `0x${string}`;
+    };
   } | undefined;
 
-  const curveAddress = record?.curve;
-
-  const { data: tokenMeta, refetch: refetchToken } = useReadContracts({
+  const { data: tokenMeta } = useReadContracts({
     contracts: [
-      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'name' },
-      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'symbol' },
-      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'graduated' },
-      { address: tokenAddress, abi: TOKEN_V2_ABI, functionName: 'pendingPlatformEth' },
+      { address: tokenAddress, abi: TOKEN_V3_ABI, functionName: 'name' },
+      { address: tokenAddress, abi: TOKEN_V3_ABI, functionName: 'symbol' },
     ],
   });
 
-  const { data: curveMeta, refetch: refetchCurve } = useReadContracts({
-    contracts: [
-      { address: curveAddress!, abi: CURVE_V2_ABI, functionName: 'realEthRaised' },
-      { address: curveAddress!, abi: CURVE_V2_ABI, functionName: 'progressBps' },
-      { address: curveAddress!, abi: CURVE_V2_ABI, functionName: 'forceClosed' },
-    ],
-    query: { enabled: !!curveAddress },
-  });
-
-  const refetchMeta = () => { void refetchToken(); void refetchCurve(); };
-
-  const name           = tokenMeta?.[0]?.result as string | undefined;
-  const symbol         = tokenMeta?.[1]?.result as string | undefined;
-  const graduated      = tokenMeta?.[2]?.result as boolean | undefined;
-  const pendingPlatEth = tokenMeta?.[3]?.result as bigint | undefined;
-  const realEthRaised  = curveMeta?.[0]?.result as bigint | undefined;
-  const progressBps    = curveMeta?.[1]?.result as bigint | undefined;
-  const forceClosed    = curveMeta?.[2]?.result as boolean | undefined;
-
-  const progressPct = progressBps ? Number(progressBps) / 100 : 0;
-  const raisedEth   = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
+  const name   = tokenMeta?.[0]?.result as string | undefined;
+  const symbol = tokenMeta?.[1]?.result as string | undefined;
 
   const { writeContractAsync, data: txHash, isPending } = useWriteContract();
   const { isLoading: isMining, isSuccess } = useWaitForTransactionReceipt({ hash: txHash });
-  const [confirmAction, setConfirmAction] = useState<'forceClose' | 'flush' | null>(null);
+  const [confirmLP, setConfirmLP] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
   useEffect(() => {
-    if (isSuccess) {
-      setDone(true);
-      refetchMeta();
-    }
-  }, [isSuccess, refetchMeta]);
+    if (isSuccess) setDone(true);
+  }, [isSuccess]);
 
-  const handleForceClose = async () => {
+  const handleWithdrawLP = async () => {
     setError(null);
     setDone(false);
     try {
       await writeContractAsync({
         address: factory,
-        abi: FACTORY_V2_ABI,
-        functionName: 'forceCloseCurve',
+        abi: FACTORY_V3_ABI,
+        functionName: 'withdrawLP',
         args: [tokenAddress, adminAddress],
       });
-      setConfirmAction(null);
+      setConfirmLP(false);
     } catch (e: any) {
       setError(e?.shortMessage || e?.message || 'Transaction failed');
     }
   };
 
-  const handleFlushPlatformEth = async () => {
-    setError(null);
-    setDone(false);
-    try {
-      await writeContractAsync({
-        address: factory,
-        abi: FACTORY_V2_ABI,
-        functionName: 'flushTokenPlatformEth',
-        args: [tokenAddress],
-      });
-      setConfirmAction(null);
-    } catch (e: any) {
-      setError(e?.shortMessage || e?.message || 'Transaction failed');
-    }
-  };
+  const deployedAt = record?.deployedAt ? new Date(Number(record.deployedAt) * 1000).toLocaleDateString() : '–';
 
   return (
     <div className="border border-border rounded-md bg-card p-4">
@@ -360,19 +321,9 @@ function AdminTokenRow({
                 ${symbol}
               </span>
             )}
-            {graduated ? (
-              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded uppercase tracking-wider">
-                Graduated
-              </span>
-            ) : forceClosed ? (
-              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-red-500/10 text-red-400 border border-red-500/20 rounded uppercase tracking-wider">
-                Force Closed
-              </span>
-            ) : (
-              <span className="text-[10px] font-mono px-1.5 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded uppercase tracking-wider">
-                Bonding · {progressPct.toFixed(1)}%
-              </span>
-            )}
+            <span className="text-[10px] font-mono px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded uppercase tracking-wider">
+              V4 Pool
+            </span>
           </div>
 
           <div className="flex items-center gap-3 mt-1 flex-wrap">
@@ -384,112 +335,51 @@ function AdminTokenRow({
             >
               Token: {shortAddr(tokenAddress)} <ExternalLink className="h-2.5 w-2.5" />
             </a>
-            {curveAddress && (
-              <a
-                href={`https://basescan.org/address/${curveAddress}`}
-                target="_blank"
-                rel="noreferrer"
-                className="text-[11px] font-mono text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-              >
-                Curve: {shortAddr(curveAddress)} <ExternalLink className="h-2.5 w-2.5" />
-              </a>
-            )}
             {record?.creator && (
               <span className="text-[11px] font-mono text-muted-foreground">
                 Creator: {shortAddr(record.creator)}
               </span>
             )}
+            <span className="text-[11px] font-mono text-muted-foreground">
+              Deployed: {deployedAt}
+            </span>
           </div>
 
-          {record && (record.initialDevBuyEth > 0n || record.initialDevBuyTokens > 0n) && (
-            <p className="text-[11px] font-mono text-muted-foreground mt-1">
-              Dev buy: {Number(formatEther(record.initialDevBuyEth)).toFixed(4)} ETH
-              {' '}→ {(Number(formatEther(record.initialDevBuyTokens)) / 1e6).toFixed(2)}M tokens
+          {record?.poolKey && (
+            <p className="text-[11px] font-mono text-muted-foreground/60 mt-1">
+              Pool: fee={record.poolKey.fee} tickSpacing={record.poolKey.tickSpacing}
             </p>
           )}
         </div>
 
-        <div className="flex items-center gap-4 text-right flex-wrap">
-          <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Raised</p>
-            <p className="font-mono text-sm tabular-nums">{raisedEth.toFixed(4)} ETH</p>
-          </div>
-
-          {pendingPlatEth !== undefined && pendingPlatEth > 0n && (
-            <div>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Parked fees</p>
-              <p className="font-mono text-sm tabular-nums text-primary">
-                {Number(formatEther(pendingPlatEth)).toFixed(6)} ETH
-              </p>
-            </div>
-          )}
-
-          <div className="flex gap-2">
-            {/* Flush parked platform ETH */}
-            {pendingPlatEth !== undefined && pendingPlatEth > 0n && confirmAction !== 'flush' && (
-              <button
-                onClick={() => { setConfirmAction('flush'); setError(null); setDone(false); }}
-                disabled={isPending || isMining}
-                className="text-xs font-bold px-3 py-2 bg-primary/20 text-primary border border-primary/30 rounded hover:bg-primary/30 disabled:opacity-30"
-              >
-                <Zap className="h-3 w-3 inline mr-1" />
-                Flush fees
-              </button>
-            )}
-
-            {/* Force close */}
-            {!graduated && !forceClosed && confirmAction !== 'forceClose' && confirmAction !== 'flush' && (
-              <button
-                onClick={() => { setConfirmAction('forceClose'); setError(null); setDone(false); }}
-                disabled={isPending || isMining}
-                className="text-xs font-bold px-3 py-2 bg-red-500/90 text-white rounded hover:bg-red-500 disabled:opacity-30"
-              >
-                Force close
-              </button>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          {!confirmLP ? (
+            <button
+              onClick={() => { setConfirmLP(true); setError(null); setDone(false); }}
+              disabled={isPending || isMining}
+              className="text-xs font-bold px-3 py-2 bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded hover:bg-amber-500/30 disabled:opacity-30"
+            >
+              Withdraw LP
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {/* Confirm flush */}
-      {confirmAction === 'flush' && (
-        <div className="mt-3 flex items-center gap-2 flex-wrap">
-          <p className="text-[11px] font-mono text-muted-foreground">
-            Flush {Number(formatEther(pendingPlatEth ?? 0n)).toFixed(6)} ETH parked fees to factory?
-          </p>
-          <button
-            onClick={handleFlushPlatformEth}
-            disabled={isPending || isMining}
-            className="text-xs font-bold px-3 py-1.5 bg-primary text-primary-foreground rounded disabled:opacity-50"
-          >
-            {isPending ? 'Sign…' : isMining ? 'Mining…' : 'Confirm flush'}
-          </button>
-          <button
-            onClick={() => setConfirmAction(null)}
-            disabled={isPending || isMining}
-            className="text-xs px-2 py-1.5 text-muted-foreground hover:text-foreground"
-          >
-            Cancel
-          </button>
-        </div>
-      )}
-
-      {/* Confirm force close */}
-      {confirmAction === 'forceClose' && (
+      {confirmLP && (
         <div className="mt-3 space-y-1.5">
           <p className="text-[11px] text-amber-400 font-mono">
-            ⚠ This will permanently disable trading on this token. ETH will be returned to your wallet.
+            This will remove the LP position from the V4 pool. Action is logged on-chain via LPWithdrawn event.
           </p>
           <div className="flex items-center gap-2">
             <button
-              onClick={handleForceClose}
+              onClick={handleWithdrawLP}
               disabled={isPending || isMining}
-              className="text-xs font-bold px-3 py-1.5 bg-red-500 text-white rounded hover:bg-red-600 disabled:opacity-50"
+              className="text-xs font-bold px-3 py-1.5 bg-amber-500 text-black rounded hover:bg-amber-400 disabled:opacity-50"
             >
-              {isPending ? 'Sign…' : isMining ? 'Mining…' : 'Confirm force close'}
+              {isPending ? 'Sign…' : isMining ? 'Mining…' : 'Confirm withdraw LP'}
             </button>
             <button
-              onClick={() => setConfirmAction(null)}
+              onClick={() => setConfirmLP(false)}
               disabled={isPending || isMining}
               className="text-xs px-2 py-1.5 text-muted-foreground hover:text-foreground"
             >
@@ -504,7 +394,7 @@ function AdminTokenRow({
       )}
       {done && (
         <p className="mt-2 text-[11px] text-emerald-400 font-mono">
-          ✓ Done.{' '}
+          Done.{' '}
           <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline">
             View tx
           </a>

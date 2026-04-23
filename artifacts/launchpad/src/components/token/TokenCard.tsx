@@ -1,19 +1,18 @@
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
-import { TOTAL_SUPPLY } from '@/lib/contracts';
-import { useCurveConstants } from '@/hooks/use-curve-constants';
-import { formatEther } from 'viem';
 import { Link } from 'wouter';
 import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
+const TOTAL_SUPPLY = 1_000_000_000;
+
 interface TokenCardProps {
   address: `0x${string}`;
+  currentPriceEth?: number;
 }
 
-export function TokenCard({ address }: TokenCardProps) {
-  const { name, symbol, realEthRaised, graduated, currentPrice } = useToken(address);
+export function TokenCard({ address, currentPriceEth = 0 }: TokenCardProps) {
+  const { name, symbol } = useToken(address);
   const { data: ethPrice } = useEthPrice();
-  const { targetEth } = useCurveConstants();
   const meta = useTokenMetadata(address);
   const imageUrl = ipfsToHttp(meta?.image);
 
@@ -23,11 +22,7 @@ export function TokenCard({ address }: TokenCardProps) {
     );
   }
 
-  const ethRaisedNum = realEthRaised ? Number(formatEther(realEthRaised)) : 0;
-  const progress = Math.min((ethRaisedNum / targetEth) * 100, 100);
-  const ethRaised = ethRaisedNum;
-  const priceInEth = currentPrice ? Number(formatEther(currentPrice)) : 0;
-  const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
+  const mcEth = currentPriceEth * TOTAL_SUPPLY;
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
 
   return (
@@ -47,11 +42,9 @@ export function TokenCard({ address }: TokenCardProps) {
           <div className="min-w-0 flex-1">
             <div className="flex items-center justify-between gap-2">
               <p className="font-bold text-sm text-foreground truncate group-hover:text-primary transition-colors">{name}</p>
-              {graduated && (
-                <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 border-2 border-primary text-primary shrink-0">
-                  DEX
-                </span>
-              )}
+              <span className="text-[9px] font-black tracking-widest px-1.5 py-0.5 border border-primary/50 text-primary shrink-0">
+                V4
+              </span>
             </div>
             <p className="text-xs text-muted-foreground font-mono">${symbol}</p>
           </div>
@@ -63,26 +56,15 @@ export function TokenCard({ address }: TokenCardProps) {
           </p>
         )}
 
-        <div className="mt-auto space-y-1.5">
-          <div className="flex justify-between text-xs text-muted-foreground">
-            <span>{ethRaised.toFixed(3)} ETH</span>
-            <span className="text-primary font-medium">{progress.toFixed(1)}%</span>
-          </div>
-          <div className="h-1 w-full bg-secondary rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-500"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-        </div>
-
-        <div className="flex justify-between text-xs border-t border-border pt-2">
+        <div className="flex justify-between text-xs border-t border-border pt-2 mt-auto">
           <span className="text-muted-foreground">
             MCap: <span className="text-foreground font-mono">
               {mcUsd ? `$${mcUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `${mcEth.toFixed(3)} ETH`}
             </span>
           </span>
-          <span className="text-muted-foreground font-mono">{priceInEth < 0.000001 ? '<0.000001' : priceInEth.toFixed(7)}</span>
+          <span className="text-muted-foreground font-mono">
+            {currentPriceEth > 0 ? (currentPriceEth < 0.000001 ? '<0.000001' : currentPriceEth.toFixed(7)) : '—'}
+          </span>
         </div>
       </div>
     </Link>

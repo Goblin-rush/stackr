@@ -1,6 +1,6 @@
 import { useParams } from 'wouter';
 import { useState, useEffect, useRef } from 'react';
-import { useReadContract, useWatchContractEvent, useAccount } from 'wagmi';
+import { useReadContract, useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
 import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
@@ -9,13 +9,18 @@ import { TradeWidget } from '@/components/token/TradeWidget';
 import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
-import { TOTAL_SUPPLY, FACTORY_V2_ADDRESS, FACTORY_V2_ABI, CURVE_V2_ABI, V2_TARGET_REAL_ETH } from '@/lib/contracts';
+import {
+  FACTORY_V3_ADDRESS,
+  FACTORY_V3_ABI,
+  computePoolId,
+} from '@/lib/contracts';
 import { Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
-import { formatEther } from 'viem';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata } from '@/lib/token-metadata';
+import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata, updateTokenMetadataImage } from '@/lib/token-metadata';
 import { uploadImage } from '@/lib/upload';
 import { toast } from 'sonner';
+
+const TOTAL_SUPPLY = 1_000_000_000;
 
 function timeAgo(ts: number | null): string {
   if (!ts) return '–';
@@ -39,38 +44,6 @@ function genAvatarUri(symbol: string): string {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
-function ProgressBar({ pct }: { pct: number }) {
-  const p = Math.min(pct, 100);
-  let gradient = 'linear-gradient(90deg, hsl(142 66% 36%) 0%, hsl(152 68% 48%) 100%)';
-  let glow = '0 0 10px hsl(142 66% 44% / 0.38)';
-  if (p >= 85) {
-    gradient = 'linear-gradient(90deg, hsl(4 84% 46%) 0%, hsl(18 92% 64%) 100%)';
-    glow = '0 0 14px hsl(4 84% 58% / 0.55)';
-  } else if (p >= 60) {
-    gradient = 'linear-gradient(90deg, hsl(24 90% 46%) 0%, hsl(36 92% 60%) 100%)';
-    glow = '0 0 12px hsl(24 90% 55% / 0.45)';
-  } else if (p >= 30) {
-    gradient = 'linear-gradient(90deg, hsl(42 88% 42%) 0%, hsl(48 90% 56%) 100%)';
-    glow = '0 0 10px hsl(42 88% 50% / 0.40)';
-  }
-  return (
-    <div className="relative h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/6">
-      <div
-        className="absolute top-0 left-0 h-full rounded-full transition-all duration-700"
-        style={{ width: `${p}%`, background: gradient, boxShadow: p > 3 ? glow : 'none' }}
-      >
-        <span
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
-            animation: 'shimmer 2.2s ease-in-out infinite',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
 export default function TokenDetailPage() {
   const { address } = useParams<{ address: `0x${string}` }>();
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
@@ -80,46 +53,29 @@ export default function TokenDetailPage() {
   const { address: walletAddress } = useAccount();
 
   const { data: record, isLoading: isRecordLoading } = useReadContract({
-    address: FACTORY_V2_ADDRESS ?? undefined,
-    abi: FACTORY_V2_ABI,
+    address: FACTORY_V3_ADDRESS ?? undefined,
+    abi: FACTORY_V3_ABI,
     functionName: 'getRecord',
     args: [address],
-    query: { enabled: !!FACTORY_V2_ADDRESS && !!address },
+    query: { enabled: !!FACTORY_V3_ADDRESS && !!address },
   });
-  const curveAddress = (record as any)?.curve as `0x${string}` | undefined;
 
-  const { name, symbol, realEthRaised, graduated, currentPrice, progress, uniswapPair, isLoading, refetch } = useToken(address, curveAddress);
+  const { name, symbol, isLoading } = useToken(address);
   const { data: ethPrice } = useEthPrice();
-  const live = useChainTokenLive(address, curveAddress);
+  const live = useChainTokenLive(address);
   const meta = useTokenMetadata(address);
 
-  useWatchContractEvent({ address: curveAddress, abi: CURVE_V2_ABI, eventName: 'Buy', enabled: !!curveAddress, onLogs: () => refetch() });
-  useWatchContractEvent({ address: curveAddress, abi: CURVE_V2_ABI, eventName: 'Sell', enabled: !!curveAddress, onLogs: () => refetch() });
-  useWatchContractEvent({ address: curveAddress, abi: CURVE_V2_ABI, eventName: 'Graduated', enabled: !!curveAddress, onLogs: () => refetch() });
-
-  useEffect(() => {
-    const id = setInterval(() => refetch(), 12000);
-    return () => clearInterval(id);
-  }, [refetch]);
-
-  const priceInEth = currentPrice ? Number(formatEther(currentPrice)) : live.currentPrice;
-  const mcEth = priceInEth * Number(formatEther(TOTAL_SUPPLY));
+  const priceInEth = live.currentPrice;
+  const mcEth = priceInEth * TOTAL_SUPPLY;
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
   const change24h = live.priceChange24hPct;
-  const TARGET_ETH_NUM = Number(formatEther(V2_TARGET_REAL_ETH)); // 5.0
-  const realEthRaisedNum = realEthRaised
-    ? Number(formatEther(realEthRaised))
-    : live.realEthRaised > 0 ? live.realEthRaised : 0;
-  const pct = progress
-    ? Number(progress) / 100
-    : Math.min((realEthRaisedNum / TARGET_ETH_NUM) * 100, 100);
 
-  const initialDevBuyEth = (record as any)?.initialDevBuyEth
-    ? Number(formatEther((record as any).initialDevBuyEth as bigint))
-    : 0;
-
-  const creator = (record as any)?.creator as string | undefined;
+  const rec = record as any;
+  const creator = rec?.creator as string | undefined;
+  const deployedAt = rec?.deployedAt ? Number(rec.deployedAt) * 1000 : null;
   const isCreator = !!(walletAddress && creator && walletAddress.toLowerCase() === creator.toLowerCase());
+
+  const poolId = address ? computePoolId(address) : null;
 
   const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -128,7 +84,7 @@ export default function TokenDetailPage() {
     const tid = toast.loading('Uploading image…');
     try {
       const r = await uploadImage(file);
-      await saveTokenMetadata(address, { image: r.url });
+      await updateTokenMetadataImage(address, r.url);
       toast.success('Image saved!', { id: tid, description: r.cid.slice(0, 12) + '…' });
       setTimeout(() => window.location.reload(), 800);
     } catch (err: any) {
@@ -185,7 +141,7 @@ export default function TokenDetailPage() {
           {/* LEFT — 8 cols */}
           <div className="lg:col-span-8 space-y-4">
 
-            {/* ─── Unified Header Card ─── */}
+            {/* Unified Header Card */}
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
               <div className="p-5 md:p-6">
 
@@ -223,30 +179,26 @@ export default function TokenDetailPage() {
                         </span>
                         <h1 className="text-base md:text-lg font-bold text-foreground/90">{name}</h1>
                       </div>
-                      {((record as any)?.creator || (record as any)?.deployedAt) && (
+                      {(creator || deployedAt) && (
                         <p className="text-[11px] text-muted-foreground font-mono mt-1.5">
-                          {(record as any)?.creator && (
+                          {creator && (
                             <>
                               by{' '}
-                              <a href={`https://basescan.org/address/${(record as any).creator}`} target="_blank" rel="noreferrer"
+                              <a href={`https://basescan.org/address/${creator}`} target="_blank" rel="noreferrer"
                                 className="hover:text-primary transition-colors">
-                                {shortAddr((record as any).creator)}
+                                {shortAddr(creator)}
                               </a>
                               {' · '}
                             </>
                           )}
-                          {(record as any)?.deployedAt ? `${timeAgo(Number((record as any).deployedAt) * 1000)} ago` : ''}
-                          {' · Base'}
+                          {deployedAt ? `${timeAgo(deployedAt)} ago` : ''}
+                          {' · Base · Uniswap V4'}
                         </p>
                       )}
                     </div>
                   </div>
-                  <span className={`shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border ${
-                    graduated
-                      ? 'border-primary/50 text-primary bg-primary/10'
-                      : 'border-border/60 text-muted-foreground bg-white/4'
-                  }`}>
-                    {graduated ? 'DEX' : 'BONDING'}
+                  <span className="shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border border-primary/50 text-primary bg-primary/10">
+                    V4 POOL
                   </span>
                 </div>
 
@@ -266,26 +218,42 @@ export default function TokenDetailPage() {
                       className="text-muted-foreground hover:text-primary transition-colors">
                       {copiedCA ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
                     </button>
-                    {curveAddress && (
-                      <a href={`https://basescan.org/address/${curveAddress}`} target="_blank" rel="noreferrer noopener"
-                        className="text-[10px] font-mono text-muted-foreground/50 hover:text-primary transition-colors">
-                        Curve
+                    {poolId && (
+                      <a
+                        href={`https://basescan.org/address/${FACTORY_V3_ADDRESS}`}
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="text-[10px] font-mono text-primary hover:text-primary/80 transition-colors"
+                      >
+                        V4 Pool
                       </a>
                     )}
-                    {graduated && uniswapPair && uniswapPair !== '0x0000000000000000000000000000000000000000' && (
-                      <a href={`https://app.uniswap.org/explore/pools/base/${uniswapPair}`} target="_blank" rel="noreferrer noopener"
-                        className="text-[10px] font-mono text-primary hover:text-primary/80 transition-colors">
-                        Uniswap
-                      </a>
-                    )}
+                    <a
+                      href={`https://app.uniswap.org/swap?chain=base&outputCurrency=${address}`}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-[10px] font-mono text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Uniswap
+                    </a>
                   </div>
                 </div>
 
-                {/* Stats — 4 cols with thin dividers */}
+                {/* Stats */}
                 <div className="grid grid-cols-4 gap-0 mb-5 pt-3 border-t border-border/30">
                   {[
-                    { label: 'Price', value: ethPrice && priceInEth ? `$${(priceInEth * ethPrice).toFixed(7)}` : '–', color: '' },
-                    { label: 'Market Cap', value: mcUsd ? `$${mcUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : `${mcEth.toFixed(3)} ETH`, color: '' },
+                    {
+                      label: 'Price',
+                      value: priceInEth > 0
+                        ? (ethPrice ? `$${(priceInEth * ethPrice).toFixed(7)}` : `${priceInEth.toFixed(8)} ETH`)
+                        : '—',
+                      color: '',
+                    },
+                    {
+                      label: 'Market Cap',
+                      value: mcUsd ? `$${mcUsd.toLocaleString(undefined, { maximumFractionDigits: 0 })}` : (mcEth > 0 ? `${mcEth.toFixed(3)} ETH` : '—'),
+                      color: '',
+                    },
                     {
                       label: '24h',
                       value: live.trades.length > 1 ? `${change24h >= 0 ? '+' : ''}${change24h.toFixed(1)}%` : '–',
@@ -300,15 +268,11 @@ export default function TokenDetailPage() {
                   ))}
                 </div>
 
-                {/* Bonding curve */}
-                <div className="mb-5">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-[10px] font-semibold tracking-wider text-muted-foreground/60 uppercase">Bonding curve</span>
-                    <span className="text-[11px] font-semibold tabular-nums text-foreground/80">
-                      {pct.toFixed(0)}% · {realEthRaisedNum.toFixed(2)} / {TARGET_ETH_NUM} ETH
-                    </span>
-                  </div>
-                  <ProgressBar pct={pct} />
+                {/* Pool info row */}
+                <div className="mb-4 flex items-center gap-2 flex-wrap">
+                  <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest">Pool</span>
+                  <span className="text-[11px] font-mono text-muted-foreground">Uniswap V4 · 0.3% LP fee · 3% swap tax</span>
+                  <span className="text-[11px] font-mono text-primary/70">1.5% rewards / 1.5% platform</span>
                 </div>
 
                 {/* Description + socials */}
@@ -348,22 +312,22 @@ export default function TokenDetailPage() {
               </div>
             </div>
 
-            {/* ─── TradingView Chart ─── */}
+            {/* TradingView Chart */}
             <div className="rounded-xl border border-border/60 overflow-hidden">
               <TVAdvancedChart
                 seed={address}
-                baseEthRaised={realEthRaisedNum}
-                graduated={graduated}
+                baseEthRaised={0}
+                graduated={true}
                 symbol={`${symbol || 'TOKEN'}/ETH`}
                 height={440}
                 ethPrice={ethPrice ?? 3000}
                 currentMcUsd={mcUsd}
-                initialDevBuyEth={initialDevBuyEth}
+                initialDevBuyEth={0}
                 lastTrade={live.lastTrade ? { price: live.lastTrade.price, ethAmount: live.lastTrade.ethAmount, timestamp: live.lastTrade.timestamp } : null}
               />
             </div>
 
-            {/* ─── Trades / Holders tabbed ─── */}
+            {/* Trades / Holders tabbed */}
             <div className="rounded-xl bg-card border border-border/60 overflow-hidden">
               <div className="flex border-b border-border/40">
                 {(['trades', 'holders'] as const).map((tab) => (
@@ -405,8 +369,11 @@ export default function TokenDetailPage() {
 
           {/* RIGHT — 4 cols */}
           <div className="lg:col-span-4 space-y-4">
-            <TradeWidget tokenAddress={address} curveAddress={curveAddress} />
-
+            <TradeWidget
+              tokenAddress={address}
+              currentPriceEth={live.currentPrice}
+              symbol={symbol}
+            />
           </div>
 
         </div>

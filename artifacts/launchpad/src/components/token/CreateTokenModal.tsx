@@ -7,7 +7,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from '@/component
 import { useCreateToken } from '@/hooks/use-launchpad';
 import { useLocation } from 'wouter';
 import { useWatchContractEvent } from 'wagmi';
-import { FACTORY_V2_ADDRESS, FACTORY_V2_ABI } from '@/lib/contracts';
+import { FACTORY_V3_ADDRESS } from '@/lib/contracts';
 import { saveTokenMetadata } from '@/lib/token-metadata';
 import { Loader2, Upload, Rocket } from 'lucide-react';
 import { txPendingToast, txSubmittedToast, txSuccessToast, txErrorToast } from '@/lib/tx-toast';
@@ -21,7 +21,6 @@ const formSchema = z.object({
   website: z.string().url('Must be a valid URL').or(z.literal('')).optional(),
   twitter: z.string().optional(),
   telegram: z.string().optional(),
-  initialBuy: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -95,7 +94,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
-    defaultValues: { name: '', symbol: '', description: '', website: '', twitter: '', telegram: '', initialBuy: '' },
+    defaultValues: { name: '', symbol: '', description: '', website: '', twitter: '', telegram: '' },
   });
 
   useEffect(() => {
@@ -116,10 +115,9 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   }, [step, newTokenAddress]);
 
   useWatchContractEvent({
-    address: FACTORY_V2_ADDRESS ?? undefined,
-    abi: FACTORY_V2_ABI,
+    address: FACTORY_V3_ADDRESS ?? undefined,
     eventName: 'TokenDeployed',
-    enabled: !!FACTORY_V2_ADDRESS && step === 'confirming',
+    enabled: !!FACTORY_V3_ADDRESS && step === 'confirming',
     onLogs: async (logs) => {
       const log = logs[0];
       if (!log?.args?.token) return;
@@ -142,7 +140,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   });
 
   async function onSubmit(data: FormValues) {
-    if (!FACTORY_V2_ADDRESS) { toast.error('Factory contract not configured.'); return; }
+    if (!FACTORY_V3_ADDRESS) { toast.error('Factory contract not configured.'); return; }
     if (!imageUri) {
       toast.error('Token image is required', { description: 'Upload a PNG, JPG, GIF or WEBP before launching.' });
       fileInputRef.current?.click();
@@ -153,7 +151,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
     deployToastId.current = id;
     const metadataURI = imageUri || '';
     try {
-      await createToken(data.name, data.symbol.toUpperCase(), metadataURI, data.initialBuy);
+      await createToken(data.name, data.symbol.toUpperCase(), metadataURI);
       setStep('confirming');
     } catch (err) {
       txErrorToast(id, err);
@@ -163,7 +161,6 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
   }
 
   const isLoading = step !== 'idle';
-  const initialBuyVal = parseFloat(form.watch('initialBuy') || '0');
   const descLen = form.watch('description')?.length ?? 0;
 
   const btnLabel = () => {
@@ -184,7 +181,7 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
             </div>
             <div>
               <h2 className="text-[14px] font-black tracking-tight text-foreground leading-none">Launch Token</h2>
-              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Base Mainnet · Bonding Curve V2</p>
+              <p className="text-[10px] text-muted-foreground font-mono mt-0.5">Base Mainnet · Uniswap V4 Pool</p>
             </div>
           </div>
         </div>
@@ -323,43 +320,10 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
               </div>
             </div>
 
-            {/* Dev buy */}
-            <div className="border-t border-border/40 pt-3">
-              <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70 mb-1.5">Dev Buy <span className="normal-case font-normal tracking-normal">(optional, included in deploy tx)</span></p>
-              <FormField control={form.control} name="initialBuy" render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.001"
-                        placeholder="0.0"
-                        className={`${fieldClass} pr-12`}
-                        {...field}
-                        disabled={isLoading}
-                      />
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[11px] text-muted-foreground font-mono">ETH</span>
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-[10px]" />
-                </FormItem>
-              )} />
-
-              {initialBuyVal > 0 && (
-                <div className="mt-2 rounded-lg bg-primary/8 border border-primary/15 px-3 py-2 space-y-1">
-                  {[
-                    { label: 'Dev buy (5% tax)', val: initialBuyVal },
-                    { label: 'Platform fee (1.5%)', val: initialBuyVal * 0.015 },
-                    { label: 'Burn (1.5%)', val: initialBuyVal * 0.015 },
-                  ].map((row) => (
-                    <div key={row.label} className="flex justify-between text-[11px] font-mono">
-                      <span className="text-muted-foreground">{row.label}</span>
-                      <span className="text-primary">{row.val.toFixed(4)} ETH</span>
-                    </div>
-                  ))}
-                </div>
-              )}
+            {/* V4 pool info note */}
+            <div className="rounded-lg bg-primary/5 border border-primary/15 px-3 py-2.5">
+              <p className="text-[10px] font-mono text-primary font-semibold mb-1">Uniswap V4 Pool · 3% swap tax</p>
+              <p className="text-[10px] text-muted-foreground font-mono">1.5% to holder rewards · 1.5% platform · 0.3% LP fee</p>
             </div>
 
             {error && (
@@ -368,13 +332,13 @@ export function CreateTokenModal({ open, onOpenChange }: CreateTokenModalProps) 
 
             <button
               type="submit"
-              disabled={isLoading || imageUploading || !FACTORY_V2_ADDRESS || !imageUri}
+              disabled={isLoading || imageUploading || !FACTORY_V3_ADDRESS || !imageUri}
               className="w-full py-3 rounded-xl text-[13px] font-bold tracking-wide transition-all disabled:opacity-40 disabled:cursor-not-allowed enabled:bg-primary enabled:text-primary-foreground enabled:hover:bg-primary/90 enabled:glow-primary flex items-center justify-center gap-2"
             >
               {isLoading
                 ? <><Loader2 className="h-4 w-4 animate-spin" />{btnLabel()}</>
                 : imageUploading ? <><Loader2 className="h-4 w-4 animate-spin" />Uploading image…</>
-                : !FACTORY_V2_ADDRESS ? 'Not configured'
+                : !FACTORY_V3_ADDRESS ? 'Not configured'
                 : !imageUri ? 'Upload an image to continue'
                 : <><Rocket className="h-4 w-4" />Launch Token</>
               }

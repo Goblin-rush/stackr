@@ -26,38 +26,58 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
 
-## Aethpad V2 — Token Launchpad (Base Mainnet)
+## Stackr V3 — Token Launchpad (Base Mainnet) · Uniswap V4
 
 ### Deployed Contracts (Base Mainnet)
-- **Factory V2**: `0x2315896A0e8fd675235178e11D30567Dc6C6f0b8` — set in `VITE_FACTORY_V2_ADDRESS`
-- **Deployer**: `0x3cAb46C265e365dab9F5D4a1b6ac5074aEdC0128`
-- **Router**: `0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24`
+- **StackrHookV3**: `0xe88D16864cAD90E9d6e0731D67a8946bc30700cc` — Uniswap V4 hook
+- **StackrFactoryV3**: `0x77a29992f609A90d7d911B056145fF95Ca7e7e73` — token factory
+- **Uniswap V4 PoolManager**: `0x498581ff718922c3f8e6a244956af099b2652b2b`
+- **Deployer EOA**: `0xaAd5f333dFBD6c5561C9D41E624A12069b337B46`
 
-### V2 Architecture
-- Factory deploys **two separate contracts**: Token (ERC20) + Curve (bonding curve AMM)
-- `factory.getRecord(tokenAddress)` returns `{ creator, curve, createdAt, metadataURI }`
-- **Buy/Sell/Graduated events are on the CURVE contract** (not the token)
-- V2 event signatures:
-  - `Buy(buyer, ethIn, ethForCurve, tokensOut, progressBps)` on Curve
-  - `Sell(seller, tokensIn, ethOutGross, ethToUser, progressBps)` on Curve
-  - `Graduated(ethToLp, tokensToLp, pair)` on Curve
-  - `TokenDeployed(token, curve, creator, name, symbol, metadataURI, devBuyEth, devBuyTokens)` on Factory
-- 5% ETH tax: 1.5% burn / 2% holder rewards (time-weighted hold score) / 1.5% platform
-- Anti-snipe tiers: <5min +20%, <1hr +10%, <24hr +5% extra sell tax
-- `createToken(name, symbol, metadataURI, { value: devBuyEth })` — dev buy in same tx
-- `approve(curveAddress, amount)` on Token, then `sell(tokens, minEthOut)` on Curve
+### V3 Architecture (NO BONDING CURVE)
+- Factory deploys Token (ERC20) + registers V4 pool immediately — no bonding curve
+- `factory.getRecord(tokenAddress)` returns `{ token, creator, deployedAt, metadataURI, poolKey }`
+- All trades happen via Uniswap V4 PoolManager (pool key: ETH/token, fee=3000, tickSpacing=60)
+- Hook tax 3% on every swap: 1.5% holder rewards + 1.5% platform (100% anti-snipe to rewards)
+- LP fee 0.3% goes to pool LP held by factory
+- V3 event signatures:
+  - `PoolRegistered(bytes32 indexed poolId, address indexed token)` on Hook
+  - `TaxCollected(bytes32 indexed poolId, bool isBuy, uint256 ethAmount, uint256 antiSnipeBps)` on Hook
+  - `TaxDistributed(bytes32 indexed poolId, uint256 rewardEth, uint256 platformEth)` on Hook
+  - `LPWithdrawn(bytes32 indexed poolId, address indexed to, uint256 ethReceived, uint256 tokensReceived)` on Hook
+  - `Swap(bytes32 indexed id, ...)` on PoolManager (V4 standard)
+  - `TokenDeployed(address indexed token, address indexed creator, ...)` on Factory
+- `createToken(name, symbol, metadataURI)` — no dev buy, no ETH value needed (nonpayable)
+- Trading: redirect to `https://app.uniswap.org/swap?chain=base&outputCurrency={token}`
+- PoolId = keccak256(abi.encode(ETH, token, 3000, 60, hookAddress))
+- Price: `sqrtPriceX96ToEthPerToken()` from PoolManager.getSlot0(poolId)
 
-### Frontend (artifacts/launchpad)
-- React + Vite + Tailwind v4 + wagmi + Privy + viem
+### V3 Frontend (artifacts/launchpad)
+- React + Vite + Tailwind v4 + wagmi + viem
 - Chain: Base mainnet (chain ID 8453)
-- Charts: `lightweight-charts` with OHLCV crosshair legend overlay (TradingView-style)
-- All Etherscan links → Basescan links
+- TradeWidget: redirects to Uniswap V4 (no direct swap in app)
+- Charts: simulated OHLCV with live Swap event ticks
+- Admin: withdrawPlatformFees(to, amount) + withdrawLP(token, to)
 - Key contracts in `artifacts/launchpad/src/lib/contracts.ts`
 
-### API Server (artifacts/api-server)
+### V3 API Server (artifacts/api-server)
 - Express 5 + TypeScript + viem
-- `GET /api/candles?curveAddress=0x...&interval=15m` — OHLCV REST endpoint
-  - Fetches Buy/Sell events from Base via viem getLogs
+- `GET /api/candles?tokenAddress=0x...&interval=15m` — OHLCV REST endpoint
+  - Fetches V4 PoolManager Swap events filtered by poolId from Base via viem getLogs
   - Returns `{ candles: [{ time, open, high, low, close, volume, buyVolume, sellVolume }] }`
-- `POST /api/upload` — Pinata IPFS image upload
-- `GET/POST /api/tokens/metadata` — local metadata store (description, links, image)
+- `POST /api/upload-image` — Pinata IPFS image upload (falls back to server JWT if client JWT missing)
+- `GET /api/tokens/metadata` — bulk fetch all token metadata (address → metadata map)
+- `GET /api/tokens/:address/metadata` — single token metadata
+- `POST /api/tokens/:address/metadata` — create token metadata (once-write for all fields)
+- `PATCH /api/tokens/:address/metadata` — update individual fields (used by creator to update image)
+- `GET /api/tokens` — list all V3 tokens indexed from chain (from token_records_v3 DB table)
+- `GET /api/healthz` — health check
+- **Cron indexer** (`lib/indexer.ts`): runs every 60s, indexes `TokenDeployed` events from StackrFactoryV3
+  - On first run backtracks 500k blocks (~11 days) for historical deployments
+  - Progress tracked in `indexer_cursors` table; tokens stored in `token_records_v3` table
+
+### DB Tables (Neon PostgreSQL via NEON_DATABASE_URL)
+- `token_metadata` — per-token metadata (description, website, twitter, telegram, image)
+- `token_records_v3` — on-chain indexed V3 tokens (address, creator, deployedAt, metadataURI, blockNumber)
+- `indexer_cursors` — indexer progress cursors (lastBlock per cursor ID)
+- `trades` — V2 trade history (legacy, not used in V3)

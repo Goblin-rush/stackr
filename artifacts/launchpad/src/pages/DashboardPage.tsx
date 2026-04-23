@@ -6,31 +6,24 @@ import { formatEther, formatUnits } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import {
-  FACTORY_V2_ADDRESS,
-  FACTORY_V2_ABI,
-  TOKEN_V2_ABI,
-  CURVE_V2_ABI,
+  FACTORY_V3_ADDRESS,
+  FACTORY_V3_ABI,
+  TOKEN_V3_ABI,
+  POOL_MANAGER_V4_ADDRESS,
+  computePoolId,
+  sqrtPriceX96ToEthPerToken,
 } from '@/lib/contracts';
-import { Wallet, Coins, ExternalLink, TrendingUp, Star } from 'lucide-react';
+import { Wallet, Coins, ExternalLink, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const TOTAL_SUPPLY = 1_000_000_000;
 
 interface Holding {
   token: `0x${string}`;
-  curve: `0x${string}`;
   name: string;
   symbol: string;
   balance: bigint;
-  holdScore: bigint;
-  totalLiveScore: bigint;
-  pendingRewards: bigint;       // pendingRewards(address) — allocated but not yet pushed
-  totalReceivedByHolder: bigint; // totalReceivedByHolder(address) — cumulative auto-distributed ETH
-  graduated: boolean;
-  curvePriceEth: bigint;
-}
-
-function poolSharePct(h: Holding): number {
-  if (h.totalLiveScore === 0n) return 0;
-  return (Number(h.holdScore) / Number(h.totalLiveScore)) * 100;
+  priceEth: number;
 }
 
 function formatCompact(n: number): string {
@@ -40,6 +33,20 @@ function formatCompact(n: number): string {
   return n.toFixed(2);
 }
 
+const SLOT0_ABI = [
+  {
+    name: 'getSlot0',
+    type: 'function' as const,
+    stateMutability: 'view' as const,
+    inputs: [{ name: 'id', type: 'bytes32' }],
+    outputs: [
+      { name: 'sqrtPriceX96', type: 'uint160' },
+      { name: 'tick', type: 'int24' },
+      { name: 'protocolFee', type: 'uint24' },
+      { name: 'lpFee', type: 'uint24' },
+    ],
+  },
+] as const;
 
 export default function DashboardPage() {
   const { address, isConnected } = useAccount();
@@ -61,11 +68,11 @@ export default function DashboardPage() {
   }, [blockNumber]);
 
   useEffect(() => {
-    if (!isConnected || !address || !client || !FACTORY_V2_ADDRESS) {
+    if (!isConnected || !address || !client || !FACTORY_V3_ADDRESS) {
       setHoldings(null);
       return;
     }
-    const factory = FACTORY_V2_ADDRESS;
+    const factory = FACTORY_V3_ADDRESS;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -74,8 +81,8 @@ export default function DashboardPage() {
       try {
         const total = (await client.readContract({
           address: factory,
-          abi: FACTORY_V2_ABI,
-          functionName: 'allTokensLength',
+          abi: FACTORY_V3_ABI,
+          functionName: 'totalTokens',
         })) as bigint;
 
         if (total === 0n) {
@@ -85,7 +92,7 @@ export default function DashboardPage() {
 
         const tokenCalls = Array.from({ length: Number(total) }, (_, i) => ({
           address: factory,
-          abi: FACTORY_V2_ABI,
+          abi: FACTORY_V3_ABI,
           functionName: 'allTokens' as const,
           args: [BigInt(i)],
         }));
@@ -94,21 +101,24 @@ export default function DashboardPage() {
           .map((r) => (r.status === 'success' ? (r.result as `0x${string}`) : null))
           .filter((x): x is `0x${string}` => !!x);
 
-        const balCalls = tokens.flatMap((t) => [
-          { address: t, abi: TOKEN_V2_ABI, functionName: 'balanceOf' as const, args: [address] },
-          { address: factory, abi: FACTORY_V2_ABI, functionName: 'getRecord' as const, args: [t] },
-        ]);
+        // Get balances for all tokens
+        const balCalls = tokens.map((t) => ({
+          address: t,
+          abi: TOKEN_V3_ABI,
+          functionName: 'balanceOf' as const,
+          args: [address],
+        }));
         const balResults = await client.multicall({ contracts: balCalls, allowFailure: true });
 
-        const candidates: { token: `0x${string}`; curve: `0x${string}`; balance: bigint }[] = [];
+        const candidates: `0x${string}`[] = [];
+        const balances = new Map<string, bigint>();
         for (let i = 0; i < tokens.length; i++) {
-          const balR = balResults[i * 2];
-          const recR = balResults[i * 2 + 1];
-          if (balR.status !== 'success' || recR.status !== 'success') continue;
+          const balR = balResults[i];
+          if (balR.status !== 'success') continue;
           const balance = balR.result as bigint;
           if (balance === 0n) continue;
-          const rec = recR.result as { curve: `0x${string}` };
-          candidates.push({ token: tokens[i], curve: rec.curve, balance });
+          candidates.push(tokens[i]);
+          balances.set(tokens[i].toLowerCase(), balance);
         }
 
         if (candidates.length === 0) {
@@ -116,46 +126,42 @@ export default function DashboardPage() {
           return;
         }
 
-        // 8 multicall slots per token:
-        // 0 name  1 symbol  2 holdScore  3 totalHoldScoreLive
-        // 4 graduated  5 currentPrice  6 pendingRewards  7 totalReceivedByHolder
-        const detailCalls = candidates.flatMap((c) => [
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'name' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'symbol' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'holdScore' as const, args: [address] as [`0x${string}`] },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalHoldScoreLive' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'graduated' as const },
-          { address: c.curve, abi: CURVE_V2_ABI, functionName: 'currentPrice' as const },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'pendingRewards' as const, args: [address] as [`0x${string}`] },
-          { address: c.token, abi: TOKEN_V2_ABI, functionName: 'totalReceivedByHolder' as const, args: [address] as [`0x${string}`] },
+        // Get name + symbol for candidates
+        const metaCalls = candidates.flatMap((t) => [
+          { address: t, abi: TOKEN_V3_ABI, functionName: 'name' as const },
+          { address: t, abi: TOKEN_V3_ABI, functionName: 'symbol' as const },
         ]);
+        const metaResults = await client.multicall({ contracts: metaCalls, allowFailure: true });
 
-        const detailResults = await client.multicall({ contracts: detailCalls, allowFailure: true });
+        // Get current price via PoolManager.getSlot0
+        const slot0Calls = candidates.map((t) => ({
+          address: POOL_MANAGER_V4_ADDRESS,
+          abi: SLOT0_ABI,
+          functionName: 'getSlot0' as const,
+          args: [computePoolId(t)] as [`0x${string}`],
+        }));
+        const slot0Results = await client.multicall({ contracts: slot0Calls, allowFailure: true }).catch(() => []);
 
-        const list: Holding[] = candidates.map((c, i) => {
-          const off = i * 8;
-          const get = <T,>(idx: number, fallback: T): T => {
-            const r = detailResults[off + idx];
-            return r.status === 'success' ? (r.result as T) : fallback;
-          };
-          return {
-            token: c.token,
-            curve: c.curve,
-            balance: c.balance,
-            name: get<string>(0, 'Unknown'),
-            symbol: get<string>(1, '???'),
-            holdScore: get<bigint>(2, 0n),
-            totalLiveScore: get<bigint>(3, 0n),
-            graduated: get<boolean>(4, false),
-            curvePriceEth: get<bigint>(5, 0n),
-            pendingRewards: get<bigint>(6, 0n),
-            totalReceivedByHolder: get<bigint>(7, 0n),
-          };
+        if (cancelled) return;
+
+        const list: Holding[] = candidates.map((t, i) => {
+          const name = metaResults[i * 2]?.status === 'success' ? (metaResults[i * 2].result as string) : 'Unknown';
+          const symbol = metaResults[i * 2 + 1]?.status === 'success' ? (metaResults[i * 2 + 1].result as string) : '???';
+          const balance = balances.get(t.toLowerCase()) ?? 0n;
+
+          let priceEth = 0;
+          if (slot0Results[i]?.status === 'success') {
+            const sqrtPriceX96 = (slot0Results[i].result as any)[0] as bigint;
+            priceEth = sqrtPriceX96ToEthPerToken(sqrtPriceX96);
+          }
+
+          return { token: t, name, symbol, balance, priceEth };
         });
 
+        // Sort by portfolio value descending
         list.sort((a, b) => {
-          const va = Number(formatEther((a.balance * a.curvePriceEth) / 10n ** 18n));
-          const vb = Number(formatEther((b.balance * b.curvePriceEth) / 10n ** 18n));
+          const va = Number(formatUnits(a.balance, 18)) * a.priceEth;
+          const vb = Number(formatUnits(b.balance, 18)) * b.priceEth;
           return vb - va;
         });
 
@@ -173,24 +179,20 @@ export default function DashboardPage() {
 
   const totals = useMemo(() => {
     if (!holdings) return null;
-    let portfolioEth = 0n;
-    let totalReceived = 0n;
-    let totalPending = 0n;
+    let portfolioEth = 0;
     for (const h of holdings) {
-      portfolioEth += (h.balance * h.curvePriceEth) / 10n ** 18n;
-      totalReceived += h.totalReceivedByHolder;
-      totalPending  += h.pendingRewards;
+      portfolioEth += Number(formatUnits(h.balance, 18)) * h.priceEth;
     }
-    return { portfolioEth, totalReceived, totalPending, count: holdings.length };
+    return { portfolioEth, count: holdings.length };
   }, [holdings]);
 
-  if (!FACTORY_V2_ADDRESS) {
+  if (!FACTORY_V3_ADDRESS) {
     return (
       <Shell>
         <EmptyState
           icon={<TrendingUp className="h-8 w-8 text-muted-foreground" />}
           title="Dashboard not yet active"
-          body="Contracts not deployed yet. Once live, your holdings and reward stats will appear here."
+          body="Contracts not deployed yet. Once live, your holdings will appear here."
         />
       </Shell>
     );
@@ -205,7 +207,7 @@ export default function DashboardPage() {
           </div>
           <h2 className="text-lg font-bold mb-2">Connect your wallet</h2>
           <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
-            See your token holdings and ETH rewards received.
+            See your token holdings and portfolio value.
           </p>
           <button
             onClick={() => open()}
@@ -221,49 +223,25 @@ export default function DashboardPage() {
   return (
     <Shell>
       {/* Summary stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <SummaryCard
           icon={<Coins className="h-3.5 w-3.5" />}
           label="Holdings"
           value={loading ? null : String(totals?.count ?? 0)}
-          sub="tokens held"
+          sub="V3 tokens held"
         />
         <SummaryCard
           icon={<Wallet className="h-3.5 w-3.5" />}
           label="Portfolio"
-          value={loading ? null : `${Number(formatEther(totals?.portfolioEth ?? 0n)).toFixed(4)} ETH`}
-          sub={ethPrice && totals ? `≈ $${(Number(formatEther(totals.portfolioEth)) * ethPrice).toFixed(2)}` : '--'}
+          value={loading ? null : `${(totals?.portfolioEth ?? 0).toFixed(4)} ETH`}
+          sub={ethPrice && totals ? `≈ $${(totals.portfolioEth * ethPrice).toFixed(2)}` : '--'}
         />
         <SummaryCard
           icon={<TrendingUp className="h-3.5 w-3.5 text-primary" />}
-          label="Total Received"
-          value={
-            loading
-              ? null
-              : totals && totals.totalReceived > 0n
-                ? `${Number(formatEther(totals.totalReceived)).toFixed(6)} ETH`
-                : '--'
-          }
-          sub={
-            ethPrice && totals && totals.totalReceived > 0n
-              ? `≈ $${(Number(formatEther(totals.totalReceived)) * ethPrice).toFixed(2)}`
-              : 'auto-distributed'
-          }
-          highlight={!!totals && totals.totalReceived > 0n}
-        />
-        <SummaryCard
-          icon={<Star className="h-3.5 w-3.5 text-amber-400" />}
-          label="Est. Pending"
-          value={
-            loading
-              ? null
-              : totals && totals.totalPending > 0n
-                ? `${Number(formatEther(totals.totalPending)).toFixed(6)} ETH`
-                : '--'
-          }
-          sub="pushed on next trade"
-          highlight={!!totals && totals.totalPending > 0n}
-          highlightColor="amber"
+          label="Pool"
+          value="Uniswap V4"
+          sub="1.5% rewards auto-distributed"
+          highlight
         />
       </div>
 
@@ -280,7 +258,7 @@ export default function DashboardPage() {
       {loading && !holdings && (
         <div className="space-y-3">
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} className="h-[100px] w-full bg-muted/30 rounded-xl" />
+            <Skeleton key={i} className="h-[80px] w-full bg-muted/30 rounded-xl" />
           ))}
         </div>
       )}
@@ -289,19 +267,17 @@ export default function DashboardPage() {
         <EmptyState
           icon={<Coins className="h-8 w-8 text-muted-foreground" />}
           title="No holdings yet"
-          body="Buy a token on the Launchpad. Your holdings and rewards will appear here automatically."
+          body="Buy a token on the Launchpad via Uniswap V4. Your holdings will appear here automatically."
         />
       )}
 
       {holdings && holdings.length > 0 && (
         <div className="space-y-3">
           {holdings.map((h) => {
-            const share = poolSharePct(h);
-            const valEth = Number(formatEther((h.balance * h.curvePriceEth) / 10n ** 18n));
-            const balFormatted = formatCompact(Number(formatUnits(h.balance, 18)));
-            const received = Number(formatEther(h.totalReceivedByHolder));
-            const pending  = Number(formatEther(h.pendingRewards));
-            const scoreStr = formatCompact(Number(formatUnits(h.holdScore, 18)));
+            const balanceNum = Number(formatUnits(h.balance, 18));
+            const valEth = balanceNum * h.priceEth;
+            const valUsd = ethPrice ? valEth * ethPrice : null;
+            const balFormatted = formatCompact(balanceNum);
 
             return (
               <div
@@ -314,12 +290,10 @@ export default function DashboardPage() {
                       <span className="text-sm font-bold group-hover:text-primary transition-colors">
                         ${h.symbol}
                       </span>
-                      {h.graduated && (
-                        <span className="text-[9px] font-black uppercase tracking-widest text-primary border border-primary/50 bg-primary/10 px-1.5 py-0.5 rounded">
-                          DEX
-                        </span>
-                      )}
                       <span className="text-[11px] text-muted-foreground font-mono">{h.name}</span>
+                      <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded uppercase tracking-wider">
+                        V4
+                      </span>
                     </div>
                   </Link>
                   <a
@@ -332,30 +306,17 @@ export default function DashboardPage() {
                   </a>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+                <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
                   <StatCell label="Balance" value={`${balFormatted} ${h.symbol}`} />
-                  <StatCell label="Value" value={`${valEth.toFixed(5)} ETH`} />
+                  <StatCell label="Price" value={h.priceEth > 0 ? `${h.priceEth.toFixed(8)} ETH` : '—'} />
                   <StatCell
-                    label="Hold Score"
-                    value={scoreStr}
-                    sub="reward multiplier"
+                    label="Value (ETH)"
+                    value={valEth > 0 ? `${valEth.toFixed(5)} ETH` : '—'}
                   />
                   <StatCell
-                    label="Pool Share"
-                    value={`${share.toFixed(2)}%`}
-                    sub="of reward pool"
-                  />
-                  <StatCell
-                    label="Est. Pending"
-                    value={pending > 0 ? `${pending.toFixed(6)} ETH` : '--'}
-                    sub={pending > 0 ? 'pushed on next trade' : 'nothing queued'}
-                    highlightAmber={pending > 0}
-                  />
-                  <StatCell
-                    label="Total Received"
-                    value={received > 0 ? `${received.toFixed(6)} ETH` : '--'}
-                    sub={received > 0 ? 'auto-distributed' : 'no rewards yet'}
-                    highlight={received > 0}
+                    label="Value (USD)"
+                    value={valUsd ? `$${valUsd.toFixed(2)}` : '—'}
+                    highlight={valEth > 0}
                   />
                 </div>
               </div>
@@ -374,6 +335,7 @@ function Shell({ children }: { children: React.ReactNode }) {
       <main className="flex-1 container max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-black tracking-tight">Profile</h1>
+          <p className="text-sm text-muted-foreground mt-1">Your Stackr V3 token holdings on Base mainnet</p>
         </div>
         {children}
       </main>
@@ -387,19 +349,15 @@ function SummaryCard({
   value,
   sub,
   highlight,
-  highlightColor = 'primary',
 }: {
   icon: React.ReactNode;
   label: string;
   value: string | null;
   sub: React.ReactNode;
   highlight?: boolean;
-  highlightColor?: 'primary' | 'amber';
 }) {
-  const isAmber = highlight && highlightColor === 'amber';
-  const isPrimary = highlight && highlightColor === 'primary';
   return (
-    <div className={`rounded-xl border bg-card p-4 transition-colors ${isAmber ? 'border-amber-500/30 bg-amber-500/5' : isPrimary ? 'border-primary/30 bg-primary/5' : 'border-border/60'}`}>
+    <div className={`rounded-xl border bg-card p-4 transition-colors ${highlight ? 'border-primary/30 bg-primary/5' : 'border-border/60'}`}>
       <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted-foreground mb-2">
         {icon}
         {label}
@@ -407,7 +365,7 @@ function SummaryCard({
       {value === null ? (
         <Skeleton className="h-6 w-24 bg-muted/40 mb-1" />
       ) : (
-        <div className={`text-lg font-bold tabular-nums leading-tight ${isAmber ? 'text-amber-400' : isPrimary ? 'text-primary' : 'text-foreground'}`}>
+        <div className={`text-lg font-bold tabular-nums leading-tight ${highlight ? 'text-primary' : 'text-foreground'}`}>
           {value}
         </div>
       )}
@@ -419,24 +377,18 @@ function SummaryCard({
 function StatCell({
   label,
   value,
-  sub,
   highlight,
-  highlightAmber,
 }: {
   label: string;
   value: string;
-  sub?: string;
   highlight?: boolean;
-  highlightAmber?: boolean;
 }) {
-  const color = highlightAmber ? 'text-amber-400' : highlight ? 'text-primary' : 'text-foreground/90';
   return (
     <div className="px-4 py-3">
       <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground/60 mb-0.5">{label}</div>
-      <div className={`text-[13px] font-semibold tabular-nums truncate ${color}`}>
+      <div className={`text-[13px] font-semibold tabular-nums truncate ${highlight ? 'text-primary' : 'text-foreground/90'}`}>
         {value}
       </div>
-      {sub && <div className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">{sub}</div>}
     </div>
   );
 }

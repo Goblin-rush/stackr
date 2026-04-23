@@ -110,17 +110,35 @@ export async function saveTokenMetadata(
   meta: Omit<TokenMetadata, 'createdAt'>,
 ): Promise<void> {
   saveTokenMetadataLocal(address, meta);
+  const key = address.toLowerCase();
   try {
-    await fetch(`/api/metadata?address=${address.toLowerCase()}`, {
+    await fetch(`/api/tokens/${key}/metadata`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(meta),
     });
     // Also seed remote cache so any open tab sees it without refetch.
-    remoteCache.set(address.toLowerCase(), { ...meta, createdAt: Date.now() });
+    remoteCache.set(key, { ...meta, createdAt: Date.now() });
     notify();
   } catch {
     // Server save failed — local copy still works for the creator.
+  }
+}
+
+/** Update just the image field for an existing token metadata record. */
+export async function updateTokenMetadataImage(address: string, imageUrl: string): Promise<void> {
+  const key = address.toLowerCase();
+  try {
+    await fetch(`/api/tokens/${key}/metadata`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: imageUrl }),
+    });
+    const existing = remoteCache.get(key);
+    remoteCache.set(key, { ...(existing ?? { createdAt: Date.now() }), image: imageUrl });
+    notify();
+  } catch {
+    // silent — local copy already updated
   }
 }
 
@@ -128,7 +146,7 @@ export async function saveTokenMetadata(
 export async function fetchTokenMetadataRemote(address: string): Promise<TokenMetadata | null> {
   const key = address.toLowerCase();
   try {
-    const r = await fetch(`/api/metadata?address=${key}`);
+    const r = await fetch(`/api/tokens/${key}/metadata`);
     if (r.status === 404) return null;
     if (!r.ok) return null;
     const meta = (await r.json()) as TokenMetadata;
@@ -143,7 +161,7 @@ export async function fetchTokenMetadataRemote(address: string): Promise<TokenMe
 /** Bulk prefetch all known token metadata into the cache. Called once at app boot. */
 export async function prefetchAllTokenMetadata(): Promise<void> {
   try {
-    const r = await fetch('/api/metadata');
+    const r = await fetch('/api/tokens/metadata');
     if (!r.ok) return;
     const all = (await r.json()) as Record<string, TokenMetadata>;
     for (const [addr, meta] of Object.entries(all)) {

@@ -1,5 +1,19 @@
 import { pgTable, text, bigint, serial, integer } from "drizzle-orm/pg-core";
 
+// ─── V3 Token Registry ────────────────────────────────────────────────────────
+
+export const tokenRecordsV3 = pgTable("token_records_v3", {
+  address: text("address").primaryKey(),
+  creator: text("creator").notNull(),
+  deployedAt: bigint("deployed_at", { mode: "number" }).notNull(),
+  metadataURI: text("metadata_uri"),
+  indexedAt: bigint("indexed_at", { mode: "number" }).notNull(),
+  blockNumber: bigint("block_number", { mode: "number" }),
+});
+
+export type TokenRecordV3Row = typeof tokenRecordsV3.$inferSelect;
+export type TokenRecordV3Insert = typeof tokenRecordsV3.$inferInsert;
+
 export const tokenMetadata = pgTable("token_metadata", {
   address: text("address").primaryKey(),
   website: text("website"),

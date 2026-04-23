@@ -1,7 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
-import { FACTORY_V2_ADDRESS, FACTORY_V2_ABI, TOKEN_V2_ABI, CURVE_V2_ABI, isHiddenToken } from '@/lib/contracts';
+import {
+  HOOK_V3_ADDRESS,
+  FACTORY_V3_ADDRESS,
+  FACTORY_V3_ABI,
+  TOKEN_V3_ABI,
+  isHiddenToken,
+} from '@/lib/contracts';
 
 export interface GlobalTrade {
   id: string;
@@ -14,15 +20,12 @@ export interface GlobalTrade {
   txHash: `0x${string}`;
 }
 
-// V2 events on CURVE contracts
-const BUY_EVENT = parseAbiItem(
-  'event Buy(address indexed buyer, uint256 ethIn, uint256 ethForCurve, uint256 tokensOut, uint256 progressBps)'
+// Hook events
+const TAX_COLLECTED_EVENT = parseAbiItem(
+  'event TaxCollected(bytes32 indexed poolId, bool isBuy, uint256 ethAmount, uint256 antiSnipeBps)'
 );
-const SELL_EVENT = parseAbiItem(
-  'event Sell(address indexed seller, uint256 tokensIn, uint256 ethOutGross, uint256 ethToUser, uint256 progressBps)'
-);
-const TOKEN_DEPLOYED = parseAbiItem(
-  'event TokenDeployed(address indexed token, address indexed curve, address indexed creator, string name, string symbol, string metadataURI, uint256 devBuyEth, uint256 devBuyTokens)'
+const POOL_REGISTERED_EVENT = parseAbiItem(
+  'event PoolRegistered(bytes32 indexed poolId, address indexed token)'
 );
 
 const KEEP = 40;
@@ -31,17 +34,15 @@ const BACKFILL_BLOCKS = 9_000n;
 export function useGlobalTradeTape(maxTokens = 200) {
   const client = usePublicClient();
   const [trades, setTrades] = useState<GlobalTrade[]>([]);
-  // Maps lowercase curveAddress → { tokenAddress, symbol }
-  const curveMapRef = useRef<Map<string, { tokenAddress: `0x${string}`; symbol: string }>>(new Map());
+  // Maps lowercase poolId → { tokenAddress, symbol }
+  const poolMapRef = useRef<Map<string, { tokenAddress: `0x${string}`; symbol: string }>>(new Map());
   const seenRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (!client || !FACTORY_V2_ADDRESS) return;
-    const factory = FACTORY_V2_ADDRESS;
+    if (!client || !FACTORY_V3_ADDRESS || !HOOK_V3_ADDRESS) return;
     let cancelled = false;
-    let unwatchBuy: (() => void) | undefined;
-    let unwatchSell: (() => void) | undefined;
-    let unwatchDeployed: (() => void) | undefined;
+    let unwatchTax: (() => void) | undefined;
+    let unwatchRegistered: (() => void) | undefined;
 
     const blockTsCache = new Map<bigint, number>();
     const getTs = async (bn: bigint) => {
@@ -62,40 +63,22 @@ export function useGlobalTradeTape(maxTokens = 200) {
       setTrades((cur) => [...incoming, ...cur].slice(0, KEEP));
     };
 
-    const subscribe = (curves: `0x${string}`[]) => {
-      unwatchBuy?.();
-      unwatchSell?.();
-      if (curves.length === 0) return;
-      unwatchBuy = client.watchEvent({
-        address: curves,
-        event: BUY_EVENT,
-        onLogs: (logs) => handleLive(logs, true),
-      });
-      unwatchSell = client.watchEvent({
-        address: curves,
-        event: SELL_EVENT,
-        onLogs: (logs) => handleLive(logs, false),
-      });
-    };
-
-    const handleLive = async (logs: Log[], isBuy: boolean) => {
+    const handleTaxCollected = async (logs: Log[]) => {
       const fresh: GlobalTrade[] = [];
       for (const l of logs as any[]) {
         const id = `${l.transactionHash}:${l.logIndex}`;
         if (seenRef.current.has(id)) continue;
         seenRef.current.add(id);
-        const curveAddr = (l.address as string).toLowerCase();
-        const entry = curveMapRef.current.get(curveAddr);
+        const poolId = (l.args.poolId as string).toLowerCase();
+        const entry = poolMapRef.current.get(poolId);
         if (!entry) continue;
-        const ethAmount = isBuy
-          ? Number(formatEther(l.args.ethIn as bigint))
-          : Number(formatEther(l.args.ethToUser as bigint));
-        const account = (isBuy ? l.args.buyer : l.args.seller) as `0x${string}`;
+        const isBuy = l.args.isBuy as boolean;
+        const ethAmount = Number(formatEther(l.args.ethAmount as bigint));
         const ts = await getTs(l.blockNumber);
         fresh.push({
           id,
           type: isBuy ? 'buy' : 'sell',
-          account,
+          account: '0x0000000000000000000000000000000000000000' as `0x${string}`,
           ethAmount,
           tokenAddress: entry.tokenAddress,
           symbol: entry.symbol,
@@ -103,26 +86,25 @@ export function useGlobalTradeTape(maxTokens = 200) {
           txHash: l.transactionHash as `0x${string}`,
         });
       }
-      pushTrades(fresh);
+      if (fresh.length > 0) pushTrades(fresh.reverse());
     };
 
     (async () => {
       try {
-        if (!factory) return;
-
-        // 1) Enumerate tokens from V2 factory
+        // 1) Enumerate tokens from V3 factory
         const total = (await client.readContract({
-          address: factory,
-          abi: FACTORY_V2_ABI,
-          functionName: 'allTokensLength',
+          address: FACTORY_V3_ADDRESS,
+          abi: FACTORY_V3_ABI,
+          functionName: 'totalTokens',
         })) as bigint;
-        const totalNum = Math.min(Number(total), maxTokens);
 
+        const totalNum = Math.min(Number(total), maxTokens);
         let tokenAddrs: `0x${string}`[] = [];
+
         if (totalNum > 0) {
           const calls = Array.from({ length: totalNum }, (_, i) => ({
-            address: factory,
-            abi: FACTORY_V2_ABI,
+            address: FACTORY_V3_ADDRESS,
+            abi: FACTORY_V3_ABI,
             functionName: 'allTokens' as const,
             args: [BigInt(i)],
           }));
@@ -134,108 +116,131 @@ export function useGlobalTradeTape(maxTokens = 200) {
 
         if (cancelled) return;
 
-        // 2) Get records (curve + symbol) via multicall
+        // 2) Get symbol for each token + poolId via PoolRegistered events
         if (tokenAddrs.length > 0) {
-          const CHUNK = 40;
-          for (let i = 0; i < tokenAddrs.length; i += CHUNK) {
-            const chunk = tokenAddrs.slice(i, i + CHUNK);
-            const recordCalls = chunk.map((t) => ({
-              address: factory,
-              abi: FACTORY_V2_ABI,
-              functionName: 'getRecord' as const,
-              args: [t] as [`0x${string}`],
-            }));
-            const symbolCalls = chunk.map((t) => ({
-              address: t,
-              abi: TOKEN_V2_ABI,
-              functionName: 'symbol' as const,
-            }));
-            const [recordRes, symbolRes] = await Promise.all([
-              client.multicall({ contracts: recordCalls, allowFailure: true }),
-              client.multicall({ contracts: symbolCalls, allowFailure: true }),
-            ]);
-            if (cancelled) return;
-            type RecordTuple = { token: `0x${string}`; curve: `0x${string}`; creator: `0x${string}`; deployedAt: bigint; metadataURI: string; initialDevBuyEth: bigint; initialDevBuyTokens: bigint };
-            chunk.forEach((tokenAddress, j) => {
-              const rec = recordRes[j]?.status === 'success' ? (recordRes[j].result as unknown as RecordTuple) : null;
-              const sym = symbolRes[j]?.status === 'success' ? (symbolRes[j].result as string) : '?';
-              if (rec?.curve) {
-                curveMapRef.current.set(rec.curve.toLowerCase(), { tokenAddress, symbol: sym });
-              }
-            });
+          const tip = await client.getBlockNumber();
+          const fromBlock = 0n; // need full history for PoolRegistered
+
+          const [poolRegisteredLogs, symbolResults] = await Promise.all([
+            client
+              .getLogs({
+                address: HOOK_V3_ADDRESS,
+                event: POOL_REGISTERED_EVENT,
+                fromBlock,
+                toBlock: tip,
+              })
+              .catch(() => [] as any[]),
+            client.multicall({
+              contracts: tokenAddrs.map((t) => ({
+                address: t,
+                abi: TOKEN_V3_ABI,
+                functionName: 'symbol' as const,
+              })),
+              allowFailure: true,
+            }),
+          ]);
+
+          if (cancelled) return;
+
+          // Build tokenAddress → symbol map
+          const symbolMap = new Map<string, string>();
+          tokenAddrs.forEach((addr, i) => {
+            const sym =
+              symbolResults[i]?.status === 'success'
+                ? (symbolResults[i].result as string)
+                : '?';
+            symbolMap.set(addr.toLowerCase(), sym);
+          });
+
+          // Build poolId → token map from PoolRegistered events
+          const knownTokenSet = new Set(tokenAddrs.map((a) => a.toLowerCase()));
+          for (const l of poolRegisteredLogs as any[]) {
+            const poolId = (l.args.poolId as string).toLowerCase();
+            const token = (l.args.token as string).toLowerCase() as `0x${string}`;
+            if (!knownTokenSet.has(token) || isHiddenToken(token)) continue;
+            const sym = symbolMap.get(token) ?? '?';
+            poolMapRef.current.set(poolId, { tokenAddress: token as `0x${string}`, symbol: sym });
           }
 
-          // 3) Backfill recent trades
-          const curveAddrs = Array.from(curveMapRef.current.keys()) as `0x${string}`[];
-          if (curveAddrs.length > 0) {
-            const tip = await client.getBlockNumber();
-            const fromBlock = tip > BACKFILL_BLOCKS ? tip - BACKFILL_BLOCKS : 0n;
-            const [buyLogs, sellLogs] = await Promise.all([
-              client.getLogs({ address: curveAddrs, event: BUY_EVENT, fromBlock, toBlock: tip }).catch(() => []),
-              client.getLogs({ address: curveAddrs, event: SELL_EVENT, fromBlock, toBlock: tip }).catch(() => []),
-            ]);
+          if (cancelled) return;
+
+          // 3) Backfill recent TaxCollected events
+          if (poolMapRef.current.size > 0) {
+            const taxLogs = await client
+              .getLogs({
+                address: HOOK_V3_ADDRESS,
+                event: TAX_COLLECTED_EVENT,
+                fromBlock: tip > BACKFILL_BLOCKS ? tip - BACKFILL_BLOCKS : 0n,
+                toBlock: tip,
+              })
+              .catch(() => [] as any[]);
+
             if (cancelled) return;
 
-            const all: Array<{ log: any; isBuy: boolean }> = [
-              ...(buyLogs as any[]).map((l) => ({ log: l, isBuy: true })),
-              ...(sellLogs as any[]).map((l) => ({ log: l, isBuy: false })),
-            ];
-            all.sort((a, b) => {
-              const bn = Number(b.log.blockNumber - a.log.blockNumber);
-              return bn !== 0 ? bn : Number((b.log.logIndex ?? 0) - (a.log.logIndex ?? 0));
-            });
-            const slice = all.slice(0, KEEP);
+            const filtered = (taxLogs as any[])
+              .filter((l) => poolMapRef.current.has((l.args.poolId as string).toLowerCase()))
+              .sort((a, b) => {
+                const bn = Number(b.blockNumber - a.blockNumber);
+                return bn !== 0 ? bn : (b.logIndex ?? 0) - (a.logIndex ?? 0);
+              })
+              .slice(0, KEEP);
 
-            const blocks = new Set<bigint>();
-            slice.forEach(({ log }) => blocks.add(log.blockNumber));
+            const blocks = new Set<bigint>(filtered.map((l: any) => l.blockNumber));
             await Promise.all(Array.from(blocks).map((b) => getTs(b)));
 
             const built: GlobalTrade[] = [];
-            for (const { log, isBuy } of slice) {
-              const id = `${log.transactionHash}:${log.logIndex}`;
+            for (const l of filtered) {
+              const id = `${l.transactionHash}:${l.logIndex}`;
               if (seenRef.current.has(id)) continue;
               seenRef.current.add(id);
-              const curveAddr = (log.address as string).toLowerCase();
-              const entry = curveMapRef.current.get(curveAddr);
+              const poolId = (l.args.poolId as string).toLowerCase();
+              const entry = poolMapRef.current.get(poolId);
               if (!entry) continue;
-              const ethAmount = isBuy
-                ? Number(formatEther(log.args.ethIn as bigint))
-                : Number(formatEther(log.args.ethToUser as bigint));
-              const account = (isBuy ? log.args.buyer : log.args.seller) as `0x${string}`;
               built.push({
                 id,
-                type: isBuy ? 'buy' : 'sell',
-                account,
-                ethAmount,
+                type: (l.args.isBuy as boolean) ? 'buy' : 'sell',
+                account: '0x0000000000000000000000000000000000000000' as `0x${string}`,
+                ethAmount: Number(formatEther(l.args.ethAmount as bigint)),
                 tokenAddress: entry.tokenAddress,
                 symbol: entry.symbol,
-                timestamp: blockTsCache.get(log.blockNumber) ?? Date.now(),
-                txHash: log.transactionHash as `0x${string}`,
+                timestamp: blockTsCache.get(l.blockNumber) ?? Date.now(),
+                txHash: l.transactionHash as `0x${string}`,
               });
             }
             if (built.length > 0) setTrades(built.slice(0, KEEP));
           }
         }
 
-        // 4) Subscribe to live trades on all known curves
-        subscribe(Array.from(curveMapRef.current.keys()) as `0x${string}`[]);
+        if (cancelled) return;
 
-        // 5) Watch new TokenDeployed to track new curves
-        unwatchDeployed = client.watchEvent({
-          address: factory,
-          event: TOKEN_DEPLOYED,
-          onLogs: (logs) => {
-            let added = false;
+        // 4) Subscribe to live TaxCollected events
+        unwatchTax = client.watchEvent({
+          address: HOOK_V3_ADDRESS,
+          event: TAX_COLLECTED_EVENT,
+          onLogs: (logs) => { if (!cancelled) void handleTaxCollected(logs); },
+        });
+
+        // 5) Watch for new PoolRegistered events (new token deployments)
+        unwatchRegistered = client.watchEvent({
+          address: HOOK_V3_ADDRESS,
+          event: POOL_REGISTERED_EVENT,
+          onLogs: async (logs) => {
+            if (cancelled) return;
             for (const l of logs as any[]) {
-              const tokenAddress = l.args.token as `0x${string}`;
-              const curveAddress = l.args.curve as `0x${string}`;
-              const sym = (l.args.symbol as string) || '?';
-              if (!curveMapRef.current.has(curveAddress.toLowerCase())) {
-                curveMapRef.current.set(curveAddress.toLowerCase(), { tokenAddress, symbol: sym });
-                added = true;
+              const poolId = (l.args.poolId as string).toLowerCase();
+              const token = (l.args.token as string).toLowerCase() as `0x${string}`;
+              if (poolMapRef.current.has(poolId) || isHiddenToken(token)) continue;
+              try {
+                const sym = (await client.readContract({
+                  address: token as `0x${string}`,
+                  abi: TOKEN_V3_ABI,
+                  functionName: 'symbol',
+                })) as string;
+                poolMapRef.current.set(poolId, { tokenAddress: token as `0x${string}`, symbol: sym });
+              } catch {
+                poolMapRef.current.set(poolId, { tokenAddress: token as `0x${string}`, symbol: '?' });
               }
             }
-            if (added) subscribe(Array.from(curveMapRef.current.keys()) as `0x${string}`[]);
           },
         });
       } catch {
@@ -245,9 +250,8 @@ export function useGlobalTradeTape(maxTokens = 200) {
 
     return () => {
       cancelled = true;
-      unwatchBuy?.();
-      unwatchSell?.();
-      unwatchDeployed?.();
+      unwatchTax?.();
+      unwatchRegistered?.();
     };
   }, [client, maxTokens]);
 

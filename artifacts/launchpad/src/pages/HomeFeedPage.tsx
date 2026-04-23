@@ -2,9 +2,8 @@ import { Navbar } from '@/components/layout/Navbar';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo } from 'react';
 import { Link } from 'wouter';
-import { useCurveConstants } from '@/hooks/use-curve-constants';
 import { Search, X, Plus, Rocket } from 'lucide-react';
 import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
 
@@ -17,15 +16,13 @@ function genAvatarUri(symbol: string): string {
   return `data:image/svg+xml;base64,${btoa(svg)}`;
 }
 
-type FeedSort = 'new' | 'movers' | 'graduated' | 'mcap' | 'oldest' | 'lasttrade';
+type FeedSort = 'new' | 'mcap' | 'oldest' | 'lasttrade';
 
 const SORT_TABS: { id: FeedSort; label: string }[] = [
-  { id: 'new', label: 'New' },
-  { id: 'movers', label: 'Top' },
-  { id: 'graduated', label: 'Graduated' },
-  { id: 'mcap', label: 'Mcap' },
-  { id: 'oldest', label: 'Oldest' },
+  { id: 'new',       label: 'New'    },
   { id: 'lasttrade', label: 'Recent' },
+  { id: 'mcap',      label: 'Mcap'   },
+  { id: 'oldest',    label: 'Oldest' },
 ];
 
 function timeAgo(ts: number | null): string {
@@ -46,13 +43,11 @@ function formatUsd(n: number): string {
 function sortTokens(tokens: FeedToken[], sort: FeedSort): FeedToken[] {
   const arr = [...tokens];
   switch (sort) {
-    case 'new':      return arr.sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0) || b.createdIndex - a.createdIndex);
-    case 'oldest':   return arr.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0) || a.createdIndex - b.createdIndex);
-    case 'movers':   return arr.filter((t) => !t.graduated).sort((a, b) => b.realEthRaised - a.realEthRaised);
-    case 'graduated':return arr.filter((t) => t.graduated).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
-    case 'mcap':     return arr.sort((a, b) => b.marketCapEth - a.marketCapEth);
-    case 'lasttrade':return arr.filter((t) => t.lastTradeMs).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
-    default:         return arr;
+    case 'new':       return arr.sort((a, b) => (b.createdAtMs ?? 0) - (a.createdAtMs ?? 0) || b.createdIndex - a.createdIndex);
+    case 'oldest':    return arr.sort((a, b) => (a.createdAtMs ?? 0) - (b.createdAtMs ?? 0) || a.createdIndex - b.createdIndex);
+    case 'mcap':      return arr.sort((a, b) => b.marketCapEth - a.marketCapEth);
+    case 'lasttrade': return arr.filter((t) => t.lastTradeMs).sort((a, b) => (b.lastTradeMs ?? 0) - (a.lastTradeMs ?? 0));
+    default:          return arr;
   }
 }
 
@@ -61,101 +56,19 @@ interface RowDisplay {
   symbol: string;
   name: string;
   image?: string;
-  graduated: boolean;
   priceLabel: string;
   mcapLabel: string;
-  raisedLabel: string;
-  progress: number;
+  tradeLabel: string;
   ageLabel: string;
   creatorLabel: string | null;
 }
 
-function accentColor(pct: number): string {
-  if (pct >= 85) return 'hsl(4 84% 58%)';
-  if (pct >= 60) return 'hsl(24 90% 55%)';
-  if (pct >= 30) return 'hsl(42 88% 50%)';
-  return 'hsl(142 66% 44%)';
-}
-
-/* ─── Animated progress bar ───────────────────────── */
-function ProgressBar({ pct, size = 'sm' }: { pct: number; size?: 'sm' | 'xs' }) {
-  const [displayed, setDisplayed] = useState(0);
-  const rafRef = useRef<number | null>(null);
-  const prevRef = useRef(0);
-
-  useEffect(() => {
-    const start = prevRef.current;
-    const end = Math.min(pct, 100);
-    const duration = 800;
-    const startTime = performance.now();
-    function step(now: number) {
-      const t = Math.min((now - startTime) / duration, 1);
-      const eased = 1 - Math.pow(1 - t, 3);
-      const val = start + (end - start) * eased;
-      setDisplayed(val);
-      if (t < 1) rafRef.current = requestAnimationFrame(step);
-      else prevRef.current = end;
-    }
-    rafRef.current = requestAnimationFrame(step);
-    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [pct]);
-
-  const h = size === 'sm' ? 'h-2' : 'h-1.5';
-
-  function barStyle(p: number): { gradient: string; glow: string } {
-    if (p >= 85) return {
-      gradient: 'linear-gradient(90deg, hsl(4 84% 46%) 0%, hsl(18 92% 64%) 100%)',
-      glow: '0 0 14px hsl(4 84% 58% / 0.55)',
-    };
-    if (p >= 60) return {
-      gradient: 'linear-gradient(90deg, hsl(24 90% 46%) 0%, hsl(36 92% 60%) 100%)',
-      glow: '0 0 12px hsl(24 90% 55% / 0.45)',
-    };
-    if (p >= 30) return {
-      gradient: 'linear-gradient(90deg, hsl(42 88% 42%) 0%, hsl(48 90% 56%) 100%)',
-      glow: '0 0 10px hsl(42 88% 50% / 0.40)',
-    };
-    return {
-      gradient: 'linear-gradient(90deg, hsl(142 66% 36%) 0%, hsl(152 68% 48%) 100%)',
-      glow: '0 0 10px hsl(142 66% 44% / 0.38)',
-    };
-  }
-
-  const { gradient, glow } = barStyle(pct);
-
-  return (
-    <div className={`relative ${h} w-full bg-white/5 rounded-full overflow-hidden border border-white/6`}>
-      <div
-        className="absolute top-0 left-0 h-full rounded-full overflow-hidden"
-        style={{
-          width: `${displayed}%`,
-          background: gradient,
-          boxShadow: displayed > 3 ? glow : 'none',
-          transition: 'box-shadow 0.3s ease',
-        }}
-      >
-        <span
-          className="absolute inset-0"
-          style={{
-            background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 50%, transparent 100%)',
-            animation: 'shimmer 2.2s ease-in-out infinite',
-          }}
-        />
-      </div>
-    </div>
-  );
-}
-
-/* ─── Standard row card ──────────────────────────── */
 function Row({ d }: { d: RowDisplay }) {
   return (
     <Link href={d.href}>
       <div className="relative rounded-xl bg-card border border-border/60 mb-2.5 cursor-pointer group card-hover overflow-hidden">
-        {/* Left accent bar — color follows bonding curve progress */}
-        <div
-          className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl transition-all"
-          style={{ backgroundColor: accentColor(d.progress), opacity: 0.7 }}
-        />
+        {/* Left accent bar */}
+        <div className="absolute left-0 top-0 bottom-0 w-0.5 rounded-l-xl bg-primary opacity-40" />
 
         {/* Header */}
         <div className="flex items-center border-b border-border/40 pl-3 gap-2.5">
@@ -173,34 +86,23 @@ function Row({ d }: { d: RowDisplay }) {
               {d.creatorLabel ? `${d.creatorLabel} · ` : ''}{d.ageLabel}
             </p>
           </div>
-          {d.graduated && (
-            <span className="self-center mr-3 text-[9px] font-semibold tracking-wider text-primary bg-primary/12 border border-primary/30 rounded-full px-2 py-0.5">
-              DEX
-            </span>
-          )}
+          <span className="self-center mr-3 text-[9px] font-semibold tracking-wider text-primary bg-primary/12 border border-primary/30 rounded-full px-2 py-0.5">
+            V4
+          </span>
         </div>
 
         {/* Data row */}
         <div className="grid grid-cols-3 pl-3">
           {[
-            { label: 'PRICE', value: d.priceLabel },
-            { label: 'MCAP',  value: d.mcapLabel },
-            { label: 'RAISED', value: d.raisedLabel },
+            { label: 'PRICE',      value: d.priceLabel  },
+            { label: 'MCAP',       value: d.mcapLabel   },
+            { label: 'LAST TRADE', value: d.tradeLabel  },
           ].map((cell, i) => (
             <div key={cell.label} className={`px-3 py-2.5 ${i < 2 ? 'border-r border-border/40' : ''}`}>
               <div className="text-[9px] font-semibold tracking-widest text-muted-foreground/60 mb-0.5 uppercase">{cell.label}</div>
               <div className="text-[12px] font-semibold tabular-nums text-foreground/90 truncate">{cell.value}</div>
             </div>
           ))}
-        </div>
-
-        {/* Progress */}
-        <div className="px-4 pb-3 pt-2.5 pl-4.5">
-          <div className="flex justify-between items-center mb-2">
-            <span className="text-[9px] font-semibold tracking-widest text-muted-foreground/60 uppercase">Curve → DEX</span>
-            <span className="text-[11px] font-semibold tabular-nums text-foreground/80">{d.progress.toFixed(0)}%</span>
-          </div>
-          <ProgressBar pct={d.progress} size="xs" />
         </div>
       </div>
     </Link>
@@ -213,8 +115,6 @@ function shortAddr(a: string | null): string | null {
 }
 
 function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | undefined }) {
-  const { targetEth } = useCurveConstants();
-  const progress = Math.min((token.realEthRaised / targetEth) * 100, 100);
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
   const meta = useTokenMetadata(token.address);
@@ -226,14 +126,14 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
         symbol: token.symbol || '?',
         name: token.name || 'Unnamed',
         image,
-        graduated: token.graduated,
         priceLabel: priceUsd
-          ? `$${priceUsd.toFixed(priceUsd < 0.01 ? 8 : 4)}`
-          : token.currentPriceEth.toExponential(2),
-        mcapLabel: mcUsd ? formatUsd(mcUsd) : `${token.marketCapEth.toFixed(2)} ETH`,
-        raisedLabel: `${token.realEthRaised.toFixed(3)} / ${targetEth} ETH`,
-        progress,
-        ageLabel: timeAgo(token.lastTradeMs ?? token.createdAtMs),
+          ? `$${priceUsd < 0.01 ? priceUsd.toFixed(8) : priceUsd.toFixed(4)}`
+          : token.currentPriceEth > 0
+          ? `${token.currentPriceEth.toExponential(2)} ETH`
+          : '—',
+        mcapLabel: mcUsd ? formatUsd(mcUsd) : token.marketCapEth > 0 ? `${token.marketCapEth.toFixed(2)} ETH` : '—',
+        tradeLabel: token.lastTradeMs ? timeAgo(token.lastTradeMs) : '—',
+        ageLabel: timeAgo(token.createdAtMs),
         creatorLabel: shortAddr(token.creator),
       }}
     />
@@ -323,7 +223,7 @@ export default function HomeFeedPage() {
         {isLoading ? (
           <div className="space-y-2.5">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="h-28 bg-card/60 border border-border/40 rounded-xl animate-pulse" />
+              <div key={i} className="h-24 bg-card/60 border border-border/40 rounded-xl animate-pulse" />
             ))}
           </div>
         ) : filtered.length > 0 ? (
@@ -339,7 +239,7 @@ export default function HomeFeedPage() {
             </div>
             <h2 className="text-base font-bold mb-2">No tokens launched yet</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
-              Be the first to launch a token on Base mainnet via the bonding curve.
+              Be the first to launch a token on Base mainnet via Uniswap V4.
             </p>
             <button
               onClick={() => setIsCreateOpen(true)}
