@@ -143,10 +143,11 @@ export function useChainTokenLive(
       const amount1 = l.args.amount1 as bigint;
       const sqrtPriceX96 = l.args.sqrtPriceX96 as bigint;
 
-      // amount0 > 0 → pool received ETH → user paid ETH → BUY
-      const isBuy = amount0 > 0n;
-      const ethAmount = isBuy ? amount0 : -amount0; // always positive
-      const tokenAmount = isBuy ? -amount1 : amount1; // always positive
+      // amount0 < 0 → hook paid ETH into pool → user bought token → BUY
+      // amount0 > 0 → hook received ETH from pool → user sold token → SELL
+      const isBuy = amount0 < 0n;
+      const ethAmount = isBuy ? -amount0 : amount0; // always positive
+      const tokenAmount = isBuy ? amount1 : -amount1; // always positive
 
       const ethAmountNum = Number(formatEther(ethAmount));
       const tokenAmountNum = tokenAmount > 0n ? Number(formatEther(tokenAmount)) : 0;
@@ -272,9 +273,9 @@ export function useChainTokenLive(
           const amount0 = l.args.amount0 as bigint;
           const amount1 = l.args.amount1 as bigint;
           const sqrtPriceX96 = l.args.sqrtPriceX96 as bigint;
-          const isBuy = amount0 > 0n;
-          const ethAmount = isBuy ? amount0 : -amount0;
-          const tokenAmount = isBuy ? -amount1 : amount1;
+          const isBuy = amount0 < 0n;
+          const ethAmount = isBuy ? -amount0 : amount0;
+          const tokenAmount = isBuy ? amount1 : -amount1;
           trades.push({
             id: tradeIdRef.current++,
             type: isBuy ? 'buy' : 'sell',
