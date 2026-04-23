@@ -63,7 +63,7 @@ contract StackrFactoryV3 is Ownable, ReentrancyGuard {
 
     // ─── Core contracts ───────────────────────────────────────────
     IPoolManager  public immutable poolManager;
-    StackrHookV3  public immutable hook;
+    StackrHookV3  public hook;
 
     // ─── Token registry ───────────────────────────────────────────
     struct TokenRecord {
@@ -94,6 +94,7 @@ contract StackrFactoryV3 is Ownable, ReentrancyGuard {
     event PlatformFeesWithdrawn(address indexed to, uint256 amount);
     event PlatformFeeReceived(address indexed fromToken, uint256 amount);
     event LPWithdrawn(address indexed token, address indexed to);
+    event HookUpdated(address indexed oldHook, address indexed newHook);
 
     // ─── Constructor ─────────────────────────────────────────────
 
@@ -105,6 +106,18 @@ contract StackrFactoryV3 is Ownable, ReentrancyGuard {
         require(address(_hook)        != address(0), "Bad hook");
         poolManager = _poolManager;
         hook        = _hook;
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    //  ADMIN
+    // ═════════════════════════════════════════════════════════════
+
+    /// @notice Update the hook to a new address (e.g. after hook re-deployment).
+    ///         Only callable by the factory owner.
+    function updateHook(address payable newHook) external onlyOwner {
+        require(newHook != address(0), "Bad hook");
+        emit HookUpdated(address(hook), newHook);
+        hook = StackrHookV3(newHook);
     }
 
     // ═════════════════════════════════════════════════════════════
