@@ -1,8 +1,8 @@
 /**
  * Auto-Distributor — cron job that runs every 5 minutes.
  *
- * For each V3 token registered in the DB:
- *  1. Computes the Uniswap V4 poolId from the token address.
+ * For each V3 token in the DB (per chain):
+ *  1. Computes the Uniswap V4 poolId from the token address + hook address.
  *  2. Reads accumulatedEthClaims[poolId] from StackrHookV3.
  *  3. If the accumulated amount exceeds DISTRIBUTE_THRESHOLD, calls
  *     distributeTax(key) on the hook contract.
@@ -24,21 +24,40 @@ import {
   type Hex,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { base } from 'viem/chains';
+import { base, mainnet } from 'viem/chains';
 import { db, tokenRecordsV3 } from '@workspace/db';
+import { eq } from 'drizzle-orm';
 import { logger } from './logger';
 
-// ─── Config ─────────────────────────────────────────────────────────────────
+// ─── Chain configs ────────────────────────────────────────────────────────────
 
-const HOOK_ADDRESS    = '0x216f7C96Bcfd65a572b408D152D39945a00900cc' as Address;
-const POOL_FEE        = 3000;        // 0.3% Uniswap V4 LP fee
+const CHAINS = [
+  {
+    chainId: 8453,
+    name: 'base',
+    chain: base,
+    hookAddress: '0x216f7C96Bcfd65a572b408D152D39945a00900cc' as Address,
+    getRpc: () => process.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org',
+  },
+  {
+    chainId: 1,
+    name: 'ethereum',
+    chain: mainnet,
+    hookAddress: '0x76F3624d08D120162377F9Ba195362293C2440cC' as Address,
+    getRpc: () => process.env.ETH_RPC_URL || 'https://eth.llamarpc.com',
+  },
+] as const;
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const POOL_FEE        = 3000;
 const TICK_SPACING    = 60;
-const INTERVAL_MS     = 5 * 60_000; // 5 minutes
+const INTERVAL_MS     = 5 * 60_000;
 
 /** Only trigger distributeTax when pending rewards > this threshold (0.0001 ETH). */
 const DISTRIBUTE_THRESHOLD = parseEther('0.0001');
 
-// ─── Minimal ABIs ────────────────────────────────────────────────────────────
+// ─── Minimal ABIs ─────────────────────────────────────────────────────────────
 
 const HOOK_ABI = [
   {
@@ -67,97 +86,94 @@ const HOOK_ABI = [
   },
 ] as const;
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function computePoolId(tokenAddress: Address): Hex {
+function computePoolId(tokenAddress: Address, hookAddress: Address): Hex {
   return keccak256(
     encodeAbiParameters(
       parseAbiParameters('address, address, uint24, int24, address'),
-      [zeroAddress, tokenAddress, POOL_FEE, TICK_SPACING, HOOK_ADDRESS],
+      [zeroAddress, tokenAddress, POOL_FEE, TICK_SPACING, hookAddress],
     ),
   );
 }
 
-function buildPoolKey(tokenAddress: Address) {
+function buildPoolKey(tokenAddress: Address, hookAddress: Address) {
   return {
     currency0:   zeroAddress as Address,
     currency1:   tokenAddress,
     fee:         POOL_FEE,
     tickSpacing: TICK_SPACING,
-    hooks:       HOOK_ADDRESS,
+    hooks:       hookAddress,
   };
 }
 
-function getClients() {
-  const rpcUrl    = process.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org';
-  const rawKey    = process.env.Private_key as Hex | undefined;
+// ─── Per-chain distributor ────────────────────────────────────────────────────
 
-  if (!rawKey) throw new Error('Private_key env var not set — keeper cannot sign transactions');
+async function runChain(cfg: typeof CHAINS[number], rawKey: Hex) {
+  const account      = privateKeyToAccount(rawKey);
+  const publicClient = createPublicClient({ chain: cfg.chain, transport: http(cfg.getRpc()) });
+  const walletClient = createWalletClient({ chain: cfg.chain, transport: http(cfg.getRpc()), account });
 
-  const account       = privateKeyToAccount(rawKey);
-  const publicClient  = createPublicClient({ chain: base, transport: http(rpcUrl) });
-  const walletClient  = createWalletClient({ chain: base, transport: http(rpcUrl), account });
-
-  return { publicClient, walletClient, account };
-}
-
-// ─── Core logic ──────────────────────────────────────────────────────────────
-
-async function runOnce() {
-  const { publicClient, walletClient } = getClients();
-
-  // Load every registered V3 token from the DB.
-  const tokens = await db.select({ address: tokenRecordsV3.address }).from(tokenRecordsV3);
+  const tokens = await db
+    .select({ address: tokenRecordsV3.address })
+    .from(tokenRecordsV3)
+    .where(eq(tokenRecordsV3.chainId, cfg.chainId));
 
   if (tokens.length === 0) return;
 
   for (const { address } of tokens) {
     const tokenAddress = address as Address;
-    const poolId       = computePoolId(tokenAddress);
+    const poolId       = computePoolId(tokenAddress, cfg.hookAddress);
 
     let accumulated: bigint;
     try {
       accumulated = await publicClient.readContract({
-        address: HOOK_ADDRESS,
+        address: cfg.hookAddress,
         abi: HOOK_ABI,
         functionName: 'accumulatedEthClaims',
         args: [poolId],
       });
     } catch (err: any) {
-      logger.warn({ token: tokenAddress, err: err?.message }, 'distributor: failed to read accumulatedEthClaims');
+      logger.warn({ chain: cfg.name, token: tokenAddress, err: err?.message }, 'distributor: failed to read accumulatedEthClaims');
       continue;
     }
 
     if (accumulated < DISTRIBUTE_THRESHOLD) {
-      logger.debug({ token: tokenAddress, accumulated: accumulated.toString() }, 'distributor: below threshold, skipping');
+      logger.debug({ chain: cfg.name, token: tokenAddress, accumulated: accumulated.toString() }, 'distributor: below threshold, skipping');
       continue;
     }
 
-    logger.info({ token: tokenAddress, accumulated: accumulated.toString() }, 'distributor: calling distributeTax');
+    logger.info({ chain: cfg.name, token: tokenAddress, accumulated: accumulated.toString() }, 'distributor: calling distributeTax');
 
     try {
       const txHash = await walletClient.writeContract({
-        address: HOOK_ADDRESS,
+        address: cfg.hookAddress,
         abi: HOOK_ABI,
         functionName: 'distributeTax',
-        args: [buildPoolKey(tokenAddress)],
+        args: [buildPoolKey(tokenAddress, cfg.hookAddress)],
       });
-      logger.info({ token: tokenAddress, txHash }, 'distributor: distributeTax sent');
+      logger.info({ chain: cfg.name, token: tokenAddress, txHash }, 'distributor: distributeTax sent');
 
       await publicClient.waitForTransactionReceipt({ hash: txHash, timeout: 60_000 });
-      logger.info({ token: tokenAddress, txHash }, 'distributor: distributeTax confirmed');
+      logger.info({ chain: cfg.name, token: tokenAddress, txHash }, 'distributor: distributeTax confirmed');
     } catch (err: any) {
-      logger.error({ token: tokenAddress, err: err?.message }, 'distributor: distributeTax failed');
+      logger.error({ chain: cfg.name, token: tokenAddress, err: err?.message }, 'distributor: distributeTax failed');
     }
   }
 }
 
-// ─── Exported starter ────────────────────────────────────────────────────────
+// ─── Main tick ────────────────────────────────────────────────────────────────
+
+async function runOnce(rawKey: Hex) {
+  await Promise.allSettled(CHAINS.map((cfg) => runChain(cfg, rawKey)));
+}
+
+// ─── Exported starter ─────────────────────────────────────────────────────────
 
 let running = false;
 
 export function startAutoDistributor() {
-  const rawKey = process.env.Private_key;
+  const rawKey = process.env.Private_key as Hex | undefined;
   if (!rawKey) {
     logger.warn('distributor: Private_key not set — auto-distributor disabled');
     return;
@@ -167,7 +183,7 @@ export function startAutoDistributor() {
     if (running) return;
     running = true;
     try {
-      await runOnce();
+      await runOnce(rawKey);
     } catch (err: any) {
       logger.error({ err: err?.message }, 'distributor: error');
     } finally {
@@ -177,5 +193,5 @@ export function startAutoDistributor() {
 
   void tick();
   setInterval(tick, INTERVAL_MS);
-  logger.info('distributor: started (5-min interval)');
+  logger.info('distributor: started (5-min interval, base + ethereum)');
 }

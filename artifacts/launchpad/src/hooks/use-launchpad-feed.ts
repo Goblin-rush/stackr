@@ -2,15 +2,13 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
 import {
-  FACTORY_V3_ADDRESS,
   FACTORY_V3_ABI,
   TOKEN_V3_ABI,
-  HOOK_V3_ADDRESS,
-  POOL_MANAGER_V4_ADDRESS,
   computePoolId,
   sqrtPriceX96ToEthPerToken,
   isHiddenToken,
 } from '@/lib/contracts';
+import { useV3Contracts } from '@/hooks/use-v3-contracts';
 
 export interface FeedToken {
   address: `0x${string}`;
@@ -57,9 +55,10 @@ const MULTICALL_CHUNK = 30;
 
 export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
   const client = usePublicClient();
+  const { factoryAddress, hookAddress, poolManagerAddress } = useV3Contracts();
   const [state, setState] = useState<LaunchpadFeedState>({
     tokens: [],
-    isLoading: !!FACTORY_V3_ADDRESS,
+    isLoading: !!factoryAddress,
     loadError: null,
     refresh: () => {},
   });
@@ -104,7 +103,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
   }, [refresh]);
 
   useEffect(() => {
-    if (!client || !FACTORY_V3_ADDRESS) return;
+    if (!client || !factoryAddress) return;
     let cancelled = false;
     let unwatchSwap: (() => void) | undefined;
     let unwatchDeployed: (() => void) | undefined;
@@ -117,7 +116,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
       try {
         // 1) Enumerate all tokens from V3 factory
         const total = (await client.readContract({
-          address: FACTORY_V3_ADDRESS,
+          address: factoryAddress,
           abi: FACTORY_V3_ABI,
           functionName: 'totalTokens',
         })) as bigint;
@@ -127,7 +126,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
 
         if (totalNum > 0) {
           const calls = Array.from({ length: totalNum }, (_, i) => ({
-            address: FACTORY_V3_ADDRESS,
+            address: factoryAddress,
             abi: FACTORY_V3_ABI,
             functionName: 'allTokens' as const,
             args: [BigInt(i)],
@@ -148,7 +147,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
           const metaCalls = chunk.flatMap((t) => [
             { address: t, abi: TOKEN_V3_ABI, functionName: 'name' as const },
             { address: t, abi: TOKEN_V3_ABI, functionName: 'symbol' as const },
-            { address: FACTORY_V3_ADDRESS, abi: FACTORY_V3_ABI, functionName: 'getRecord' as const, args: [t] as [`0x${string}`] },
+            { address: factoryAddress, abi: FACTORY_V3_ABI, functionName: 'getRecord' as const, args: [t] as [`0x${string}`] },
           ]);
 
           const results = await client.multicall({ contracts: metaCalls, allowFailure: true });
@@ -165,8 +164,8 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
             const creator = record?.creator as `0x${string}` | null;
             const deployedAt = record?.deployedAt ? Number(record.deployedAt) * 1000 : null;
 
-            // Compute poolId from token address
-            const poolId = computePoolId(t).toLowerCase();
+            // Compute poolId from token address (chain-aware hook)
+            const poolId = computePoolId(t, hookAddress).toLowerCase();
             poolIdToTokenRef.current.set(poolId, t.toLowerCase());
 
             tokensRef.current.set(t.toLowerCase(), {
@@ -195,7 +194,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
           if (cancelled) return;
           const chunk = tokenList.slice(i, i + CHUNK_PRICE);
           const slot0Calls = chunk.map((t) => ({
-            address: POOL_MANAGER_V4_ADDRESS,
+            address: poolManagerAddress,
             abi: [
               {
                 name: 'getSlot0',
@@ -211,7 +210,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
               },
             ] as const,
             functionName: 'getSlot0' as const,
-            args: [computePoolId(t as `0x${string}`)] as [`0x${string}`],
+            args: [computePoolId(t as `0x${string}`, hookAddress)] as [`0x${string}`],
           }));
 
           const slot0Results = await client.multicall({ contracts: slot0Calls, allowFailure: true }).catch(() => []);
@@ -239,7 +238,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
 
         const taxLogs = await client
           .getLogs({
-            address: HOOK_V3_ADDRESS,
+            address: hookAddress,
             event: TAX_COLLECTED_EVENT,
             fromBlock,
             toBlock: tip,
@@ -270,7 +269,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
         // 5) Subscribe to live PoolManager Swap events for price updates
         // Watch all swaps and filter by known poolIds in the handler
         unwatchSwap = client.watchEvent({
-          address: POOL_MANAGER_V4_ADDRESS,
+          address: poolManagerAddress,
           event: SWAP_EVENT,
           onLogs: (logs: Log[]) => {
             if (cancelled) return;
@@ -295,7 +294,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
 
         // 6) Watch for new token deployments
         unwatchDeployed = client.watchEvent({
-          address: FACTORY_V3_ADDRESS,
+          address: factoryAddress,
           event: TOKEN_DEPLOYED_EVENT,
           onLogs: async (logs: Log[]) => {
             if (cancelled) return;
@@ -304,7 +303,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
               const tokenAddr = (l.args.token as string).toLowerCase() as `0x${string}`;
               if (tokensRef.current.has(tokenAddr) || isHiddenToken(tokenAddr)) continue;
               const ts = await getBlockTs(l.blockNumber);
-              const poolId = computePoolId(tokenAddr as `0x${string}`).toLowerCase();
+              const poolId = computePoolId(tokenAddr as `0x${string}`, hookAddress).toLowerCase();
               poolIdToTokenRef.current.set(poolId, tokenAddr);
               const newIndex = tokensRef.current.size;
               tokensRef.current.set(tokenAddr, {
@@ -342,7 +341,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
       unwatchDeployed?.();
       unwatchTax?.();
     };
-  }, [client, maxTokens, reloadKey, getBlockTs, publishTokens]);
+  }, [client, factoryAddress, hookAddress, poolManagerAddress, maxTokens, reloadKey, getBlockTs, publishTokens]);
 
   return state;
 }

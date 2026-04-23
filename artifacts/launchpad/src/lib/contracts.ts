@@ -376,15 +376,57 @@ export const CURVE_V2_ABI = [
 ] as const;
 
 // ═══════════════════════════════════════════════════════════════════
-//  STACKR V3 — Base mainnet, Uniswap V4 hook, no bonding curve
+//  STACKR V3 — Multi-chain, Uniswap V4 hook, no bonding curve
 // ═══════════════════════════════════════════════════════════════════
 
+// Base mainnet (chainId 8453)
 export const HOOK_V3_ADDRESS    = '0x216f7C96Bcfd65a572b408D152D39945a00900cc' as `0x${string}`;
 export const FACTORY_V3_ADDRESS = '0xc01e4b239eA7cF7abaB4A9ECbc03cc51a656C76f' as `0x${string}`;
+
+// Ethereum mainnet (chainId 1)
+export const ETH_HOOK_V3_ADDRESS    = '0x76F3624d08D120162377F9Ba195362293C2440cC' as `0x${string}`;
+export const ETH_FACTORY_V3_ADDRESS = '0x6d9907040C25C0B3675bbAcef54a3c42710826E9' as `0x${string}`;
 
 // Old V3 addresses (still deployed; LP withdrawal available via admin page)
 export const OLD_HOOK_V3_ADDRESS    = '0x5965F3Ce0d494ecB339C9efa4e794846373F40cc' as `0x${string}`;
 export const OLD_FACTORY_V3_ADDRESS = '0xe61CDb592851082a9Ab316937C9d1dD4550856C5' as `0x${string}`;
+
+export interface V3Contracts {
+  hookAddress:        `0x${string}`;
+  factoryAddress:     `0x${string}`;
+  poolManagerAddress: `0x${string}`;
+  chainId:            number;
+  explorerUrl:        string;
+  chainName:          string;
+  chainShort:         string;
+}
+
+export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
+  8453: {
+    hookAddress:        HOOK_V3_ADDRESS,
+    factoryAddress:     FACTORY_V3_ADDRESS,
+    poolManagerAddress: '0x498581ff718922c3f8e6a244956af099b2652b2b' as `0x${string}`,
+    chainId:            8453,
+    explorerUrl:        'https://basescan.org',
+    chainName:          'Base',
+    chainShort:         'BASE',
+  },
+  1: {
+    hookAddress:        ETH_HOOK_V3_ADDRESS,
+    factoryAddress:     ETH_FACTORY_V3_ADDRESS,
+    poolManagerAddress: '0x000000000004444c5dc75cB358380D2e3dE08A90' as `0x${string}`,
+    chainId:            1,
+    explorerUrl:        'https://etherscan.io',
+    chainName:          'Ethereum',
+    chainShort:         'ETH',
+  },
+};
+
+export const SUPPORTED_CHAIN_IDS = [8453, 1] as const;
+
+export function getV3Contracts(chainId: number): V3Contracts {
+  return V3_CONTRACTS_BY_CHAIN[chainId] ?? V3_CONTRACTS_BY_CHAIN[8453];
+}
 
 // V3 fee structure
 export const V3_BASE_TAX_BPS    = 300;  // 3% total swap tax
@@ -637,9 +679,10 @@ export function getAntiSnipeStatus(lastBuyAtSec: bigint | number | undefined, no
 }
 
 // ═══════════════════════════════════════════════════════════════════
-//  UNISWAP V4 — Base mainnet infrastructure
+//  UNISWAP V4 — Per-chain infrastructure (see V3_CONTRACTS_BY_CHAIN)
 // ═══════════════════════════════════════════════════════════════════
 
+// Default to Base (kept for backwards compatibility)
 export const POOL_MANAGER_V4_ADDRESS = '0x498581ff718922c3f8e6a244956af099b2652b2b' as `0x${string}`;
 
 export const POOL_MANAGER_V4_ABI = [
@@ -780,8 +823,14 @@ export const V3_TICK_SPACING   = 60;
  * Compute the V4 PoolId (bytes32) for a given token address.
  * PoolId = keccak256(abi.encode(currency0, currency1, fee, tickSpacing, hooks))
  * where currency0 = address(0) (ETH), currency1 = token, fee=3000, tickSpacing=60.
+ *
+ * @param tokenAddress  - The ERC-20 token address.
+ * @param hookAddress   - The hook address for this chain (defaults to Base hook).
  */
-export function computePoolId(tokenAddress: `0x${string}`): `0x${string}` {
+export function computePoolId(
+  tokenAddress: `0x${string}`,
+  hookAddress: `0x${string}` = HOOK_V3_ADDRESS,
+): `0x${string}` {
   return keccak256(
     encodeAbiParameters(
       [
@@ -796,7 +845,7 @@ export function computePoolId(tokenAddress: `0x${string}`): `0x${string}` {
         tokenAddress,
         V3_POOL_FEE,
         V3_TICK_SPACING,
-        HOOK_V3_ADDRESS,
+        hookAddress,
       ]
     )
   );

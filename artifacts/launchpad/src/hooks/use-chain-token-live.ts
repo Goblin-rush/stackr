@@ -2,11 +2,10 @@ import { useEffect, useRef, useState, useCallback } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
 import {
-  POOL_MANAGER_V4_ADDRESS,
-  HOOK_V3_ADDRESS,
   computePoolId,
   sqrtPriceX96ToEthPerToken,
 } from '@/lib/contracts';
+import { useV3Contracts } from '@/hooks/use-v3-contracts';
 import type { LiveTrade, LiveHolder } from '@/types/live';
 
 // V4 PoolManager Swap event
@@ -61,6 +60,7 @@ export function useChainTokenLive(
   _curveAddress?: `0x${string}` | undefined
 ): ChainLiveState {
   const client = usePublicClient();
+  const { hookAddress, poolManagerAddress } = useV3Contracts();
   const [state, setState] = useState<ChainLiveState>({
     trades: [],
     holders: [],
@@ -82,7 +82,7 @@ export function useChainTokenLive(
   const recomputeHolders = useCallback((): LiveHolder[] => {
     const totalScaled = BigInt(TOTAL_SUPPLY) * 10n ** 18n;
     const list: LiveHolder[] = [];
-    const lowerPool = POOL_MANAGER_V4_ADDRESS.toLowerCase();
+    const lowerPool = poolManagerAddress.toLowerCase();
     for (const [addr, bal] of balancesRef.current.entries()) {
       if (bal <= 0n) continue;
       const isPool = addr.toLowerCase() === lowerPool;
@@ -97,7 +97,7 @@ export function useChainTokenLive(
     }
     list.sort((a, b) => b.percent - a.percent);
     return list.slice(0, HOLDER_TOP);
-  }, []);
+  }, [poolManagerAddress]);
 
   const getBlockTimestamp = useCallback(
     async (blockNumber: bigint): Promise<number> => {
@@ -127,7 +127,7 @@ export function useChainTokenLive(
     seenSwapRef.current = new Set();
     seenTransferRef.current = new Set();
 
-    const poolId = computePoolId(tokenAddress);
+    const poolId = computePoolId(tokenAddress, hookAddress);
 
     const earlySwapBuffer: any[] = [];
     const earlyTransferBuffer: any[] = [];
@@ -201,7 +201,7 @@ export function useChainTokenLive(
 
         // Start watchers before backfill to avoid missing live events
         unwatchSwap = client.watchEvent({
-          address: POOL_MANAGER_V4_ADDRESS,
+          address: poolManagerAddress,
           event: SWAP_EVENT,
           args: { id: poolId },
           onLogs: (logs: Log[]) => {
@@ -235,7 +235,7 @@ export function useChainTokenLive(
         const [swapLogs, transferLogs] = await Promise.all([
           client
             .getLogs({
-              address: POOL_MANAGER_V4_ADDRESS,
+              address: poolManagerAddress,
               event: SWAP_EVENT,
               args: { id: poolId },
               fromBlock,
@@ -343,7 +343,7 @@ export function useChainTokenLive(
       unwatchSwap?.();
       unwatchTransfer?.();
     };
-  }, [tokenAddress, client, getBlockTimestamp, recomputeHolders]);
+  }, [tokenAddress, client, hookAddress, poolManagerAddress, getBlockTimestamp, recomputeHolders]);
 
   return state;
 }

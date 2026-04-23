@@ -11,10 +11,10 @@ import { metaMask } from 'wagmi/connectors';
 import { formatEther, parseEther } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
 import {
-  FACTORY_V3_ADDRESS,
   FACTORY_V3_ABI,
   TOKEN_V3_ABI,
 } from '@/lib/contracts';
+import { useV3Contracts } from '@/hooks/use-v3-contracts';
 import { Shield, AlertTriangle, ExternalLink, DollarSign, Database } from 'lucide-react';
 import NotFound from '@/pages/not-found';
 
@@ -25,12 +25,13 @@ function shortAddr(a: string) {
 export default function AdminPage() {
   const { address, isConnected } = useAccount();
   const { connect } = useConnect();
+  const { factoryAddress, explorerUrl, chainName } = useV3Contracts();
 
   const { data: factoryOwner, isLoading: ownerLoading } = useReadContract({
-    address: FACTORY_V3_ADDRESS ?? undefined,
+    address: factoryAddress ?? undefined,
     abi: FACTORY_V3_ABI,
     functionName: 'owner',
-    query: { enabled: !!FACTORY_V3_ADDRESS },
+    query: { enabled: !!factoryAddress },
   });
 
   const isAdmin =
@@ -50,15 +51,15 @@ export default function AdminPage() {
           <Shield className="h-5 w-5 text-primary" />
           <h1 className="text-2xl font-black tracking-tight">Admin Console</h1>
           <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded">
-            V3 · Uniswap V4
+            V3 · Uniswap V4 · {chainName}
           </span>
         </div>
 
-        {!FACTORY_V3_ADDRESS ? (
+        {!factoryAddress ? (
           <div className="border border-amber-500/20 bg-amber-500/5 rounded-md p-6 text-center">
             <AlertTriangle className="h-8 w-8 text-amber-400 mx-auto mb-2" />
             <p className="text-sm text-amber-200 font-mono">
-              FACTORY_V3_ADDRESS not configured.
+              Factory not configured for this network.
             </p>
           </div>
         ) : !isConnected ? (
@@ -79,15 +80,15 @@ export default function AdminPage() {
             Verifying admin access…
           </div>
         ) : (
-          <AdminDashboard adminAddress={address!} />
+          <AdminDashboard adminAddress={address!} factoryAddress={factoryAddress} explorerUrl={explorerUrl} />
         )}
       </main>
     </div>
   );
 }
 
-function AdminDashboard({ adminAddress }: { adminAddress: string }) {
-  const factory = FACTORY_V3_ADDRESS!;
+function AdminDashboard({ adminAddress, factoryAddress, explorerUrl }: { adminAddress: string; factoryAddress: `0x${string}`; explorerUrl: string }) {
+  const factory = factoryAddress;
 
   const { data: statsData, refetch: refetchStats } = useReadContracts({
     contracts: [
@@ -147,7 +148,7 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
     <div className="space-y-6">
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="Connected as" value={shortAddr(adminAddress)} />
-        <StatCard label="Factory V3" value={shortAddr(factory)} link={`https://basescan.org/address/${factory}`} />
+        <StatCard label="Factory V3" value={shortAddr(factory)} link={`${explorerUrl}/address/${factory}`} />
         <StatCard label="Tokens deployed" value={total.toString()} />
         <StatCard label="Platform fees (ETH)" value={Number(formatEther(pendingFees)).toFixed(4)} highlight />
       </div>
@@ -191,7 +192,7 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
         {withdrawDone && (
           <p className="mt-2 text-[11px] text-emerald-400 font-mono">
             Withdrawn.{' '}
-            <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline">
+            <a href={`${explorerUrl}/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline">
               View tx
             </a>
           </p>
@@ -212,7 +213,7 @@ function AdminDashboard({ adminAddress }: { adminAddress: string }) {
         ) : (
           <div className="space-y-2">
             {tokenAddresses.map((addr) => (
-              <AdminTokenRow key={addr} tokenAddress={addr} adminAddress={adminAddress as `0x${string}`} />
+              <AdminTokenRow key={addr} tokenAddress={addr} adminAddress={adminAddress as `0x${string}`} factoryAddress={factory} explorerUrl={explorerUrl} />
             ))}
           </div>
         )}
@@ -246,11 +247,15 @@ function StatCard({ label, value, link, highlight }: { label: string; value: str
 function AdminTokenRow({
   tokenAddress,
   adminAddress,
+  factoryAddress,
+  explorerUrl,
 }: {
   tokenAddress: `0x${string}`;
   adminAddress: `0x${string}`;
+  factoryAddress: `0x${string}`;
+  explorerUrl: string;
 }) {
-  const factory = FACTORY_V3_ADDRESS!;
+  const factory = factoryAddress;
 
   const { data: recordData } = useReadContract({
     address: factory,
@@ -328,7 +333,7 @@ function AdminTokenRow({
 
           <div className="flex items-center gap-3 mt-1 flex-wrap">
             <a
-              href={`https://basescan.org/address/${tokenAddress}`}
+              href={`${explorerUrl}/address/${tokenAddress}`}
               target="_blank"
               rel="noreferrer"
               className="text-[11px] font-mono text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
@@ -395,7 +400,7 @@ function AdminTokenRow({
       {done && (
         <p className="mt-2 text-[11px] text-emerald-400 font-mono">
           Done.{' '}
-          <a href={`https://basescan.org/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline">
+          <a href={`${explorerUrl}/tx/${txHash}`} target="_blank" rel="noreferrer" className="underline">
             View tx
           </a>
         </p>

@@ -1,10 +1,8 @@
 /**
  * V3 Chain Indexer — cron job that runs every 60 seconds.
  *
- * Jobs:
- *  1. Reads PoolRegistered events from StackrFactoryV3 and stores
- *     new tokens in the token_records_v3 table.
- *  2. Tracks the last indexed block in indexer_cursors.
+ * Indexes TokenDeployed events from both Base and Ethereum mainnet factories.
+ * Each chain has its own cursor in indexer_cursors.
  */
 
 import {
@@ -13,77 +11,91 @@ import {
   parseAbiItem,
   type Address,
 } from 'viem';
-import { base } from 'viem/chains';
+import { base, mainnet } from 'viem/chains';
 import { db, tokenRecordsV3, indexerCursors } from '@workspace/db';
 import { eq } from 'drizzle-orm';
 import { logger } from './logger';
 
-const FACTORY_V3 = '0xc01e4b239eA7cF7abaB4A9ECbc03cc51a656C76f' as Address;
-const CURSOR_ID  = 'v3-token-indexer-v4';
-const BATCH           = 9_000n;
-// On first run (no cursor), look back this many blocks to catch historical tokens.
-// ~500k blocks ≈ 11 days at 2s/block on Base.
-const INITIAL_LOOKBACK = 500_000n;
+// ─── Chain configs ────────────────────────────────────────────────────────────
 
-const POOL_REGISTERED_EVENT = parseAbiItem(
-  'event PoolRegistered(bytes32 indexed poolId, address indexed token)'
-);
+const CHAINS = [
+  {
+    chainId: 8453,
+    name: 'base',
+    chain: base,
+    factory: '0xc01e4b239eA7cF7abaB4A9ECbc03cc51a656C76f' as Address,
+    cursorId: 'v3-token-indexer-v4',
+    getRpc: () => process.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org',
+    initialLookback: 500_000n,
+    batch: 9_000n,
+  },
+  {
+    chainId: 1,
+    name: 'ethereum',
+    chain: mainnet,
+    factory: '0x6d9907040C25C0B3675bbAcef54a3c42710826E9' as Address,
+    cursorId: 'v3-token-indexer-eth-mainnet',
+    getRpc: () => process.env.ETH_RPC_URL || 'https://eth.llamarpc.com',
+    initialLookback: 50_000n,
+    batch: 2_000n,
+  },
+] as const;
+
+// ─── Events ───────────────────────────────────────────────────────────────────
 
 const TOKEN_DEPLOYED_EVENT = parseAbiItem(
   'event TokenDeployed(address indexed token, address indexed creator, string name, string symbol, string metadataURI)'
 );
 
-function getClient() {
-  const rpcUrl = process.env.VITE_BASE_RPC_URL || 'https://mainnet.base.org';
-  return createPublicClient({ chain: base, transport: http(rpcUrl) });
-}
+// ─── Cursor helpers ───────────────────────────────────────────────────────────
 
-async function getCursor(): Promise<bigint | null> {
+async function getCursor(cursorId: string): Promise<bigint | null> {
   const rows = await db
     .select()
     .from(indexerCursors)
-    .where(eq(indexerCursors.id, CURSOR_ID))
+    .where(eq(indexerCursors.id, cursorId))
     .limit(1);
   return rows[0] ? BigInt(rows[0].lastBlock) : null;
 }
 
-async function saveCursor(block: bigint) {
+async function saveCursor(cursorId: string, block: bigint) {
   await db
     .insert(indexerCursors)
-    .values({ id: CURSOR_ID, lastBlock: Number(block), updatedAt: Date.now() })
+    .values({ id: cursorId, lastBlock: Number(block), updatedAt: Date.now() })
     .onConflictDoUpdate({
       target: indexerCursors.id,
       set: { lastBlock: Number(block), updatedAt: Date.now() },
     });
 }
 
-async function runOnce() {
-  const client = getClient();
+// ─── Per-chain indexer ────────────────────────────────────────────────────────
+
+async function runChain(cfg: typeof CHAINS[number]) {
+  const client = createPublicClient({
+    chain: cfg.chain,
+    transport: http(cfg.getRpc()),
+  });
 
   const tip = await client.getBlockNumber();
-  const cursor = await getCursor();
+  const cursor = await getCursor(cfg.cursorId);
 
-  // First run: look back INITIAL_LOOKBACK blocks to catch historical deployments.
   const from = cursor !== null
     ? cursor + 1n
-    : (tip > INITIAL_LOOKBACK ? tip - INITIAL_LOOKBACK : 0n);
+    : (tip > cfg.initialLookback ? tip - cfg.initialLookback : 0n);
 
-  if (from > tip) return; // Nothing to index.
+  if (from > tip) return;
 
-  // Process in BATCH-sized windows.
-  for (let start = from; start <= tip; start += BATCH) {
-    const end = start + BATCH - 1n > tip ? tip : start + BATCH - 1n;
+  for (let start = from; start <= tip; start += cfg.batch) {
+    const end = start + cfg.batch - 1n > tip ? tip : start + cfg.batch - 1n;
 
-    // Fetch TokenDeployed events (carries creator + metadataURI)
     const deployedLogs = await client.getLogs({
-      address: FACTORY_V3,
+      address: cfg.factory,
       event: TOKEN_DEPLOYED_EVENT,
       fromBlock: start,
       toBlock: end,
     }).catch(() => []);
 
     if (deployedLogs.length > 0) {
-      // Fetch block timestamps for new tokens.
       const blockNums = Array.from(new Set(deployedLogs.map((l) => l.blockNumber)));
       const tsByBlock = new Map<bigint, number>();
       await Promise.all(
@@ -98,30 +110,42 @@ async function runOnce() {
       );
 
       for (const l of deployedLogs) {
-        const tokenAddr = (l.args as any).token as string;
-        const creator   = (l.args as any).creator as string;
-        const metaURI   = (l.args as any).metadataURI as string | undefined;
+        const tokenAddr  = (l.args as any).token as string;
+        const creator    = (l.args as any).creator as string;
+        const metaURI    = (l.args as any).metadataURI as string | undefined;
         const deployedAt = tsByBlock.get(l.blockNumber) ?? Math.floor(Date.now() / 1000);
 
         await db
           .insert(tokenRecordsV3)
           .values({
-            address: tokenAddr.toLowerCase(),
-            creator: creator.toLowerCase(),
+            address:     tokenAddr.toLowerCase(),
+            creator:     creator.toLowerCase(),
             deployedAt,
             metadataURI: metaURI ?? null,
-            indexedAt: Date.now(),
+            indexedAt:   Date.now(),
             blockNumber: Number(l.blockNumber),
+            chainId:     cfg.chainId,
           })
           .onConflictDoNothing();
       }
 
-      logger.info({ count: deployedLogs.length, from: String(start), to: String(end) }, 'indexer: indexed tokens');
+      logger.info(
+        { chain: cfg.name, count: deployedLogs.length, from: String(start), to: String(end) },
+        'indexer: indexed tokens'
+      );
     }
 
-    await saveCursor(end);
+    await saveCursor(cfg.cursorId, end);
   }
 }
+
+// ─── Main tick ────────────────────────────────────────────────────────────────
+
+async function runOnce() {
+  await Promise.allSettled(CHAINS.map(runChain));
+}
+
+// ─── Exported starter ─────────────────────────────────────────────────────────
 
 let running = false;
 
@@ -138,8 +162,7 @@ export function startIndexer() {
     }
   };
 
-  // Run immediately, then every 60 seconds.
   void tick();
   setInterval(tick, 60_000);
-  logger.info('indexer: started (60s interval)');
+  logger.info('indexer: started (60s interval, base + ethereum)');
 }

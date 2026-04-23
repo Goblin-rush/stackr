@@ -2,17 +2,16 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAccount, usePublicClient, useBlockNumber } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
 import { Link } from 'wouter';
-import { formatEther, formatUnits } from 'viem';
+import { formatUnits } from 'viem';
 import { Navbar } from '@/components/layout/Navbar';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import {
-  FACTORY_V3_ADDRESS,
   FACTORY_V3_ABI,
   TOKEN_V3_ABI,
-  POOL_MANAGER_V4_ADDRESS,
   computePoolId,
   sqrtPriceX96ToEthPerToken,
 } from '@/lib/contracts';
+import { useV3Contracts } from '@/hooks/use-v3-contracts';
 import { Wallet, Coins, ExternalLink, TrendingUp } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -53,6 +52,7 @@ export default function DashboardPage() {
   const { open } = useAppKit();
   const client = usePublicClient();
   const { data: ethPrice } = useEthPrice();
+  const { factoryAddress, poolManagerAddress, hookAddress, explorerUrl, chainName } = useV3Contracts();
   const [holdings, setHoldings] = useState<Holding[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -68,11 +68,11 @@ export default function DashboardPage() {
   }, [blockNumber]);
 
   useEffect(() => {
-    if (!isConnected || !address || !client || !FACTORY_V3_ADDRESS) {
+    if (!isConnected || !address || !client || !factoryAddress) {
       setHoldings(null);
       return;
     }
-    const factory = FACTORY_V3_ADDRESS;
+    const factory = factoryAddress;
     let cancelled = false;
     setLoading(true);
     setError(null);
@@ -135,10 +135,10 @@ export default function DashboardPage() {
 
         // Get current price via PoolManager.getSlot0
         const slot0Calls = candidates.map((t) => ({
-          address: POOL_MANAGER_V4_ADDRESS,
+          address: poolManagerAddress,
           abi: SLOT0_ABI,
           functionName: 'getSlot0' as const,
-          args: [computePoolId(t)] as [`0x${string}`],
+          args: [computePoolId(t, hookAddress)] as [`0x${string}`],
         }));
         const slot0Results = await client.multicall({ contracts: slot0Calls, allowFailure: true }).catch(() => []);
 
@@ -175,7 +175,7 @@ export default function DashboardPage() {
     })();
 
     return () => { cancelled = true; };
-  }, [address, isConnected, client, refreshKey]);
+  }, [address, isConnected, client, factoryAddress, poolManagerAddress, hookAddress, refreshKey]);
 
   const totals = useMemo(() => {
     if (!holdings) return null;
@@ -186,9 +186,9 @@ export default function DashboardPage() {
     return { portfolioEth, count: holdings.length };
   }, [holdings]);
 
-  if (!FACTORY_V3_ADDRESS) {
+  if (!factoryAddress) {
     return (
-      <Shell>
+      <Shell chainName={chainName}>
         <EmptyState
           icon={<TrendingUp className="h-8 w-8 text-muted-foreground" />}
           title="Dashboard not yet active"
@@ -200,7 +200,7 @@ export default function DashboardPage() {
 
   if (!isConnected) {
     return (
-      <Shell>
+      <Shell chainName={chainName}>
         <div className="flex flex-col items-center justify-center py-24 text-center">
           <div className="w-14 h-14 rounded-full bg-muted/30 border border-border flex items-center justify-center mb-5">
             <Wallet className="h-6 w-6 text-muted-foreground" />
@@ -221,7 +221,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <Shell>
+    <Shell chainName={chainName}>
       {/* Summary stats */}
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 mb-8">
         <SummaryCard
@@ -297,7 +297,7 @@ export default function DashboardPage() {
                     </div>
                   </Link>
                   <a
-                    href={`https://basescan.org/address/${h.token}`}
+                    href={`${explorerUrl}/address/${h.token}`}
                     target="_blank"
                     rel="noreferrer noopener"
                     className="text-muted-foreground/40 hover:text-muted-foreground transition-colors"
@@ -328,14 +328,16 @@ export default function DashboardPage() {
   );
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children, chainName }: { children: React.ReactNode; chainName?: string }) {
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <Navbar />
       <main className="flex-1 container max-w-5xl mx-auto px-4 py-8 md:px-8 md:py-10">
         <div className="mb-8">
           <h1 className="text-2xl font-black tracking-tight">Profile</h1>
-          <p className="text-sm text-muted-foreground mt-1">Your Stackr V3 token holdings on Base mainnet</p>
+          <p className="text-sm text-muted-foreground mt-1">
+            Your Stackr V3 token holdings{chainName ? ` on ${chainName}` : ''}
+          </p>
         </div>
         {children}
       </main>

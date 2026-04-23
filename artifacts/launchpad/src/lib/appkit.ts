@@ -1,6 +1,6 @@
 import { createAppKit } from '@reown/appkit/react';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
-import { base } from '@reown/appkit/networks';
+import { base, mainnet } from '@reown/appkit/networks';
 
 const projectId = import.meta.env.VITE_WALLETCONNECT_PROJECT_ID as string;
 
@@ -8,7 +8,7 @@ if (!projectId) {
   throw new Error('VITE_WALLETCONNECT_PROJECT_ID is required');
 }
 
-export const networks = [base] as [typeof base, ...typeof base[]];
+export const networks = [base, mainnet] as [typeof base, ...typeof base[]];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,

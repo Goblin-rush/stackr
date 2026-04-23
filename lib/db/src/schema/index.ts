@@ -9,6 +9,7 @@ export const tokenRecordsV3 = pgTable("token_records_v3", {
   metadataURI: text("metadata_uri"),
   indexedAt: bigint("indexed_at", { mode: "number" }).notNull(),
   blockNumber: bigint("block_number", { mode: "number" }),
+  chainId: integer("chain_id").notNull().default(8453),
 });
 
 export type TokenRecordV3Row = typeof tokenRecordsV3.$inferSelect;

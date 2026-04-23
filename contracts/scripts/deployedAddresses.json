@@ -1,11 +1,7 @@
 {
-  "network": "base",
-  "poolManager": "0x498581ff718922c3f8e6a244956af099b2652b2b",
-  "hook": "0x5965F3Ce0d494ecB339C9efa4e794846373F40cc",
-  "factory": "0xe61CDb592851082a9Ab316937C9d1dD4550856C5",
-  "deployedAt": "2026-04-23T17:45:29.031Z",
-  "current": {
-    "hook": "0x216f7C96Bcfd65a572b408D152D39945a00900cc",
-    "factory": "0xc01e4b239eA7cF7abaB4A9ECbc03cc51a656C76f"
-  }
+  "network": "mainnet",
+  "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
+  "hook": "0x76F3624d08D120162377F9Ba195362293C2440cC",
+  "factory": "0x6d9907040C25C0B3675bbAcef54a3c42710826E9",
+  "deployedAt": "2026-04-23T23:11:41.911Z"
 }
