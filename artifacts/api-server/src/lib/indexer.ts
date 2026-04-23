@@ -18,8 +18,8 @@ import { db, tokenRecordsV3, indexerCursors } from '@workspace/db';
 import { eq } from 'drizzle-orm';
 import { logger } from './logger';
 
-const FACTORY_V3 = '0xCC218ec9ae8E968666618C11877119ddc6A368C4' as Address;
-const CURSOR_ID  = 'v3-token-indexer';
+const FACTORY_V3 = '0xc01e4b239eA7cF7abaB4A9ECbc03cc51a656C76f' as Address;
+const CURSOR_ID  = 'v3-token-indexer-v4';
 const BATCH           = 9_000n;
 // On first run (no cursor), look back this many blocks to catch historical tokens.
 // ~500k blocks ≈ 11 days at 2s/block on Base.
