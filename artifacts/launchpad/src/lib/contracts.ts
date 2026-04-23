@@ -375,8 +375,8 @@ export const CURVE_V2_ABI = [
 //  STACKR V3 — Base mainnet, Uniswap V4 hook, no bonding curve
 // ═══════════════════════════════════════════════════════════════════
 
-export const HOOK_V3_ADDRESS    = '0xF10b1c50281fDb01111515cc1b2Ab92D70fB40cC' as `0x${string}`;
-export const FACTORY_V3_ADDRESS = '0x2CA2fe3ce3a1d8B6876e36c7a7a546FBF80d933e' as `0x${string}`;
+export const HOOK_V3_ADDRESS    = '0x1927Ed1B24A5E6DCEDA54A5e17258B19994480Cc' as `0x${string}`;
+export const FACTORY_V3_ADDRESS = '0x7b52badc77204AF17D24FaBd96b0c81fC35c0207' as `0x${string}`;
 
 // V3 fee structure
 export const V3_BASE_TAX_BPS    = 300;  // 3% total swap tax
@@ -394,7 +394,7 @@ export const FACTORY_V3_ABI = [
   {
     name: 'createToken',
     type: 'function',
-    stateMutability: 'nonpayable',
+    stateMutability: 'payable',
     inputs: [
       { name: 'name',        type: 'string' },
       { name: 'symbol',      type: 'string' },
