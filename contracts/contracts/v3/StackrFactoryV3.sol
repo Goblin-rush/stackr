@@ -50,12 +50,15 @@ contract StackrFactoryV3 is Ownable, ReentrancyGuard {
 
     // ─── Virtual floor price (off-chain pre-computed) ─────────────
     // VIRTUAL_ETH = 3 ETH, TOTAL_SUPPLY = 1B tokens (both 18 decimals)
-    // price_per_token_eth = 3e18 / 1e27 = 3e-9 ETH per token
-    // sqrtPriceX96 = sqrt(3e-9) * 2^96 ≈ 4,337,385,640,896,646,285,286,817
+    // price (token/ETH) = 1B / 3 ≈ 333,333,333 tokens per ETH (cheap token at launch)
+    // V4 sqrtPriceX96 = sqrt(token/ETH) * 2^96 = sqrt(333333333) * 2^96
+    //                 = 1442432316960066433403385752322048
+    // This corresponds to tick 196200 (aligned to tickSpacing 60).
+    // Pool starts at tickUpper of the LP range → LP is all-token, no ETH required.
     //
     // Auditors: verify with:
-    //   python3 -c "import math; print(int(math.sqrt(3e18/1e27) * 2**96))"
-    uint160 public constant VIRTUAL_SQRT_PRICE_X96 = 4_337_385_640_896_646_285_286_817;
+    //   node -e "const Q96=2n**96n; console.log((BigInt(Math.round(Math.sqrt(333333333)*Number(Q96))).toString()))"
+    uint160 public constant VIRTUAL_SQRT_PRICE_X96 = 1_442_432_316_960_066_433_403_385_752_322_048;
 
     // Tick spacing for 0.3% LP fee tier (fee = 3000)
     int24  public constant TICK_SPACING = 60;
