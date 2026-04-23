@@ -112,6 +112,9 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
     /// @dev Tracks the liquidity units seeded per pool so withdrawLP knows how much to remove.
     mapping(bytes32 => uint128) public lpLiquidity;
 
+    /// @dev Tracks the tickUpper used when seeding LP so removeLiquidity uses matching bounds.
+    mapping(bytes32 => int24) internal lpTickUpper;
+
     // ─── Events ───────────────────────────────────────────────────
     event FactorySet(address indexed factory);
     event PoolRegistered(bytes32 indexed poolId, address indexed token);
@@ -563,29 +566,33 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
         // 1. Initialize pool at the virtual floor price. Returns the current tick.
         int24 currentTick = poolManager.initialize(p.key, p.sqrtPriceX96);
 
-        // 2. Single-sided token-only LP: position entirely ABOVE current price.
-        //    This way only token1 (the Stackr token) is required — no ETH needed.
+        // 2. Single-sided token-only LP: position from MIN_TICK up to currentTick.
         //
-        //    tickLower = next tick boundary ABOVE currentTick (rounded up to tickSpacing).
-        //    tickUpper = max valid tick for tickSpacing 60.
+        //    At currentTick == tickUpper (pool initialized at exactly the top of the range):
+        //      amount0 (ETH) = L * (1/sqrtLower - 1/sqrtUpper) but since sqrtUpper==sqrtCurrent
+        //                    = 0  → no ETH required ✓
+        //      amount1 (token) = L * (sqrtUpper - sqrtLower)  → all tokens ✓
         //
-        //    Auditors [V4-SINGLE-SIDED]: when tickLower > currentTick, Uniswap V4
-        //    computes amount0 (ETH) = 0 and amount1 (token) = L*(sqrtUpper-sqrtLower)/Q96.
-        //    No ETH settlement is required.
+        //    As buys happen (zeroForOne=true, tick decreases below tickUpper):
+        //      tokens flow OUT of LP to buyers, ETH flows IN → bonding curve works ✓
+        //
+        //    tickUpper = currentTick rounded DOWN to tickSpacing alignment.
+        //    tickLower = -887220 (minimum valid tick for tickSpacing 60).
         int24 tickSpacing = p.key.tickSpacing;
-        int24 tickLower   = _nextTickAbove(currentTick, tickSpacing);
-        int24 tickUpper   = 887220;
+        int24 tickUpper   = (currentTick / tickSpacing) * tickSpacing;
+        int24 tickLower   = -887220;
 
-        // 3. Compute liquidity from token amount for a single-sided position.
-        //    For a position (tickLower, tickUpper) entirely above current price:
+        // 3. Compute liquidity from token amount.
+        //    At currentTick == tickUpper:
         //      amount1 = L * (sqrtUpper - sqrtLower) / Q96
         //    Solving for L:
         //      L = tokenAmount * Q96 / (sqrtUpper - sqrtLower)
-        //    We use the pre-computed sqrtPrice at the full-range bounds (±887220) as
-        //    constants.  Since sqrtUpper >> sqrtLower the approximation error is <0.01%.
+        //    sqrtUpper ≈ p.sqrtPriceX96 (initial price = top of range)
+        //    sqrtLower ≈ SQRT_PRICE_AT_MIN_TICK (negligible, ~4e9)
         uint256 Q96 = 2 ** 96;
-        uint256 liquidity = (p.tokenAmount * Q96) /
-            (SQRT_PRICE_AT_MAX_TICK - SQRT_PRICE_AT_MIN_TICK);
+        uint256 denominator = uint256(p.sqrtPriceX96) - SQRT_PRICE_AT_MIN_TICK;
+        require(denominator > 0, "Bad sqrtPrice");
+        uint256 liquidity = (p.tokenAmount * Q96) / denominator;
         require(liquidity > 0, "Zero liquidity");
 
         IPoolManager.ModifyLiquidityParams memory liqParams = IPoolManager.ModifyLiquidityParams({
@@ -597,9 +604,10 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
 
         (BalanceDelta callerDelta, ) = poolManager.modifyLiquidity(p.key, liqParams, "");
 
-        // Store seeded liquidity units so withdrawLP knows how much to remove later.
+        // Store seeded liquidity units and tick bounds so withdrawLP can remove later.
         bytes32 pid = _poolId(p.key);
-        lpLiquidity[pid] = uint128(liquidity);
+        lpLiquidity[pid]  = uint128(liquidity);
+        lpTickUpper[pid]  = tickUpper;
 
         // 4. Settle token debt (currency1 = the Stackr token).
         int128 token1Delta = callerDelta.amount1();
@@ -700,10 +708,14 @@ contract StackrHookV3 is ReentrancyGuard, IUnlockCallback {
     function _handleRemoveLiquidity(RemoveLiquidityPayload memory p) internal {
         bytes32 poolId = _poolId(p.key);
 
+        // Read stored tick bounds from when LP was seeded.
+        int24 storedTickUpper = lpTickUpper[poolId];
+        if (storedTickUpper == 0) storedTickUpper = 196200; // fallback for pre-fix pools
+
         // Remove all tracked liquidity from the pool.
         IPoolManager.ModifyLiquidityParams memory liqParams = IPoolManager.ModifyLiquidityParams({
             tickLower:      -887220,
-            tickUpper:       887220,
+            tickUpper:       storedTickUpper,
             liquidityDelta: -int256(uint256(p.liquidity)),
             salt:           bytes32(0)
         });
