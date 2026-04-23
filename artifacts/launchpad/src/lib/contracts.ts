@@ -375,8 +375,8 @@ export const CURVE_V2_ABI = [
 //  STACKR V3 — Base mainnet, Uniswap V4 hook, no bonding curve
 // ═══════════════════════════════════════════════════════════════════
 
-export const HOOK_V3_ADDRESS    = '0x1927Ed1B24A5E6DCEDA54A5e17258B19994480Cc' as `0x${string}`;
-export const FACTORY_V3_ADDRESS = '0x7b52badc77204AF17D24FaBd96b0c81fC35c0207' as `0x${string}`;
+export const HOOK_V3_ADDRESS    = '0x7C96cAb69CC3599f8dDABEAbEa35E7D2128Cc0cc' as `0x${string}`;
+export const FACTORY_V3_ADDRESS = '0xCC218ec9ae8E968666618C11877119ddc6A368C4' as `0x${string}`;
 
 // V3 fee structure
 export const V3_BASE_TAX_BPS    = 300;  // 3% total swap tax
@@ -700,6 +700,67 @@ export const HOOK_V3_ABI = [
       { name: 'ethReceived',  type: 'uint256', indexed: false },
       { name: 'tokensReceived', type: 'uint256', indexed: false },
     ],
+  },
+  {
+    name: 'BuyExecuted',
+    type: 'event',
+    inputs: [
+      { name: 'poolId',     type: 'bytes32', indexed: true  },
+      { name: 'buyer',      type: 'address', indexed: true  },
+      { name: 'ethIn',      type: 'uint256', indexed: false },
+      { name: 'tokensOut',  type: 'uint256', indexed: false },
+    ],
+  },
+  {
+    name: 'SellExecuted',
+    type: 'event',
+    inputs: [
+      { name: 'poolId',     type: 'bytes32', indexed: true  },
+      { name: 'seller',     type: 'address', indexed: true  },
+      { name: 'tokensIn',   type: 'uint256', indexed: false },
+      { name: 'ethOut',     type: 'uint256', indexed: false },
+    ],
+  },
+  // ── Public buy: send ETH, receive tokens ─────────────────────────
+  {
+    name: 'buy',
+    type: 'function',
+    stateMutability: 'payable',
+    inputs: [
+      {
+        name: 'key',
+        type: 'tuple',
+        components: [
+          { name: 'currency0',   type: 'address' },
+          { name: 'currency1',   type: 'address' },
+          { name: 'fee',         type: 'uint24'  },
+          { name: 'tickSpacing', type: 'int24'   },
+          { name: 'hooks',       type: 'address' },
+        ],
+      },
+    ],
+    outputs: [],
+  },
+  // ── Public sell: approve + send tokens, receive ETH ──────────────
+  {
+    name: 'sell',
+    type: 'function',
+    stateMutability: 'nonpayable',
+    inputs: [
+      {
+        name: 'key',
+        type: 'tuple',
+        components: [
+          { name: 'currency0',   type: 'address' },
+          { name: 'currency1',   type: 'address' },
+          { name: 'fee',         type: 'uint24'  },
+          { name: 'tickSpacing', type: 'int24'   },
+          { name: 'hooks',       type: 'address' },
+        ],
+      },
+      { name: 'tokenAmount', type: 'uint256' },
+    ],
+    outputs: [],
   },
 ] as const;
 
