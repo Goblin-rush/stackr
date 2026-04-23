@@ -16,7 +16,7 @@ import {
 } from '@/lib/contracts';
 import { Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useTokenMetadata, ipfsToHttp, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata, updateTokenMetadataImage } from '@/lib/token-metadata';
+import { useTokenMetadata, ipfsToHttp, ipfsNextGateway, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata, updateTokenMetadataImage } from '@/lib/token-metadata';
 import { uploadImage } from '@/lib/upload';
 import { toast } from 'sonner';
 
@@ -49,6 +49,8 @@ export default function TokenDetailPage() {
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
   const [copiedCA, setCopiedCA] = useState(false);
   const [imgUpdating, setImgUpdating] = useState(false);
+  const [displayImgSrc, setDisplayImgSrc] = useState<string | null>(null);
+  const imgGatewayTriedRef = useRef(false);
   const imgInputRef = useRef<HTMLInputElement>(null);
   const { address: walletAddress } = useAccount();
 
@@ -96,7 +98,15 @@ export default function TokenDetailPage() {
   };
 
   const imgUrl = ipfsToHttp(meta?.image);
-  const avatarSrc = imgUrl || (symbol ? genAvatarUri(symbol) : '');
+  const fallbackAvatar = symbol ? genAvatarUri(symbol) : '';
+  const resolvedImgSrc = displayImgSrc ?? imgUrl ?? fallbackAvatar;
+
+  useEffect(() => {
+    imgGatewayTriedRef.current = false;
+    setDisplayImgSrc(imgUrl);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meta?.image]);
+
   const web = normalizeWebsite(meta?.website);
   const tw = normalizeTwitter(meta?.twitter);
   const tg = normalizeTelegram(meta?.telegram);
@@ -150,7 +160,20 @@ export default function TokenDetailPage() {
                   <div className="flex items-start gap-3 min-w-0">
                     <div className="relative w-12 h-12 shrink-0 mt-0.5 group">
                       <div className="w-12 h-12 rounded-xl overflow-hidden border border-border/30 bg-muted">
-                        {avatarSrc && <img src={avatarSrc} alt={symbol || ''} className="w-full h-full object-cover" />}
+                        {resolvedImgSrc && (
+                          <img
+                            src={resolvedImgSrc}
+                            alt={symbol || ''}
+                            className="w-full h-full object-cover"
+                            onError={() => {
+                              if (!imgGatewayTriedRef.current && resolvedImgSrc) {
+                                const next = ipfsNextGateway(resolvedImgSrc);
+                                if (next) { imgGatewayTriedRef.current = true; setDisplayImgSrc(next); return; }
+                              }
+                              setDisplayImgSrc(fallbackAvatar);
+                            }}
+                          />
+                        )}
                       </div>
                       {isCreator && (
                         <button
