@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startIndexer } from "./lib/indexer";
+import { startAutoDistributor } from "./lib/auto-distributor";
 
 const rawPort = process.env["PORT"];
 
@@ -26,4 +27,7 @@ app.listen(port, (err) => {
 
   // Start background chain indexer (V3 PoolRegistered events → DB).
   startIndexer();
+
+  // Start auto-distributor: calls distributeTax on pools every 5 min when rewards accumulate.
+  startAutoDistributor();
 });
