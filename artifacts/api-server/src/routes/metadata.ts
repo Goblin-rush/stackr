@@ -48,18 +48,29 @@ router.post("/tokens/:address/metadata", async (req, res) => {
 
   const key = addr.toLowerCase();
 
+  const vals = {
+    address: key,
+    website: safeStr(body.website, 512),
+    twitter: safeStr(body.twitter, 512),
+    telegram: safeStr(body.telegram, 512),
+    description: safeStr(body.description, 4096),
+    image: safeStr(body.image, 512),
+    createdAt: Date.now(),
+  };
+
   await db
     .insert(tokenMetadata)
-    .values({
-      address: key,
-      website: safeStr(body.website, 512),
-      twitter: safeStr(body.twitter, 512),
-      telegram: safeStr(body.telegram, 512),
-      description: safeStr(body.description, 4096),
-      image: safeStr(body.image, 512),
-      createdAt: Date.now(),
-    })
-    .onConflictDoNothing();
+    .values(vals)
+    .onConflictDoUpdate({
+      target: tokenMetadata.address,
+      set: {
+        website:     vals.website,
+        twitter:     vals.twitter,
+        telegram:    vals.telegram,
+        description: vals.description,
+        image:       vals.image,
+      },
+    });
 
   res.json({ ok: true });
 });
