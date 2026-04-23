@@ -30,7 +30,7 @@ import { logger } from './logger';
 
 // ─── Config ─────────────────────────────────────────────────────────────────
 
-const HOOK_ADDRESS    = '0xF10b1c50281fDb01111515cc1b2Ab92D70fB40cC' as Address;
+const HOOK_ADDRESS    = '0x1927Ed1B24A5E6DCEDA54A5e17258B19994480Cc' as Address;
 const POOL_FEE        = 3000;        // 0.3% Uniswap V4 LP fee
 const TICK_SPACING    = 60;
 const INTERVAL_MS     = 5 * 60_000; // 5 minutes
