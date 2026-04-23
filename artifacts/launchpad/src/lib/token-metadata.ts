@@ -9,12 +9,26 @@ export interface TokenMetadata {
   createdAt: number;
 }
 
-const IPFS_GATEWAY = 'https://gateway.pinata.cloud/ipfs/';
+const IPFS_GATEWAYS = [
+  'https://ipfs.io/ipfs/',
+  'https://gateway.pinata.cloud/ipfs/',
+  'https://cloudflare-ipfs.com/ipfs/',
+];
 
 export function ipfsToHttp(uri?: string | null): string | null {
   if (!uri) return null;
-  if (uri.startsWith('ipfs://')) return IPFS_GATEWAY + uri.slice(7);
+  if (uri.startsWith('ipfs://')) return IPFS_GATEWAYS[0] + uri.slice(7);
   if (/^https?:\/\//i.test(uri)) return uri;
+  return null;
+}
+
+export function ipfsNextGateway(currentUrl: string): string | null {
+  for (let i = 0; i < IPFS_GATEWAYS.length - 1; i++) {
+    if (currentUrl.startsWith(IPFS_GATEWAYS[i])) {
+      const cid = currentUrl.slice(IPFS_GATEWAYS[i].length);
+      return IPFS_GATEWAYS[i + 1] + cid;
+    }
+  }
   return null;
 }
 
@@ -111,18 +125,27 @@ export async function saveTokenMetadata(
 ): Promise<void> {
   saveTokenMetadataLocal(address, meta);
   const key = address.toLowerCase();
-  try {
-    await fetch(`/api/tokens/${key}/metadata`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(meta),
-    });
-    // Also seed remote cache so any open tab sees it without refetch.
-    remoteCache.set(key, { ...meta, createdAt: Date.now() });
-    notify();
-  } catch {
-    // Server save failed — local copy still works for the creator.
-  }
+  const payload: Record<string, string | undefined> = {};
+  if (meta.image)       payload.image       = meta.image;
+  if (meta.description) payload.description = meta.description;
+  if (meta.website)     payload.website     = meta.website;
+  if (meta.twitter)     payload.twitter     = meta.twitter;
+  if (meta.telegram)    payload.telegram    = meta.telegram;
+  const tryPost = async (retries = 2): Promise<void> => {
+    try {
+      const r = await fetch(`/api/tokens/${key}/metadata`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (!r.ok && retries > 0) { await new Promise((res) => setTimeout(res, 1000)); return tryPost(retries - 1); }
+      remoteCache.set(key, { ...meta, createdAt: Date.now() });
+      notify();
+    } catch {
+      if (retries > 0) { await new Promise((res) => setTimeout(res, 1000)); return tryPost(retries - 1); }
+    }
+  };
+  void tryPost();
 }
 
 /** Update just the image field for an existing token metadata record. */
