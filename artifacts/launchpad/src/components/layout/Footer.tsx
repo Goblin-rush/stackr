@@ -1,6 +1,6 @@
 import { XIcon } from './Navbar';
 
-const X_URL = 'https://x.com/stakr_?s=21';
+const X_URL = 'https://x.com/_stackr?s=21';
 
 export function Footer() {
   return (
@@ -19,7 +19,7 @@ export function Footer() {
             className="flex items-center gap-1.5 text-muted-foreground/50 hover:text-muted-foreground transition-colors"
           >
             <XIcon className="h-3 w-3" />
-            <span>@stakr_</span>
+            <span>@_stackr</span>
           </a>
           <span className="text-muted-foreground/40 text-[10px]">© Stackr 2026</span>
         </div>
