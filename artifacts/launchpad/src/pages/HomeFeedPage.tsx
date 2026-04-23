@@ -2,10 +2,29 @@ import { Navbar } from '@/components/layout/Navbar';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
 import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { Link } from 'wouter';
 import { Search, X, Plus, Rocket } from 'lucide-react';
-import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
+import { useTokenMetadata, ipfsToHttp, ipfsNextGateway } from '@/lib/token-metadata';
+
+function ImgWithFallback({ src, alt, fallback, className }: { src: string; alt: string; fallback: string; className?: string }) {
+  const [cur, setCur] = useState(src);
+  const triedRef = useRef(false);
+  return (
+    <img
+      src={cur}
+      alt={alt}
+      className={className}
+      onError={() => {
+        if (!triedRef.current) {
+          const next = ipfsNextGateway(cur);
+          if (next) { triedRef.current = true; setCur(next); return; }
+        }
+        setCur(fallback);
+      }}
+    />
+  );
+}
 
 function genAvatarUri(symbol: string): string {
   const palette = ['#c2410c','#7c3aed','#15803d','#1d4ed8','#0e7490','#b45309','#9f1239','#4d7c0f'];
@@ -72,11 +91,14 @@ function Row({ d }: { d: RowDisplay }) {
 
         {/* Header */}
         <div className="flex items-center border-b border-border/40 pl-3 gap-2.5">
-          {d.image && (
-            <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-border/30 bg-muted">
-              <img src={d.image} alt={d.symbol} className="w-full h-full object-cover" />
-            </div>
-          )}
+          <div className="w-8 h-8 rounded-lg overflow-hidden shrink-0 border border-border/30 bg-muted flex items-center justify-center">
+            <ImgWithFallback
+              src={d.image || genAvatarUri(d.symbol)}
+              alt={d.symbol}
+              fallback={genAvatarUri(d.symbol)}
+              className="w-full h-full object-cover"
+            />
+          </div>
           <div className="flex-1 py-2.5 min-w-0">
             <div className="flex items-center gap-2 min-w-0">
               <p className="text-[14px] font-bold text-foreground truncate group-hover:text-primary transition-colors">{d.name}</p>
