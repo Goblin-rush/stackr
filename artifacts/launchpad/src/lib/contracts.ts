@@ -426,7 +426,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     chainName:          'Ethereum',
     chainShort:         'ETH',
     rpcUrl:             'https://1rpc.io/eth',
-    pinnedTokens:       ['0x8c8069e3a22724b7dfe61708845584d1846ac770'],
+    pinnedTokens:       ['0x39205a4c372fec91b18613c945d09c4b0f4aeea7'],
   },
 };
 

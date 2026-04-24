@@ -6,13 +6,13 @@ import { useTokenBalance } from '@/hooks/use-token';
 import { ExternalLink, Loader2 } from 'lucide-react';
 import {
   HOOK_V3_ABI,
-  HOOK_V3_ADDRESS,
   V3_POOL_FEE,
   V3_TICK_SPACING,
   V3_BASE_TAX_BPS,
   V3_REWARD_BPS,
   V3_PLATFORM_BPS,
   V3_LP_FEE_BPS,
+  getV3Contracts,
 } from '@/lib/contracts';
 
 const ERC20_ABI = [
@@ -37,6 +37,7 @@ interface TradeWidgetProps {
   curveAddress?: `0x${string}`;
   currentPriceEth?: number;
   symbol?: string;
+  chainId?: number;
 }
 
 function formatPrice(ethPerToken: number): string {
@@ -60,7 +61,10 @@ function estimateEthOut(tokensIn: number, priceEth: number): string {
   return afterTax.toFixed(6);
 }
 
-export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: TradeWidgetProps) {
+export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId = 8453 }: TradeWidgetProps) {
+  const contracts = getV3Contracts(chainId);
+  const hookAddress = contracts.hookAddress;
+
   const { isConnected, address: userAddress } = useAccount();
   const { open } = useAppKit();
   const { data: ethBalance } = useBalance({ address: userAddress });
@@ -78,7 +82,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
     currency1: tokenAddress,
     fee: V3_POOL_FEE,
     tickSpacing: V3_TICK_SPACING,
-    hooks: HOOK_V3_ADDRESS,
+    hooks: hookAddress,
   } as const;
 
   // ERC20 allowance (for sell)
@@ -86,7 +90,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
     address: tokenAddress,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: userAddress ? [userAddress, HOOK_V3_ADDRESS] : undefined,
+    args: userAddress ? [userAddress, hookAddress] : undefined,
     query: { enabled: !!userAddress && side === 'sell' },
   });
 
@@ -119,7 +123,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
         address: tokenAddress,
         abi: ERC20_ABI,
         functionName: 'approve',
-        args: [HOOK_V3_ADDRESS, maxUint256],
+        args: [hookAddress, maxUint256],
       });
       setTxHash(hash);
     } catch (e: unknown) {
@@ -134,7 +138,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
     if (ethWei === 0n) return;
     try {
       const hash = await writeContractAsync({
-        address: HOOK_V3_ADDRESS,
+        address: hookAddress,
         abi: HOOK_V3_ABI,
         functionName: 'buy',
         args: [poolKey],
@@ -152,7 +156,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
     if (tokenAmountWei === 0n) return;
     try {
       const hash = await writeContractAsync({
-        address: HOOK_V3_ADDRESS,
+        address: hookAddress,
         abi: HOOK_V3_ABI,
         functionName: 'sell',
         args: [poolKey, tokenAmountWei],
@@ -182,9 +186,11 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 pt-3 pb-1">
-        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">Trade · Base</span>
+        <span className="text-[10px] font-mono uppercase tracking-widest text-muted-foreground">
+          Trade · {chainId === 1 ? 'ETH' : 'Base'}
+        </span>
         <a
-          href={`https://basescan.org/address/${tokenAddress}`}
+          href={`${contracts.explorerUrl}/address/${tokenAddress}`}
           target="_blank"
           rel="noreferrer noopener"
           className="text-muted-foreground/50 hover:text-primary transition-colors"
@@ -346,7 +352,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol }: Trade
         )}
 
         <p className="text-center text-[9px] font-mono text-muted-foreground/40">
-          Uniswap V4 hook · Base mainnet · 3% tax
+          Uniswap V4 hook · {chainId === 1 ? 'ETH mainnet' : 'Base mainnet'} · 3% tax
         </p>
       </div>
     </div>

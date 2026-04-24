@@ -430,7 +430,8 @@ export default function TokenDetailPage() {
             <TradeWidget
               tokenAddress={address}
               currentPriceEth={live.currentPrice}
-              symbol={symbol}
+              symbol={symbol ?? undefined}
+              chainId={chainId}
             />
           </div>
 
