@@ -13,6 +13,10 @@ import {
   V3_PLATFORM_BPS,
   V3_LP_FEE_BPS,
   getV3Contracts,
+  isStackrV2Token,
+  ETH_STACKR_V2_TOKEN,
+  ETH_STACKR_V2_PAIR,
+  UNISWAP_V2_PAIR_ABI,
 } from '@/lib/contracts';
 
 const ERC20_ABI = [
@@ -119,6 +123,17 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
   }, [isTxSuccess, side, refetchAllowance]);
 
   const isLoading = isWritePending || isTxLoading;
+  const isV2 = isStackrV2Token(tokenAddress) && chainId === 1;
+
+  // V2 pair reserves (only used when isV2)
+  const { data: v2ReservesData } = useReadContract({
+    address: ETH_STACKR_V2_PAIR,
+    abi: UNISWAP_V2_PAIR_ABI,
+    functionName: 'getReserves',
+    chainId: 1,
+    query: { enabled: isV2, refetchInterval: 15_000 },
+  });
+  const v2Reserves = v2ReservesData as [bigint, bigint, number] | undefined;
 
   async function handleApprove() {
     setTxError(null);
@@ -187,6 +202,78 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
   const amountNum = parseFloat(amount) || 0;
   const isBuyInvalid = side === 'buy' && amountNum > 0 && amountNum > ethBalanceNum;
   const isSellInvalid = side === 'sell' && amountNum > 0 && amountNum > tokenBalanceNum;
+
+  // ── V2 STACKR: Uniswap V2 trade card ──────────────────────────────
+  if (isV2) {
+    const ethReserve    = v2Reserves ? Number(v2Reserves[0]) / 1e18 : null;
+    const tokenReserve  = v2Reserves ? Number(v2Reserves[1]) / 1e18 : null;
+    const v2Price       = ethReserve && tokenReserve && tokenReserve > 0 ? ethReserve / tokenReserve : null;
+    const uniUrl = `https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${ETH_STACKR_V2_TOKEN}&chain=mainnet`;
+    const pairUrl = `https://v2.info.uniswap.org/pair/${ETH_STACKR_V2_PAIR}`;
+
+    return (
+      <div className="border border-border/50 rounded-xl overflow-hidden bg-card">
+        <div className="px-4 pt-4 pb-3 border-b border-border/40 flex items-center justify-between">
+          <div>
+            <p className="text-xs font-mono font-bold text-foreground uppercase tracking-widest">
+              {symbol ?? 'STACKR'} · ETH Mainnet
+            </p>
+            <p className="text-[10px] font-mono text-muted-foreground mt-0.5">
+              Uniswap V2 · 3% buy/sell tax
+            </p>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded uppercase">
+            V2 Pool
+          </span>
+        </div>
+
+        <div className="p-4 space-y-3">
+          {v2Reserves && (
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-muted/30 rounded-lg p-2.5">
+                <p className="text-[10px] font-mono text-muted-foreground uppercase">ETH Reserve</p>
+                <p className="font-mono text-sm font-bold">{ethReserve?.toFixed(6)}</p>
+              </div>
+              <div className="bg-muted/30 rounded-lg p-2.5">
+                <p className="text-[10px] font-mono text-muted-foreground uppercase">Price</p>
+                <p className="font-mono text-sm font-bold">{v2Price ? v2Price.toExponential(3) + ' ETH' : '—'}</p>
+              </div>
+            </div>
+          )}
+
+          <div className="text-[11px] font-mono text-muted-foreground space-y-1">
+            <div className="flex items-center gap-1">
+              <span className="text-primary">✓</span> 3% tax auto-distributed on every swap
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-primary">✓</span> 1.5% platform · 1.5% rewards wallet
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-primary">✓</span> Compatible with all Uniswap V2 aggregators
+            </div>
+          </div>
+
+          <a
+            href={uniUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3 bg-primary text-primary-foreground font-bold rounded-lg hover:bg-primary/90 transition-colors text-sm"
+          >
+            Trade on Uniswap <ExternalLink className="h-4 w-4" />
+          </a>
+
+          <a
+            href={pairUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center justify-center gap-1.5 w-full py-2 text-xs font-mono text-muted-foreground hover:text-foreground border border-border/40 rounded-lg transition-colors"
+          >
+            View V2 Pair Analytics <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="border border-border/50 rounded-xl overflow-hidden bg-card">
