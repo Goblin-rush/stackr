@@ -3,65 +3,45 @@ import { Navbar } from '@/components/layout/Navbar';
 const faqs: { q: string; a: string | string[] }[] = [
   {
     q: 'What is Stackr?',
-    a: 'Stackr is a token launchpad on Base. Anyone can deploy a token, trade it on a bonding curve, and earn ETH rewards just by holding. When the curve hits its target, the token automatically lists on Uniswap with locked liquidity.',
+    a: 'Stackr is a token launchpad on Base and Ethereum mainnet. Anyone can deploy a token with real Uniswap V4 liquidity from day one — no bonding curve. Every trade automatically distributes ETH rewards to holders.',
   },
   {
-    q: 'How does the bonding curve work?',
-    a: 'Every token starts at a fixed price. As people buy, the price goes up. As people sell, it comes back down. There are no order books or counterparties. You buy from and sell to the contract. Price is determined entirely by how much ETH has been raised.',
+    q: 'How does trading work?',
+    a: 'Tokens on Stackr trade directly on Uniswap V4 from the moment they launch. There is no bonding curve and no graduation step. Real liquidity, real price discovery from block one.',
   },
   {
     q: 'Do I need to do anything to receive holder rewards?',
-    a: 'No. Rewards are pushed to your wallet automatically the next time you trade or transfer the token. You just hold. Other people trade. ETH comes to you.',
+    a: 'No. Just hold the token. Every time someone buys or sells, 1.5% of the trade value is automatically sent to holders as ETH. No claiming, no staking.',
   },
   {
-    q: 'What is the anti-snipe tax?',
+    q: 'Where does the 3% tax go?',
     a: [
-      'If you sell within 24 hours of buying, you pay an extra sell tax on top of the standard 5%.',
-      'Under 5 minutes: +20%',
-      'Under 1 hour: +10%',
-      'Under 24 hours: +5%',
-      'Every cent of that extra tax goes to other holders, not the protocol.',
+      'Every buy and sell has a 3% swap tax, split as:',
+      '1.5% → distributed to token holders as ETH',
+      '1.5% → platform treasury',
+      '0.3% → Uniswap V4 LP fee (separate)',
+      'Zero goes to the creator.',
     ],
   },
   {
-    q: 'What happens when a token graduates?',
-    a: 'When the bonding curve raises 5 ETH, the contract automatically creates a Uniswap liquidity pool, deposits the remaining tokens and raised ETH into it, then burns the LP tokens to 0xdead. After that the token trades freely on the DEX and the curve is permanently closed.',
-  },
-  {
     q: 'Can the creator rug?',
-    a: 'There is no creator tax built into the protocol. The deployer cannot pull funds from the bonding curve. After graduation the LP is burned on-chain and is not controlled by anyone. The factory contract is non-upgradeable.',
+    a: 'No. The factory contract is non-upgradeable. The creator has no special access to the liquidity pool or the reward distribution. Everything is handled by the smart contract.',
   },
   {
-    q: 'What is a dev buy?',
-    a: 'When deploying a token you can optionally buy some at launch by sending ETH with the deploy transaction. The price is the same as anyone else would get at that moment, and the same anti-snipe rules apply if you sell early.',
-  },
-  {
-    q: 'Where does the 5% tax go?',
-    a: '1.5% buys tokens from the curve and burns them. 2% goes to holder rewards distributed automatically across all holders. 1.5% goes to the protocol treasury. Zero goes to the creator.',
-  },
-  {
-    q: 'How are holder rewards calculated?',
-    a: 'Rewards are weighted by how long you hold and how much you hold. Every wallet has a hold score that grows as: balance x seconds held. When rewards come in, they are split proportionally across all active hold scores. Selling reduces your score proportionally.',
-  },
-  {
-    q: 'Do holder rewards stop after graduation?',
-    a: 'No. After the token graduates to a DEX, there is a 3.5% tax on trades that feeds into the same reward pool. Holders keep earning as long as people are trading.',
-  },
-  {
-    q: 'What chain is Stackr on?',
-    a: 'Base mainnet. Make sure your wallet is connected to Base before trading or deploying.',
-  },
-  {
-    q: 'Is the smart contract audited?',
-    a: 'Not yet. This is an early version of the protocol. Only trade what you can afford to lose.',
+    q: 'What chains is Stackr on?',
+    a: 'Base mainnet and Ethereum mainnet. You can launch and trade on either chain — just make sure your wallet is connected to the right network.',
   },
   {
     q: 'What is the total supply of each token?',
     a: '1,000,000,000 tokens (1 billion). Fixed at deploy time. No mint function exists.',
   },
   {
-    q: 'Can I deploy a token on any token name or ticker?',
-    a: 'Yes. The factory does not check for duplicates. Anyone can use any name. Do your own verification before buying a token.',
+    q: 'Is the smart contract audited?',
+    a: 'Not yet. This is an early version of the protocol. Only trade what you can afford to lose.',
+  },
+  {
+    q: 'Can I deploy a token with any name or ticker?',
+    a: 'Yes. The factory does not check for duplicates. Anyone can use any name. Do your own verification before buying.',
   },
 ];
 
