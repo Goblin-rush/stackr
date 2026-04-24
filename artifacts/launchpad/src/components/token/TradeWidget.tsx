@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
+import { useAccount, useBalance, useReadContract, useWriteContract, useWaitForTransactionReceipt, useChainId, useSwitchChain } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
 import { formatEther, formatUnits, parseEther, parseUnits, maxUint256 } from 'viem';
 import { useTokenBalance } from '@/hooks/use-token';
@@ -67,7 +67,10 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
 
   const { isConnected, address: userAddress } = useAccount();
   const { open } = useAppKit();
-  const { data: ethBalance } = useBalance({ address: userAddress });
+  const walletChainId = useChainId();
+  const { switchChain, isPending: isSwitching } = useSwitchChain();
+  const isWrongChain = isConnected && walletChainId !== chainId;
+  const { data: ethBalance } = useBalance({ address: userAddress, chainId });
   const { data: tokenBalance } = useTokenBalance(tokenAddress, userAddress);
 
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
@@ -322,6 +325,15 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
             className="w-full text-[12px] font-semibold uppercase tracking-wider py-3 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-all"
           >
             Connect Wallet
+          </button>
+        ) : isWrongChain ? (
+          <button
+            onClick={() => switchChain({ chainId })}
+            disabled={isSwitching}
+            className="w-full text-[12px] font-semibold uppercase tracking-wider py-3 rounded-lg bg-amber-600 text-white hover:bg-amber-500 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {isSwitching && <Loader2 className="h-4 w-4 animate-spin" />}
+            {isSwitching ? 'Switching…' : `Switch to ${chainId === 1 ? 'Ethereum' : 'Base'}`}
           </button>
         ) : side === 'sell' && needsApproval ? (
           <button

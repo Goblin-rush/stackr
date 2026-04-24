@@ -13,6 +13,7 @@ export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   '0xa3b9648cf0cf4c6b5ea2c2f3f56a339ffa62f771',
   '0xcf9467c2ffb6a9449b9ae5d44c5748cf0681b5e5',
   '0x8fab3c308e641402e53d39aa4f7abfa7f633fa34',
+  '0x8c8069e3a22724b7dfe61708845584d1846ac770', // Old ETH STACKR (no V4 pool)
 ]);
 
 export function isHiddenToken(address: string): boolean {
@@ -480,17 +481,6 @@ export const FACTORY_V3_ABI = [
           { name: 'creator',     type: 'address' },
           { name: 'deployedAt',  type: 'uint256' },
           { name: 'metadataURI', type: 'string'  },
-          {
-            name: 'poolKey',
-            type: 'tuple',
-            components: [
-              { name: 'currency0',   type: 'address' },
-              { name: 'currency1',   type: 'address' },
-              { name: 'fee',         type: 'uint24'  },
-              { name: 'tickSpacing', type: 'int24'   },
-              { name: 'hooks',       type: 'address' },
-            ],
-          },
         ],
       },
     ],
