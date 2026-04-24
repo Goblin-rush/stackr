@@ -145,7 +145,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   return (
     <Row
       d={{
-        href: `/token/${token.address}`,
+        href: `/token/${token.chainId}/${token.address}`,
         symbol: token.symbol || '?',
         name: token.name || 'Unnamed',
         image,

@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
 import {
   computePoolId,
   sqrtPriceX96ToEthPerToken,
+  createChainClient,
+  getV3Contracts,
 } from '@/lib/contracts';
 import { useV3Contracts } from '@/hooks/use-v3-contracts';
 import type { LiveTrade, LiveHolder } from '@/types/live';
@@ -57,10 +59,17 @@ function compute24h(trades: LiveTrade[]) {
 
 export function useChainTokenLive(
   tokenAddress: `0x${string}` | undefined,
-  _curveAddress?: `0x${string}` | undefined
+  _curveAddress?: `0x${string}` | undefined,
+  chainId?: number
 ): ChainLiveState {
-  const client = usePublicClient();
-  const { hookAddress, poolManagerAddress } = useV3Contracts();
+  const walletClient = usePublicClient();
+  const walletContracts = useV3Contracts();
+
+  const fixedClient    = useMemo(() => chainId !== undefined ? createChainClient(chainId) : null, [chainId]);
+  const fixedContracts = useMemo(() => chainId !== undefined ? getV3Contracts(chainId)    : null, [chainId]);
+
+  const client = fixedClient ?? walletClient;
+  const { hookAddress, poolManagerAddress } = fixedContracts ?? walletContracts;
   const [state, setState] = useState<ChainLiveState>({
     trades: [],
     holders: [],

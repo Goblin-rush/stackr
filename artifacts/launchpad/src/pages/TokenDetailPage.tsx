@@ -1,8 +1,7 @@
 import { useParams } from 'wouter';
 import { useState, useEffect, useRef } from 'react';
-import { useReadContract, useAccount } from 'wagmi';
+import { useAccount } from 'wagmi';
 import { Navbar } from '@/components/layout/Navbar';
-import { useToken } from '@/hooks/use-token';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useChainTokenLive } from '@/hooks/use-chain-token-live';
 import { TradeWidget } from '@/components/token/TradeWidget';
@@ -10,9 +9,11 @@ import { TVAdvancedChart } from '@/components/token/TVAdvancedChart';
 import { TradeHistoryTable } from '@/components/token/TradeHistoryTable';
 import { HoldersList } from '@/components/token/HoldersList';
 import {
-  FACTORY_V3_ADDRESS,
   FACTORY_V3_ABI,
+  TOKEN_V3_ABI,
   computePoolId,
+  getV3Contracts,
+  createChainClient,
 } from '@/lib/contracts';
 import { Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -45,7 +46,10 @@ function genAvatarUri(symbol: string): string {
 }
 
 export default function TokenDetailPage() {
-  const { address } = useParams<{ address: `0x${string}` }>();
+  const { address, chainId: chainIdStr } = useParams<{ address: `0x${string}`; chainId?: string }>();
+  const chainId = chainIdStr ? Number(chainIdStr) : 8453;
+  const contracts = getV3Contracts(chainId);
+
   const [infoTab, setInfoTab] = useState<'trades' | 'holders'>('trades');
   const [copiedCA, setCopiedCA] = useState(false);
   const [imgUpdating, setImgUpdating] = useState(false);
@@ -54,17 +58,48 @@ export default function TokenDetailPage() {
   const imgInputRef = useRef<HTMLInputElement>(null);
   const { address: walletAddress } = useAccount();
 
-  const { data: record, isLoading: isRecordLoading } = useReadContract({
-    address: FACTORY_V3_ADDRESS ?? undefined,
-    abi: FACTORY_V3_ABI,
-    functionName: 'getRecord',
-    args: [address],
-    query: { enabled: !!FACTORY_V3_ADDRESS && !!address },
+  // Chain-aware token info via viem (works regardless of wallet connection)
+  const [tokenInfo, setTokenInfo] = useState<{ name: string | null; symbol: string | null; isLoading: boolean }>({
+    name: null, symbol: null, isLoading: true,
   });
+  const [record, setRecord] = useState<any>(null);
+  const [isRecordLoading, setIsRecordLoading] = useState(true);
 
-  const { name, symbol, isLoading } = useToken(address);
+  useEffect(() => {
+    if (!address) return;
+    setTokenInfo({ name: null, symbol: null, isLoading: true });
+    setIsRecordLoading(true);
+    const viemClient = createChainClient(chainId);
+    (async () => {
+      try {
+        const results = await viemClient.multicall({
+          contracts: [
+            { address: address as `0x${string}`, abi: TOKEN_V3_ABI, functionName: 'name' },
+            { address: address as `0x${string}`, abi: TOKEN_V3_ABI, functionName: 'symbol' },
+            { address: contracts.factoryAddress, abi: FACTORY_V3_ABI, functionName: 'getRecord', args: [address as `0x${string}`] },
+          ],
+          allowFailure: true,
+        });
+        setTokenInfo({
+          name: results[0].status === 'success' ? (results[0].result as string) : null,
+          symbol: results[1].status === 'success' ? (results[1].result as string) : null,
+          isLoading: false,
+        });
+        setRecord(results[2].status === 'success' ? results[2].result : null);
+      } catch {
+        setTokenInfo({ name: null, symbol: null, isLoading: false });
+      } finally {
+        setIsRecordLoading(false);
+      }
+    })();
+  }, [address, chainId, contracts.factoryAddress]);
+
+  const name = tokenInfo.name;
+  const symbol = tokenInfo.symbol;
+  const isLoading = tokenInfo.isLoading;
+
   const { data: ethPrice } = useEthPrice();
-  const live = useChainTokenLive(address);
+  const live = useChainTokenLive(address, undefined, chainId);
   const meta = useTokenMetadata(address);
 
   const priceInEth = live.currentPrice;
@@ -77,7 +112,7 @@ export default function TokenDetailPage() {
   const deployedAt = rec?.deployedAt ? Number(rec.deployedAt) * 1000 : null;
   const isCreator = !!(walletAddress && creator && walletAddress.toLowerCase() === creator.toLowerCase());
 
-  const poolId = address ? computePoolId(address) : null;
+  const poolId = address ? computePoolId(address, contracts.hookAddress) : null;
 
   const handleUpdateImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
