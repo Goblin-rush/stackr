@@ -428,7 +428,9 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     chainName:          'Ethereum',
     chainShort:         'ETH',
     rpcUrl:             'https://eth.drpc.org',
-    pinnedTokens:       [],
+    pinnedTokens:       [
+      '0x5115b090c81958e7bbc59fdea814d7b1de5df9a9', // STACKR V4 ETH mainnet
+    ],
   },
 };
 
