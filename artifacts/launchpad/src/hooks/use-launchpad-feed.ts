@@ -211,6 +211,45 @@ export function useLaunchpadFeed(maxTokens = 200, chainId?: number): LaunchpadFe
 
         if (cancelled) return;
 
+        // 2.5) Inject pinned tokens (deployed outside factory) not already in map
+        const resolved = fixedContracts ?? walletContracts;
+        const pinned = (resolved as any).pinnedTokens as readonly `0x${string}`[] | undefined ?? [];
+        const pinnedToAdd = pinned.filter(
+          (a) => !tokensRef.current.has(a.toLowerCase()) && !isHiddenToken(a)
+        );
+        if (pinnedToAdd.length > 0) {
+          const pinnedMeta = pinnedToAdd.flatMap((t) => [
+            { address: t, abi: TOKEN_V3_ABI, functionName: 'name' as const },
+            { address: t, abi: TOKEN_V3_ABI, functionName: 'symbol' as const },
+          ]);
+          const pm = await client.multicall({ contracts: pinnedMeta, allowFailure: true });
+          for (let pi = 0; pi < pinnedToAdd.length; pi++) {
+            if (cancelled) return;
+            const t = pinnedToAdd[pi];
+            const name   = pm[pi * 2]?.status === 'success'     ? (pm[pi * 2].result as string)     : 'Unknown';
+            const symbol = pm[pi * 2 + 1]?.status === 'success' ? (pm[pi * 2 + 1].result as string) : '???';
+            const poolId = computePoolId(t, hookAddress).toLowerCase();
+            poolIdToTokenRef.current.set(poolId, t.toLowerCase());
+            tokensRef.current.set(t.toLowerCase(), {
+              address: t,
+              curveAddress: null,
+              name,
+              symbol,
+              realEthRaised: 0,
+              currentPriceEth: 0,
+              marketCapEth: 0,
+              graduated: false,
+              createdAtMs: null,
+              createdIndex: tokensRef.current.size,
+              lastTradeMs: null,
+              creator: null,
+              chainId: resolved.chainId,
+            });
+          }
+        }
+
+        if (cancelled) return;
+
         // 3) Get current price for all tokens from PoolManager getSlot0
         const tokenList = Array.from(tokensRef.current.keys()) as string[];
         const CHUNK_PRICE = 20;

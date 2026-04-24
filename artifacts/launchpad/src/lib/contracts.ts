@@ -401,6 +401,8 @@ export interface V3Contracts {
   chainName:          string;
   chainShort:         string;
   rpcUrl:             string;
+  /** Extra token addresses to always show even if not in factory allTokens() */
+  pinnedTokens:       readonly `0x${string}`[];
 }
 
 export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
@@ -413,6 +415,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     chainName:          'Base',
     chainShort:         'BASE',
     rpcUrl:             'https://mainnet.base.org',
+    pinnedTokens:       [],
   },
   1: {
     hookAddress:        ETH_HOOK_V3_ADDRESS,
@@ -423,6 +426,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     chainName:          'Ethereum',
     chainShort:         'ETH',
     rpcUrl:             'https://eth.llamarpc.com',
+    pinnedTokens:       ['0x8c8069e3a22724b7dfe61708845584d1846ac770'],
   },
 };
 
