@@ -80,6 +80,7 @@ interface RowDisplay {
   tradeLabel: string;
   ageLabel: string;
   creatorLabel: string | null;
+  chainLabel: string;
 }
 
 function Row({ d }: { d: RowDisplay }) {
@@ -108,8 +109,8 @@ function Row({ d }: { d: RowDisplay }) {
               {d.creatorLabel ? `${d.creatorLabel} · ` : ''}{d.ageLabel}
             </p>
           </div>
-          <span className="self-center mr-3 text-[9px] font-semibold tracking-wider text-primary bg-primary/12 border border-primary/30 rounded-full px-2 py-0.5">
-            V4
+          <span className="self-center mr-3 text-[9px] font-semibold tracking-wider text-primary bg-primary/12 border border-primary/30 rounded-full px-2 py-0.5 whitespace-nowrap">
+            {d.chainLabel}
           </span>
         </div>
 
@@ -157,6 +158,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
         tradeLabel: token.lastTradeMs ? timeAgo(token.lastTradeMs) : '—',
         ageLabel: timeAgo(token.createdAtMs),
         creatorLabel: shortAddr(token.creator),
+        chainLabel: token.chainId === 1 ? 'ETH · V4' : 'BASE · V4',
       }}
     />
   );
@@ -164,7 +166,11 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
 
 /* ─── Page ───────────────────────────────────────── */
 export default function HomeFeedPage() {
-  const { tokens, isLoading } = useLaunchpadFeed(200);
+  // Always fetch from BOTH chains regardless of wallet connection
+  const baseFeed = useLaunchpadFeed(200, 8453);
+  const ethFeed  = useLaunchpadFeed(200, 1);
+  const tokens   = useMemo(() => [...baseFeed.tokens, ...ethFeed.tokens], [baseFeed.tokens, ethFeed.tokens]);
+  const isLoading = baseFeed.isLoading || ethFeed.isLoading;
   const { data: ethPrice } = useEthPrice();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [sort, setSort] = useState<FeedSort>('new');

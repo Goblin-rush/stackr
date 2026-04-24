@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { usePublicClient } from 'wagmi';
 import { formatEther, parseAbiItem, type Log } from 'viem';
 import {
@@ -7,6 +7,8 @@ import {
   computePoolId,
   sqrtPriceX96ToEthPerToken,
   isHiddenToken,
+  getV3Contracts,
+  createChainClient,
 } from '@/lib/contracts';
 import { useV3Contracts } from '@/hooks/use-v3-contracts';
 
@@ -23,6 +25,7 @@ export interface FeedToken {
   createdIndex: number;
   lastTradeMs: number | null;
   creator: `0x${string}` | null;
+  chainId: number;
 }
 
 export interface LaunchpadFeedState {
@@ -53,9 +56,29 @@ const TAX_COLLECTED_EVENT = parseAbiItem(
 const LOOKBACK_BLOCKS = 9_000n;
 const MULTICALL_CHUNK = 30;
 
-export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
-  const client = usePublicClient();
-  const { factoryAddress, hookAddress, poolManagerAddress } = useV3Contracts();
+/**
+ * Pass a fixed `chainId` to always read from that chain regardless of
+ * which wallet network the user is connected to (or not connected at all).
+ * Omit `chainId` to follow the wallet's connected chain (original behaviour).
+ */
+export function useLaunchpadFeed(maxTokens = 200, chainId?: number): LaunchpadFeedState {
+  const walletClient = usePublicClient();
+  const walletContracts = useV3Contracts();
+
+  // When a fixed chainId is provided, use a dedicated viem client + contracts
+  // that are independent of the user's wallet connection.
+  const fixedClient = useMemo(
+    () => (chainId !== undefined ? createChainClient(chainId) : null),
+    [chainId]
+  );
+  const fixedContracts = useMemo(
+    () => (chainId !== undefined ? getV3Contracts(chainId) : null),
+    [chainId]
+  );
+
+  const client = fixedClient ?? walletClient;
+  const { factoryAddress, hookAddress, poolManagerAddress } =
+    fixedContracts ?? walletContracts;
   const [state, setState] = useState<LaunchpadFeedState>({
     tokens: [],
     isLoading: !!factoryAddress,
@@ -181,6 +204,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
               createdIndex: i + j,
               lastTradeMs: null,
               creator: creator ?? null,
+              chainId: (fixedContracts ?? walletContracts).chainId,
             });
           }
         }
@@ -319,6 +343,7 @@ export function useLaunchpadFeed(maxTokens = 200): LaunchpadFeedState {
                 createdIndex: newIndex,
                 lastTradeMs: null,
                 creator: (l.args.creator as `0x${string}`) ?? null,
+                chainId: (fixedContracts ?? walletContracts).chainId,
               });
               added = true;
             }

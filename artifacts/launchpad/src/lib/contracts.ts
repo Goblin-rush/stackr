@@ -1,4 +1,5 @@
-import { keccak256, encodeAbiParameters } from 'viem';
+import { keccak256, encodeAbiParameters, createPublicClient, http, type PublicClient } from 'viem';
+import { base, mainnet } from 'viem/chains';
 
 // Tokens hidden from public feed and global trade tape (e.g. dev/test tokens).
 // Lowercase addresses only.
@@ -399,6 +400,7 @@ export interface V3Contracts {
   explorerUrl:        string;
   chainName:          string;
   chainShort:         string;
+  rpcUrl:             string;
 }
 
 export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
@@ -410,6 +412,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     explorerUrl:        'https://basescan.org',
     chainName:          'Base',
     chainShort:         'BASE',
+    rpcUrl:             'https://mainnet.base.org',
   },
   1: {
     hookAddress:        ETH_HOOK_V3_ADDRESS,
@@ -419,8 +422,16 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     explorerUrl:        'https://etherscan.io',
     chainName:          'Ethereum',
     chainShort:         'ETH',
+    rpcUrl:             'https://eth.llamarpc.com',
   },
 };
+
+/** Create a viem public client for a given supported chain — wallet-independent. */
+export function createChainClient(chainId: number): PublicClient {
+  const cfg = V3_CONTRACTS_BY_CHAIN[chainId] ?? V3_CONTRACTS_BY_CHAIN[8453];
+  const viemChain = chainId === 1 ? mainnet : base;
+  return createPublicClient({ chain: viemChain, transport: http(cfg.rpcUrl) }) as PublicClient;
+}
 
 export const SUPPORTED_CHAIN_IDS = [8453, 1] as const;
 
