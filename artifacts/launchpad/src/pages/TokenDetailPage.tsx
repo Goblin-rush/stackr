@@ -14,7 +14,11 @@ import {
   computePoolId,
   getV3Contracts,
   createChainClient,
+  isStackrV2Token,
+  ETH_STACKR_V2_PAIR,
+  UNISWAP_V2_PAIR_ABI,
 } from '@/lib/contracts';
+import { useReadContract } from 'wagmi';
 import { Copy, Check, ExternalLink, Globe, Send, ImagePlus, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useTokenMetadata, ipfsToHttp, ipfsNextGateway, normalizeWebsite, normalizeTwitter, normalizeTelegram, saveTokenMetadata, updateTokenMetadataImage } from '@/lib/token-metadata';
@@ -102,7 +106,20 @@ export default function TokenDetailPage() {
   const live = useChainTokenLive(address, undefined, chainId);
   const meta = useTokenMetadata(address);
 
-  const priceInEth = live.currentPrice;
+  // V2 STACKR: read price from Uniswap V2 pair reserves
+  const isV2 = !!address && isStackrV2Token(address) && chainId === 1;
+  const { data: v2ReservesRaw } = useReadContract({
+    address: ETH_STACKR_V2_PAIR,
+    abi: UNISWAP_V2_PAIR_ABI,
+    functionName: 'getReserves',
+    query: { enabled: isV2, refetchInterval: 30_000 },
+  });
+  const v2Reserves = v2ReservesRaw as [bigint, bigint, number] | undefined;
+  const v2PriceEth = v2Reserves && Number(v2Reserves[1]) > 0
+    ? Number(v2Reserves[0]) / Number(v2Reserves[1])
+    : 0;
+
+  const priceInEth = isV2 ? v2PriceEth : live.currentPrice;
   const mcEth = priceInEth * TOTAL_SUPPLY;
   const mcUsd = ethPrice ? mcEth * ethPrice : null;
   const change24h = live.priceChange24hPct;
@@ -250,13 +267,13 @@ export default function TokenDetailPage() {
                             </>
                           )}
                           {deployedAt ? `${timeAgo(deployedAt)} ago` : ''}
-                          {` · ${contracts.chainName} · Uniswap V4`}
+                          {` · ${contracts.chainName} · ${isV2 ? 'Uniswap V2' : 'Uniswap V4'}`}
                         </p>
                       )}
                     </div>
                   </div>
-                  <span className="shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border border-primary/50 text-primary bg-primary/10">
-                    V4 POOL
+                  <span className={`shrink-0 text-[10px] font-semibold tracking-wider px-2.5 py-1 rounded-full border ${isV2 ? 'border-green-500/50 text-green-400 bg-green-500/10' : 'border-primary/50 text-primary bg-primary/10'}`}>
+                    {isV2 ? 'V2 POOL' : 'V4 POOL'}
                   </span>
                 </div>
 
@@ -329,8 +346,17 @@ export default function TokenDetailPage() {
                 {/* Pool info row */}
                 <div className="mb-4 flex items-center gap-2 flex-wrap">
                   <span className="text-[10px] font-mono text-muted-foreground/50 uppercase tracking-widest">Pool</span>
-                  <span className="text-[11px] font-mono text-muted-foreground">Uniswap V4 · 0.3% LP fee · 3% swap tax</span>
-                  <span className="text-[11px] font-mono text-primary/70">1.5% rewards / 1.5% platform</span>
+                  {isV2 ? (
+                    <>
+                      <span className="text-[11px] font-mono text-muted-foreground">Uniswap V2 · 3% buy/sell transfer tax</span>
+                      <span className="text-[11px] font-mono text-green-400/80">1.5% rewards / 1.5% platform</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="text-[11px] font-mono text-muted-foreground">Uniswap V4 · 0.3% LP fee · 3% swap tax</span>
+                      <span className="text-[11px] font-mono text-primary/70">1.5% rewards / 1.5% platform</span>
+                    </>
+                  )}
                 </div>
 
                 {/* Description + socials */}
