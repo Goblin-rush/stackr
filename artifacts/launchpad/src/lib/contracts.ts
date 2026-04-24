@@ -15,6 +15,7 @@ export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   '0x8fab3c308e641402e53d39aa4f7abfa7f633fa34',
   '0x8c8069e3a22724b7dfe61708845584d1846ac770', // Old ETH STACKR V1 (no V4 pool)
   '0x39205a4c372fec91b18613c945d09c4b0f4aeea7', // Old ETH STACKR V4 (replaced by V2 tax token)
+  '0x5115b090c81958e7bbc59fdea814d7b1de5df9a9', // Mistakenly deployed ETH STACKR V4 (hidden)
 ]);
 
 export function isHiddenToken(address: string): boolean {
@@ -428,9 +429,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     chainName:          'Ethereum',
     chainShort:         'ETH',
     rpcUrl:             'https://eth.drpc.org',
-    pinnedTokens:       [
-      '0x5115b090c81958e7bbc59fdea814d7b1de5df9a9', // STACKR V4 ETH mainnet
-    ],
+    pinnedTokens:       [],
   },
 };
 
