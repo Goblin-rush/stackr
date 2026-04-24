@@ -71,7 +71,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
   const { switchChain, isPending: isSwitching } = useSwitchChain();
   const isWrongChain = isConnected && walletChainId !== chainId;
   const { data: ethBalance } = useBalance({ address: userAddress, chainId });
-  const { data: tokenBalance } = useTokenBalance(tokenAddress, userAddress);
+  const { data: tokenBalance } = useTokenBalance(tokenAddress, userAddress, chainId);
 
   const [side, setSide] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState('');
@@ -94,6 +94,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
     abi: ERC20_ABI,
     functionName: 'allowance',
     args: userAddress ? [userAddress, hookAddress] : undefined,
+    chainId,
     query: { enabled: !!userAddress && side === 'sell' },
   });
 
@@ -127,6 +128,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
         abi: ERC20_ABI,
         functionName: 'approve',
         args: [hookAddress, maxUint256],
+        chainId,
       });
       setTxHash(hash);
     } catch (e: unknown) {
@@ -146,6 +148,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
         functionName: 'buy',
         args: [poolKey],
         value: ethWei,
+        chainId,
       });
       setTxHash(hash);
     } catch (e: unknown) {
@@ -163,6 +166,7 @@ export function TradeWidget({ tokenAddress, currentPriceEth = 0, symbol, chainId
         abi: HOOK_V3_ABI,
         functionName: 'sell',
         args: [poolKey, tokenAmountWei],
+        chainId,
       });
       setTxHash(hash);
     } catch (e: unknown) {

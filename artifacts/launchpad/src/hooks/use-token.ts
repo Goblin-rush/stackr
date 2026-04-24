@@ -29,12 +29,13 @@ export function useToken(tokenAddress: `0x${string}`, _curveAddress?: `0x${strin
   };
 }
 
-export function useTokenBalance(tokenAddress: `0x${string}`, userAddress?: `0x${string}`) {
+export function useTokenBalance(tokenAddress: `0x${string}`, userAddress?: `0x${string}`, chainId?: number) {
   const { data, refetch } = useReadContracts({
     contracts: [
       { address: tokenAddress, abi: TOKEN_V3_ABI, functionName: 'balanceOf', args: userAddress ? [userAddress] : undefined },
     ],
     query: { enabled: !!userAddress, refetchInterval: 10_000 },
+    ...(chainId ? { chainId } : {}),
   });
   return { data: data?.[0]?.result as bigint | undefined, refetch };
 }
