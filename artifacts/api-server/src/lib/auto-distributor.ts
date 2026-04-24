@@ -44,9 +44,15 @@ const CHAINS = [
     name: 'ethereum',
     chain: mainnet,
     hookAddress: '0x76F3624d08D120162377F9Ba195362293C2440cC' as Address,
-    getRpc: () => process.env.ETH_RPC_URL || 'https://eth.llamarpc.com',
+    getRpc: () => process.env.ETH_RPC_URL || 'https://eth.drpc.org',
   },
 ] as const;
+
+/**
+ * StackrV2 tax token (ETH mainnet) — 3% tax distributes automatically on each
+ * ERC-20 transfer, so it does NOT need distributeTax calls. Skip it here.
+ */
+const STACKR_V2_TOKEN = '0xd059d47a5663ac796cc1f7d000c01501e6ca1951';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -122,6 +128,11 @@ async function runChain(cfg: typeof CHAINS[number], rawKey: Hex) {
   if (tokens.length === 0) return;
 
   for (const { address } of tokens) {
+    // StackrV2 auto-distributes tax on each transfer — skip V4 distributeTax
+    if (address.toLowerCase() === STACKR_V2_TOKEN.toLowerCase()) {
+      logger.debug({ chain: cfg.name, token: address }, 'distributor: skipping StackrV2 (auto-distributing)');
+      continue;
+    }
     const tokenAddress = address as Address;
     const poolId       = computePoolId(tokenAddress, cfg.hookAddress);
 
