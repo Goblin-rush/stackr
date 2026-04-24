@@ -166,11 +166,10 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
 
 /* ─── Page ───────────────────────────────────────── */
 export default function HomeFeedPage() {
-  // Always fetch from BOTH chains regardless of wallet connection
+  // Base only for now — ETH feed hidden
   const baseFeed = useLaunchpadFeed(200, 8453);
-  const ethFeed  = useLaunchpadFeed(200, 1);
-  const tokens   = useMemo(() => [...baseFeed.tokens, ...ethFeed.tokens], [baseFeed.tokens, ethFeed.tokens]);
-  const isLoading = baseFeed.isLoading || ethFeed.isLoading;
+  const tokens   = useMemo(() => [...baseFeed.tokens], [baseFeed.tokens]);
+  const isLoading = baseFeed.isLoading;
   const { data: ethPrice } = useEthPrice();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [sort, setSort] = useState<FeedSort>('new');
