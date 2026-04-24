@@ -13,7 +13,8 @@ export const HIDDEN_TOKENS: ReadonlySet<string> = new Set([
   '0xa3b9648cf0cf4c6b5ea2c2f3f56a339ffa62f771',
   '0xcf9467c2ffb6a9449b9ae5d44c5748cf0681b5e5',
   '0x8fab3c308e641402e53d39aa4f7abfa7f633fa34',
-  '0x8c8069e3a22724b7dfe61708845584d1846ac770', // Old ETH STACKR (no V4 pool)
+  '0x8c8069e3a22724b7dfe61708845584d1846ac770', // Old ETH STACKR V1 (no V4 pool)
+  '0x39205a4c372fec91b18613c945d09c4b0f4aeea7', // Old ETH STACKR V4 (replaced by V2 tax token)
 ]);
 
 export function isHiddenToken(address: string): boolean {
@@ -426,8 +427,8 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     explorerUrl:        'https://etherscan.io',
     chainName:          'Ethereum',
     chainShort:         'ETH',
-    rpcUrl:             'https://1rpc.io/eth',
-    pinnedTokens:       ['0x39205a4c372fec91b18613c945d09c4b0f4aeea7'],
+    rpcUrl:             'https://eth.drpc.org',
+    pinnedTokens:       [],
   },
 };
 
@@ -868,3 +869,56 @@ export function sqrtPriceX96ToEthPerToken(sqrtPriceX96: bigint): number {
   const tokenPerEth = sqrtRatio * sqrtRatio;
   return tokenPerEth === 0 ? 0 : 1 / tokenPerEth;
 }
+
+// ═══════════════════════════════════════════════════════════════════
+//  STACKR V2 TAX TOKEN — ETH Mainnet (manually deployed, not factory)
+//  3% buy/sell tax: 1.5% platform + 1.5% rewards, built into transfer
+// ═══════════════════════════════════════════════════════════════════
+
+export const ETH_STACKR_V2_TOKEN   = '0xd059d47a5663ac796cc1f7d000c01501e6ca1951' as `0x${string}`;
+export const ETH_STACKR_V2_PAIR    = '0xc8cFd687a2b8D23E35F87E1a1edbDFd78a5CE3f7' as `0x${string}`;
+export const UNISWAP_V2_ROUTER     = '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D' as `0x${string}`;
+export const UNISWAP_V2_FACTORY    = '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f' as `0x${string}`;
+export const ETH_STACKR_V2_CHAIN   = 1;
+
+/** Returns true if the address is the ETH mainnet StackrV2 tax token */
+export function isStackrV2Token(address: string): boolean {
+  return address.toLowerCase() === ETH_STACKR_V2_TOKEN.toLowerCase();
+}
+
+export const STACKR_V2_TOKEN_ABI = [
+  { name: 'name',           type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'string'  }] },
+  { name: 'symbol',         type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'string'  }] },
+  { name: 'decimals',       type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'uint8'   }] },
+  { name: 'totalSupply',    type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'uint256' }] },
+  { name: 'taxBps',         type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'uint256' }] },
+  { name: 'platformWallet', type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'address' }] },
+  { name: 'rewardsWallet',  type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'address' }] },
+  { name: 'uniswapV2Pair',  type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'address' }] },
+  { name: 'owner',          type: 'function', stateMutability: 'view',        inputs: [],                                                                         outputs: [{ type: 'address' }] },
+  { name: 'balanceOf',      type: 'function', stateMutability: 'view',        inputs: [{ name: 'a',   type: 'address'  }],                                        outputs: [{ type: 'uint256' }] },
+  { name: 'allowance',      type: 'function', stateMutability: 'view',        inputs: [{ name: 'owner', type: 'address' }, { name: 'spender', type: 'address' }], outputs: [{ type: 'uint256' }] },
+  { name: 'approve',        type: 'function', stateMutability: 'nonpayable',  inputs: [{ name: 'spender', type: 'address' }, { name: 'amount', type: 'uint256' }], outputs: [{ type: 'bool'    }] },
+  { name: 'transfer',       type: 'function', stateMutability: 'nonpayable',  inputs: [{ name: 'to', type: 'address' }, { name: 'amount', type: 'uint256' }],      outputs: [{ type: 'bool'    }] },
+  { name: 'setPair',        type: 'function', stateMutability: 'nonpayable',  inputs: [{ name: 'pair', type: 'address'  }],                                        outputs: [] },
+  { name: 'setTax',         type: 'function', stateMutability: 'nonpayable',  inputs: [{ name: 'bps',  type: 'uint256'  }],                                        outputs: [] },
+  { name: 'setWallets',     type: 'function', stateMutability: 'nonpayable',  inputs: [{ name: 'p',    type: 'address'  }, { name: 'r', type: 'address' }],        outputs: [] },
+  { name: 'renounceOwnership', type: 'function', stateMutability: 'nonpayable', inputs: [],                                                                        outputs: [] },
+  {
+    name: 'Transfer',
+    type: 'event',
+    inputs: [
+      { name: 'from',  type: 'address', indexed: true  },
+      { name: 'to',    type: 'address', indexed: true  },
+      { name: 'value', type: 'uint256', indexed: false },
+    ],
+  },
+] as const;
+
+export const UNISWAP_V2_PAIR_ABI = [
+  { name: 'token0',     type: 'function', stateMutability: 'view', inputs: [],                                                                 outputs: [{ type: 'address' }] },
+  { name: 'token1',     type: 'function', stateMutability: 'view', inputs: [],                                                                 outputs: [{ type: 'address' }] },
+  { name: 'getReserves',type: 'function', stateMutability: 'view', inputs: [],                                                                 outputs: [{ name: 'reserve0', type: 'uint112' }, { name: 'reserve1', type: 'uint112' }, { name: 'blockTimestampLast', type: 'uint32' }] },
+  { name: 'totalSupply',type: 'function', stateMutability: 'view', inputs: [],                                                                 outputs: [{ type: 'uint256' }] },
+  { name: 'balanceOf',  type: 'function', stateMutability: 'view', inputs: [{ name: 'owner', type: 'address' }],                              outputs: [{ type: 'uint256' }] },
+] as const;
