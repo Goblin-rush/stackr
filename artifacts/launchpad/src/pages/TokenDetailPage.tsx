@@ -242,7 +242,7 @@ export default function TokenDetailPage() {
                           {creator && (
                             <>
                               by{' '}
-                              <a href={`https://basescan.org/address/${creator}`} target="_blank" rel="noreferrer"
+                              <a href={`${contracts.explorerUrl}/address/${creator}`} target="_blank" rel="noreferrer"
                                 className="hover:text-primary transition-colors">
                                 {shortAddr(creator)}
                               </a>
@@ -250,7 +250,7 @@ export default function TokenDetailPage() {
                             </>
                           )}
                           {deployedAt ? `${timeAgo(deployedAt)} ago` : ''}
-                          {' · Base · Uniswap V4'}
+                          {` · ${contracts.chainName} · Uniswap V4`}
                         </p>
                       )}
                     </div>
@@ -263,12 +263,12 @@ export default function TokenDetailPage() {
                 {/* CA row */}
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4 font-mono">
                   <span className="text-[9px] font-semibold tracking-wider text-muted-foreground/50 uppercase shrink-0">CA</span>
-                  <a href={`https://basescan.org/address/${address}`} target="_blank" rel="noreferrer noopener"
+                  <a href={`${contracts.explorerUrl}/address/${address}`} target="_blank" rel="noreferrer noopener"
                     className="text-[11px] text-muted-foreground/70 hover:text-primary transition-colors break-all">
                     {address}
                   </a>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <a href={`https://basescan.org/address/${address}`} target="_blank" rel="noreferrer noopener"
+                    <a href={`${contracts.explorerUrl}/address/${address}`} target="_blank" rel="noreferrer noopener"
                       className="text-muted-foreground hover:text-primary transition-colors">
                       <ExternalLink className="h-3.5 w-3.5" />
                     </a>
@@ -278,7 +278,7 @@ export default function TokenDetailPage() {
                     </button>
                     {poolId && (
                       <a
-                        href={`https://basescan.org/address/${FACTORY_V3_ADDRESS}`}
+                        href={`${contracts.explorerUrl}/address/${contracts.factoryAddress}`}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="text-[10px] font-mono text-primary hover:text-primary/80 transition-colors"
@@ -287,7 +287,7 @@ export default function TokenDetailPage() {
                       </a>
                     )}
                     <a
-                      href={`https://app.uniswap.org/swap?chain=base&outputCurrency=${address}`}
+                      href={`https://app.uniswap.org/swap?chain=${chainId === 1 ? 'mainnet' : 'base'}&outputCurrency=${address}`}
                       target="_blank"
                       rel="noreferrer noopener"
                       className="text-[10px] font-mono text-primary hover:text-primary/80 transition-colors"
