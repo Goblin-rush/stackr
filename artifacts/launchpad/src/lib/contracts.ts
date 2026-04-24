@@ -414,7 +414,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     explorerUrl:        'https://basescan.org',
     chainName:          'Base',
     chainShort:         'BASE',
-    rpcUrl:             'https://mainnet.base.org',
+    rpcUrl:             'https://1rpc.io/base',
     pinnedTokens:       [],
   },
   1: {
@@ -425,7 +425,7 @@ export const V3_CONTRACTS_BY_CHAIN: Record<number, V3Contracts> = {
     explorerUrl:        'https://etherscan.io',
     chainName:          'Ethereum',
     chainShort:         'ETH',
-    rpcUrl:             'https://eth.llamarpc.com',
+    rpcUrl:             'https://1rpc.io/eth',
     pinnedTokens:       ['0x8c8069e3a22724b7dfe61708845584d1846ac770'],
   },
 };
