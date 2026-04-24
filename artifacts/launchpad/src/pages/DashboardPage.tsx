@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useAccount, usePublicClient, useBlockNumber } from 'wagmi';
+import { useAccount, usePublicClient, useBlockNumber, useReadContracts } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
 import { Link } from 'wouter';
 import { formatUnits } from 'viem';
@@ -10,6 +10,10 @@ import {
   TOKEN_V3_ABI,
   computePoolId,
   sqrtPriceX96ToEthPerToken,
+  STACKR_V2_TOKEN_ABI,
+  UNISWAP_V2_PAIR_ABI,
+  ETH_STACKR_V2_TOKEN,
+  ETH_STACKR_V2_PAIR,
 } from '@/lib/contracts';
 import { useV3Contracts } from '@/hooks/use-v3-contracts';
 import { Wallet, Coins, ExternalLink, TrendingUp } from 'lucide-react';
@@ -59,6 +63,18 @@ export default function DashboardPage() {
   const [refreshKey, setRefreshKey] = useState(0);
 
   const { data: blockNumber } = useBlockNumber({ watch: true });
+
+  // ETH STACKR V2 balance (shown regardless of chain)
+  const { data: v2Data } = useReadContracts({
+    contracts: [
+      { address: ETH_STACKR_V2_TOKEN, abi: STACKR_V2_TOKEN_ABI, functionName: 'balanceOf', args: address ? [address] : undefined },
+      { address: ETH_STACKR_V2_PAIR,  abi: UNISWAP_V2_PAIR_ABI, functionName: 'getReserves' },
+    ],
+    query: { enabled: !!address, refetchInterval: 30_000 },
+  });
+  const v2Balance   = v2Data?.[0]?.status === 'success' ? (v2Data[0].result as bigint) : 0n;
+  const v2Reserves  = v2Data?.[1]?.status === 'success' ? (v2Data[1].result as [bigint, bigint, number]) : null;
+  const v2PriceEth  = v2Reserves && Number(v2Reserves[1]) > 0 ? Number(v2Reserves[0]) / Number(v2Reserves[1]) : 0;
   const lastFetchBlock = useRef<bigint>(0n);
   useEffect(() => {
     if (!blockNumber) return;
@@ -263,13 +279,49 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {holdings && holdings.length === 0 && !loading && (
+      {/* ETH STACKR V2 — always show if user holds any */}
+      {v2Balance > 0n && (
+        <div className="rounded-xl border border-primary/30 bg-card overflow-hidden mb-3">
+          <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+            <a
+              href={`https://app.uniswap.org/#/swap?inputCurrency=ETH&outputCurrency=${ETH_STACKR_V2_TOKEN}&chain=mainnet`}
+              target="_blank" rel="noreferrer"
+              className="flex items-center gap-2 group"
+            >
+              <span className="text-sm font-bold group-hover:text-primary transition-colors">$STACKR</span>
+              <span className="text-[11px] text-muted-foreground font-mono">Stackr</span>
+              <span className="text-[9px] font-semibold px-1.5 py-0.5 bg-green-500/10 text-green-400 border border-green-500/20 rounded uppercase tracking-wider">
+                V2 · ETH
+              </span>
+            </a>
+            <a href={`https://etherscan.io/token/${ETH_STACKR_V2_TOKEN}`} target="_blank" rel="noreferrer"
+              className="text-muted-foreground/40 hover:text-muted-foreground">
+              <ExternalLink className="h-3.5 w-3.5" />
+            </a>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-border/40">
+            <StatCell label="Balance" value={`${formatCompact(Number(v2Balance) / 1e18)} STACKR`} />
+            <StatCell label="Price" value={v2PriceEth > 0 ? v2PriceEth.toExponential(3) + ' ETH' : '—'} />
+            <StatCell label="Value (ETH)"
+              value={v2PriceEth > 0 ? `${((Number(v2Balance) / 1e18) * v2PriceEth).toFixed(5)} ETH` : '—'} />
+            <StatCell label="Value (USD)"
+              value={v2PriceEth > 0 && ethPrice
+                ? `$${((Number(v2Balance) / 1e18) * v2PriceEth * ethPrice).toFixed(2)}`
+                : '—'}
+              highlight={v2PriceEth > 0}
+            />
+          </div>
+        </div>
+      )}
+
+      {holdings && holdings.length === 0 && v2Balance === 0n && !loading && (
         <EmptyState
           icon={<Coins className="h-8 w-8 text-muted-foreground" />}
           title="No holdings yet"
           body="Buy a token on the Launchpad via Uniswap V4. Your holdings will appear here automatically."
         />
       )}
+      {holdings && holdings.length === 0 && v2Balance > 0n && !loading && null}
 
       {holdings && holdings.length > 0 && (
         <div className="space-y-3">
