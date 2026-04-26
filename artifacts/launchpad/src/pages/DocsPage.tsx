@@ -42,12 +42,12 @@ export default function DocsPage() {
         <H2 n="01">Token Lifecycle</H2>
         <pre className="font-mono text-[12px] bg-secondary border-2 border-border p-4 mb-4 overflow-x-auto leading-relaxed">
 {`  CREATE  →  BONDING CURVE  →  GRADUATION  →  DEX
-  (anyone)   (5 ETH target)    (auto on-chain)   (LP burned forever)`}
+  (anyone)   (2.75 ETH target) (auto on-chain)   (LP burned forever)`}
         </pre>
         <ol className="space-y-2 text-[14px] text-foreground/90 list-none pl-0">
           {[
             ['Create', 'Anyone deploys a token through the factory. Fixed 1B supply. No premint to the creator. An optional dev buy can be made at launch, subject to the same anti-snipe rules as everyone else.'],
-            ['Bonding curve', 'Buyers and sellers trade against the curve until it raises 5 ETH real (a 3 ETH virtual reserve smooths the early price). Holder rewards auto-distribute on every trade.'],
+            ['Bonding curve', 'Buyers and sellers trade against the curve until it raises 2.75 ETH real. The curve uses a virtual ETH reserve sized at launch via Chainlink so every token starts at $5K FDV.'],
             ['Graduation', 'When the target hits, the contract automatically pairs remaining tokens + raised ETH on a DEX and burns the LP to 0xdead.'],
             ['DEX trading', 'The token becomes a normal ERC-20. The curve is closed forever. Holder rewards continue from a 3.5% post-graduation tax.'],
           ].map(([k, v], i) => (
@@ -61,9 +61,9 @@ export default function DocsPage() {
           ))}
         </ol>
 
-        {/* §2 Tax */}
-        <H2 n="02">Tax: 5% on every curve trade</H2>
-        <P>Every buy and sell on the bonding curve takes a flat 5% ETH-side tax, split three ways:</P>
+        {/* §2 Fee */}
+        <H2 n="02">Fee: 1% on every curve trade</H2>
+        <P>Every buy and sell on the bonding curve takes a flat 1% ETH-side fee. 100% goes to the token creator. There is no platform fee, no burn, no holder tax.</P>
         <div className="border-2 border-border">
           <table className="w-full font-mono text-[12px]">
             <thead>
@@ -75,10 +75,10 @@ export default function DocsPage() {
             </thead>
             <tbody>
               {[
-                ['Burn',     '1.5%', 'Tokens bought from curve, sent to 0xdead'],
-                ['Holders',  '2.0%', 'Auto-distributed to time-weighted holders (§4)'],
-                ['Platform', '1.5%', 'Protocol treasury'],
-                ['Creator',  '0.0%', 'Zero. No creator skim, ever.'],
+                ['Creator',  '1.0%', 'Claimable by token creator at any time'],
+                ['Platform', '0.0%', 'No protocol skim'],
+                ['Burn',     '0.0%', 'No burn on trade'],
+                ['Holders',  '0.0%', 'No tax-funded rewards'],
               ].map(([k, s, d], i) => (
                 <tr key={i} className="border-t border-border">
                   <td className="px-3 py-2 font-bold uppercase">{k}</td>
@@ -373,8 +373,10 @@ export default function DocsPage() {
             </thead>
             <tbody>
               {[
-                ['VIRTUAL_ETH',     '3 ETH',         'Softens early curve, prevents vertical price spike'],
-                ['TARGET_REAL_ETH', '5 ETH',         'Graduation trigger'],
+                ['VIRTUAL_ETH',     'Set at launch via Chainlink', 'Sized so every token starts at $5K FDV'],
+                ['TARGET_REAL_ETH', '2.75 ETH',      'Graduation trigger'],
+                ['CURVE_SUPPLY',    '800,000,000',   'Tokens sold via the curve (80%)'],
+                ['LP_RESERVE',      '200,000,000',   'Tokens locked aside for graduation LP (20%)'],
                 ['TOTAL_SUPPLY',    '1,000,000,000', 'Fixed forever, no mint function'],
               ].map(([k, v, p], i) => (
                 <tr key={i} className="border-t border-border">
@@ -425,7 +427,7 @@ export default function DocsPage() {
                 ['Snipers extract early, dump on retail',  'Tiered sell tax 20 / 10 / 5%'],
                 ['Flat reward % gameable by 1-block holders', 'Time-weighted token-seconds'],
                 ['Manual claim required to earn rewards',  'Auto-distributed on every trade'],
-                ['Manual / admin graduation',              'Automatic on-chain at 5 ETH'],
+                ['Manual / admin graduation',              'Automatic on-chain at 2.75 ETH'],
               ].map(([a, b], i) => (
                 <tr key={i} className="border-t border-border align-top">
                   <td className="px-3 py-2 text-foreground/70 line-through decoration-primary/60">{a}</td>
