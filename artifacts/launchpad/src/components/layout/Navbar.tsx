@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { useAccount, useDisconnect, useConnect } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useModal } from 'connectkit';
 import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -56,7 +56,7 @@ export function XIcon({ className }: { className?: string }) {
 export function Navbar({ onCreate }: NavbarProps) {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const { open } = useAppKit();
+  const { setOpen } = useModal();
   const { connect, connectors } = useConnect();
   const [menuOpen, setMenuOpen] = useState(false);
   const [injected, setInjected] = useState<{ name: string; provider: any } | null>(null);
@@ -74,9 +74,9 @@ export function Navbar({ onCreate }: NavbarProps) {
   }, [menuOpen]);
 
   // Connect handler. If an injected wallet is present (Phantom mobile,
-  // MetaMask mobile, etc.), connect directly via the injected connector and
-  // bypass the Reown AppKit modal — this avoids the SIWX "Sign this message"
-  // prompt that fails inside Phantom's in-app browser.
+  // MetaMask mobile, etc.), connect directly via the injected connector to
+  // skip the modal entirely — fastest UX inside in-app browsers.
+  // Otherwise open the ConnectKit modal so the user can pick a wallet.
   const handleConnect = () => {
     if (injectedName) {
       const inj = connectors.find((c) => c.id === 'injected' || c.type === 'injected');
@@ -85,7 +85,7 @@ export function Navbar({ onCreate }: NavbarProps) {
         return;
       }
     }
-    open();
+    setOpen(true);
   };
 
   return (
