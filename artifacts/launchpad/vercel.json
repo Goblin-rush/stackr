@@ -1,3 +1,13 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    {
+      "source": "/api/v4/tokens/:address/holders",
+      "destination": "/api/v4/holders?address=:address"
+    },
+    {
+      "source": "/api/v4/tokens/:address",
+      "destination": "/api/v4/token?address=:address"
+    },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
