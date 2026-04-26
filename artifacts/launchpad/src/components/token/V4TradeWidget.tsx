@@ -84,10 +84,22 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
 
   // Always use ETH balance for pct picker
   const applyPct = (pct: number) => {
-    if (!ethBal || ethBalWei === 0n) return; // CHANGED: added !ethBal check
+    if (!ethBal) {
+      toast.error('Wallet balance not loaded yet');
+      return;
+    }
+    if (ethBalWei === 0n) {
+      toast.error('No ETH balance on mainnet');
+      return;
+    }
     let amt = (ethBalWei * BigInt(pct)) / 100n;
     if (pct >= 100) {
-      amt = ethBalWei > GAS_BUFFER_WEI ? ethBalWei - GAS_BUFFER_WEI : 0n;
+      // MAX: leave a small gas buffer so the tx can still be submitted
+      if (ethBalWei <= GAS_BUFFER_WEI) {
+        toast.error('Balance too low to cover gas (need > 0.005 ETH)');
+        return;
+      }
+      amt = ethBalWei - GAS_BUFFER_WEI;
     }
     setAmountStr(formatEther(amt));
   };
@@ -226,14 +238,13 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
         className="w-full mt-1 px-3 py-2 bg-background border border-border rounded font-mono text-sm focus:outline-none focus:border-primary"
       />
       {isConnected && (
-        <div className="mt-2 grid grid-cols-5 gap-1">
-          {[25, 50, 75, 100].map((p) => (
+        <div className="mt-2 grid grid-cols-4 gap-1">
+          {[25, 50, 75].map((p) => (
             <button
               key={p}
               type="button"
               onClick={() => applyPct(p)}
-              disabled={!ethBal || ethBalWei === 0n}
-              className="py-1 rounded text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition disabled:opacity-40"
+              className="py-1 rounded text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition"
             >
               {p}%
             </button>
@@ -241,8 +252,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
           <button
             type="button"
             onClick={() => applyPct(100)}
-            disabled={!ethBal || ethBalWei === 0n}
-            className="py-1 rounded text-[10px] font-bold bg-primary/20 text-primary hover:bg-primary/30 transition disabled:opacity-40"
+            className="py-1 rounded text-[10px] font-bold bg-primary/20 text-primary hover:bg-primary/30 transition"
           >
             MAX
           </button>

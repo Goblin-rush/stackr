@@ -8,6 +8,13 @@ if (!projectId) {
   throw new Error('VITE_WALLETCONNECT_PROJECT_ID is required');
 }
 
+// Mainnet RPC: prefer Alchemy via VITE_BASE_RPC_URL (despite the name, it's
+// an Ethereum mainnet endpoint); fall back to a public RPC if missing.
+// The default chain RPC (cloudflare-eth.com) is unreliable for balance reads.
+const MAINNET_RPC =
+  (import.meta.env.VITE_BASE_RPC_URL as string | undefined) ||
+  'https://eth.llamarpc.com';
+
 // Bridge Phantom's EVM provider to window.ethereum so wagmi's injected
 // connector can find it inside the Phantom mobile in-app browser when the
 // user hasn't set Phantom as their default Ethereum wallet.
@@ -30,7 +37,7 @@ const APP_DESC = 'Token Launchpad on Ethereum';
 export const config = createConfig({
   chains: [mainnet],
   transports: {
-    [mainnet.id]: http(),
+    [mainnet.id]: http(MAINNET_RPC),
   },
   connectors: [
     // Catches generic window.ethereum + every EIP-6963 announced wallet
