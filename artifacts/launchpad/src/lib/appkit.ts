@@ -27,6 +27,12 @@ createAppKit({
     swaps: false,
     onramp: false,
   },
+  // Explicitly disable Sign-In With X (SIWX) / One-Click Auth so users are
+  // not prompted to sign a message after connecting. Phantom mobile in-app
+  // browser fails on this prompt with "Error signing message".
+  siwx: undefined,
+  enableWalletGuide: false,
+  enableWallets: true,
   themeMode: 'dark',
   themeVariables: {
     '--w3m-accent': '#e63946',
