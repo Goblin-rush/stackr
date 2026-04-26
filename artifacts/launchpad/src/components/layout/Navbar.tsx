@@ -1,8 +1,25 @@
 import { Link } from 'wouter';
-import { useAccount, useDisconnect } from 'wagmi';
+import { useAccount, useDisconnect, useConnect } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
 import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
+
+// Detect any injected EVM wallet (Phantom mobile, MetaMask mobile, Rainbow,
+// Trust, Coinbase, etc.) and return its display name. Returns null on SSR or
+// if no wallet is injected.
+function detectInjectedWallet(): string | null {
+  if (typeof window === 'undefined') return null;
+  const eth: any = (window as any).ethereum;
+  if (!eth) return null;
+  if (eth.isPhantom) return 'Phantom';
+  if (eth.isMetaMask) return 'MetaMask';
+  if (eth.isRainbow) return 'Rainbow';
+  if (eth.isCoinbaseWallet || eth.isCoinbaseBrowser) return 'Coinbase';
+  if (eth.isTrust || eth.isTrustWallet) return 'Trust';
+  if (eth.isBraveWallet) return 'Brave';
+  if (eth.isOkxWallet || eth.isOKExWallet) return 'OKX';
+  return 'Wallet';
+}
 
 interface NavbarProps {
   onCreate?: () => void;
@@ -22,7 +39,13 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
+  const { connect, connectors } = useConnect();
   const [menuOpen, setMenuOpen] = useState(false);
+  const [injectedName, setInjectedName] = useState<string | null>(null);
+
+  useEffect(() => {
+    setInjectedName(detectInjectedWallet());
+  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -30,6 +53,21 @@ export function Navbar({ onCreate }: NavbarProps) {
     window.addEventListener('keydown', close);
     return () => window.removeEventListener('keydown', close);
   }, [menuOpen]);
+
+  // Connect handler. If an injected wallet is present (Phantom mobile,
+  // MetaMask mobile, etc.), connect directly via the injected connector and
+  // bypass the Reown AppKit modal — this avoids the SIWX "Sign this message"
+  // prompt that fails inside Phantom's in-app browser.
+  const handleConnect = () => {
+    if (injectedName) {
+      const inj = connectors.find((c) => c.id === 'injected' || c.type === 'injected');
+      if (inj) {
+        connect({ connector: inj });
+        return;
+      }
+    }
+    open();
+  };
 
   return (
     <>
@@ -91,10 +129,10 @@ export function Navbar({ onCreate }: NavbarProps) {
               </div>
             ) : (
               <button
-                onClick={() => open()}
+                onClick={handleConnect}
                 className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all glow-primary"
               >
-                Connect
+                {injectedName ? `Connect ${injectedName}` : 'Connect'}
               </button>
             )}
             <button
@@ -136,10 +174,10 @@ export function Navbar({ onCreate }: NavbarProps) {
                 </div>
               ) : (
                 <button
-                  onClick={() => { open(); setMenuOpen(false); }}
+                  onClick={() => { handleConnect(); setMenuOpen(false); }}
                   className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
-                  Connect Wallet
+                  {injectedName ? `Connect ${injectedName}` : 'Connect Wallet'}
                 </button>
               )}
             </div>
