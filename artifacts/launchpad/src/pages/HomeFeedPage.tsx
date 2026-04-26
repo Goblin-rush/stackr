@@ -7,7 +7,9 @@ import { useState, useMemo, useRef } from 'react';
 import { Link } from 'wouter';
 import { Search, X, Plus, Rocket } from 'lucide-react';
 import { useTokenMetadata, ipfsToHttp, ipfsNextGateway } from '@/lib/token-metadata';
-import { isHiddenToken } from '@/lib/contracts';
+import { isHiddenToken, V4_BOND_THRESHOLD_WEI } from '@/lib/contracts';
+
+const V4_BOND_THRESHOLD_ETH = Number(V4_BOND_THRESHOLD_WEI) / 1e18;
 
 function ImgWithFallback({ src, alt, fallback, className }: { src: string; alt: string; fallback: string; className?: string }) {
   const [cur, setCur] = useState(src);
@@ -83,6 +85,8 @@ interface RowDisplay {
   ageLabel: string;
   creatorLabel: string | null;
   chainLabel: string;
+  bondPct: number;
+  bondLabel: string;
 }
 
 function Row({ d }: { d: RowDisplay }) {
@@ -129,6 +133,22 @@ function Row({ d }: { d: RowDisplay }) {
             </div>
           ))}
         </div>
+
+        {/* Bonding curve progress */}
+        <div className="border-t border-border/40 pl-3 pr-3 py-2">
+          <div className="flex items-center justify-between text-[9px] font-semibold tracking-widest text-muted-foreground/60 uppercase mb-1">
+            <span>Bonding Progress</span>
+            <span className="font-mono tabular-nums text-foreground/80">
+              {d.bondLabel} <span className="text-muted-foreground/60">·</span> {d.bondPct.toFixed(2)}%
+            </span>
+          </div>
+          <div className="relative h-1.5 w-full overflow-hidden rounded-full bg-muted/60">
+            <div
+              className="h-full bg-gradient-to-r from-orange-500 via-pink-500 to-emerald-500 transition-all duration-500"
+              style={{ width: `${Math.min(100, Math.max(0, d.bondPct))}%` }}
+            />
+          </div>
+        </div>
       </div>
     </Link>
   );
@@ -147,6 +167,8 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
     ipfsToHttp(meta?.image) ??
     ipfsToHttp(token.metadataURI) ??
     genAvatarUri(token.symbol || '?');
+  const bondPct = Math.min((token.realEthRaised / V4_BOND_THRESHOLD_ETH) * 100, 100);
+  const bondLabel = `${token.realEthRaised.toFixed(4)} / ${V4_BOND_THRESHOLD_ETH.toFixed(2)} ETH`;
   return (
     <Row
       d={{
@@ -164,6 +186,8 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
         ageLabel: timeAgo(token.createdAtMs),
         creatorLabel: shortAddr(token.creator),
         chainLabel: 'ETH · BONDING',
+        bondPct,
+        bondLabel,
       }}
     />
   );
