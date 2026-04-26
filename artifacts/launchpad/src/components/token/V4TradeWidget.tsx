@@ -77,6 +77,13 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
     chainId: MAINNET,
     query: { enabled: !!address, refetchInterval: 8000 },
   });
+  const { data: symbolData } = useReadContract({
+    address: tokenAddress,
+    abi: V4_TOKEN_ABI,
+    functionName: 'symbol',
+    chainId: MAINNET,
+  });
+  const tokenSymbol = (symbolData as string | undefined) ?? '';
   const ethBalWei = ethBal?.value ?? 0n;
   const tokenBalWei = (tokenBal as bigint | undefined) ?? 0n;
   // Reserve small buffer for gas when using 100% of ETH
@@ -218,13 +225,15 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
 
       <div className="flex items-center justify-between">
         <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
-          Amount in ETH
+          {mode === 'buy' ? 'Amount in ETH' : `Amount in ${tokenSymbol || 'TOKEN'}`}
         </label>
         {isConnected && (
           <span className="text-[10px] font-mono text-muted-foreground">
             Bal:{' '}
             <span className="text-foreground">
-              {Number(formatEther(ethBalWei)).toFixed(4)} ETH
+              {mode === 'buy'
+                ? `${Number(formatEther(ethBalWei)).toFixed(4)} ETH`
+                : `${Number(formatUnits(tokenBalWei, 18)).toLocaleString(undefined, { maximumFractionDigits: 0 })} ${tokenSymbol || ''}`}
             </span>
           </span>
         )}
