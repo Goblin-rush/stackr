@@ -18,5 +18,10 @@
     "libsodium-wrappers": "^0.8.4",
     "sharp": "^0.34.5",
     "tweetsodium": "^0.0.6"
+  },
+  "pnpm": {
+    "overrides": {
+      "@walletconnect/ethereum-provider": "2.21.1"
+    }
   }
 }
