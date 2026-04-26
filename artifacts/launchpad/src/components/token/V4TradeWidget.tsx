@@ -147,7 +147,16 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
     <div className="border border-border bg-card rounded-xl p-4">
       {graduated && (
         <div className="mb-3 p-2 bg-emerald-500/10 border border-emerald-500/30 rounded text-xs text-emerald-400 font-mono">
-          Graduated — trade on Uniswap V2.
+          Graduated — trade on{' '}
+          <a
+            href={`https://app.uniswap.org/#/swap?outputCurrency=${tokenAddress}&chain=mainnet`}
+            target="_blank"
+            rel="noreferrer"
+            className="underline font-bold"
+          >
+            Uniswap V2
+          </a>
+          .
         </div>
       )}
       {cancelled && (
@@ -155,23 +164,24 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
           Launch cancelled.
         </div>
       )}
+      {!graduated && !cancelled && (
+        <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-[11px] text-amber-300 font-mono leading-snug">
+          Buy-only during bonding. Sells enabled on Uniswap after graduation (2.75 ETH bonded).
+        </div>
+      )}
 
       <div className="flex gap-2 mb-3 items-stretch">
         <button
           onClick={() => { setMode('buy'); setAmountStr(''); }}
-          className={`flex-1 py-2 rounded text-sm font-bold transition ${
-            mode === 'buy' ? 'bg-emerald-500 text-black' : 'bg-muted text-muted-foreground'
-          }`}
+          className="flex-1 py-2 rounded text-sm font-bold transition bg-emerald-500 text-black hover:bg-emerald-400"
         >
           Buy
         </button>
         <button
-          onClick={() => { setMode('sell'); setAmountStr(''); }}
-          className={`flex-1 py-2 rounded text-sm font-bold transition ${
-            mode === 'sell' ? 'bg-red-500 text-black' : 'bg-muted text-muted-foreground'
-          }`}
+          onClick={() => { setMode('buy'); setAmountStr(''); }}
+          className="flex-1 py-2 rounded text-sm font-bold transition bg-emerald-500 text-black hover:bg-emerald-400"
         >
-          Sell
+          Buy
         </button>
         <Popover>
           <PopoverTrigger asChild>
