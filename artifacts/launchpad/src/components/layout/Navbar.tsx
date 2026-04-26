@@ -5,20 +5,38 @@ import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 // Detect any injected EVM wallet (Phantom mobile, MetaMask mobile, Rainbow,
-// Trust, Coinbase, etc.) and return its display name. Returns null on SSR or
-// if no wallet is injected.
-function detectInjectedWallet(): string | null {
+// Trust, Coinbase, etc.) and return both display name and the provider object.
+// Returns null on SSR or if no wallet is injected.
+//
+// Phantom mobile in-app browser injects window.phantom.ethereum even when
+// Phantom is NOT set as the default Ethereum wallet (in which case
+// window.ethereum is undefined). We detect both namespaces.
+function detectInjectedWallet(): { name: string; provider: any } | null {
   if (typeof window === 'undefined') return null;
-  const eth: any = (window as any).ethereum;
+  const w: any = window;
+
+  // Phantom mobile / desktop — prefer the Phantom-specific namespace.
+  const phantomEth = w.phantom?.ethereum;
+  if (phantomEth) {
+    return { name: 'Phantom', provider: phantomEth };
+  }
+
+  // User-Agent fallback for Phantom in-app browser when no provider is yet
+  // injected at first paint.
+  if (/Phantom/i.test(w.navigator?.userAgent || '')) {
+    return { name: 'Phantom', provider: w.ethereum };
+  }
+
+  const eth: any = w.ethereum;
   if (!eth) return null;
-  if (eth.isPhantom) return 'Phantom';
-  if (eth.isMetaMask) return 'MetaMask';
-  if (eth.isRainbow) return 'Rainbow';
-  if (eth.isCoinbaseWallet || eth.isCoinbaseBrowser) return 'Coinbase';
-  if (eth.isTrust || eth.isTrustWallet) return 'Trust';
-  if (eth.isBraveWallet) return 'Brave';
-  if (eth.isOkxWallet || eth.isOKExWallet) return 'OKX';
-  return 'Wallet';
+  if (eth.isPhantom) return { name: 'Phantom', provider: eth };
+  if (eth.isMetaMask) return { name: 'MetaMask', provider: eth };
+  if (eth.isRainbow) return { name: 'Rainbow', provider: eth };
+  if (eth.isCoinbaseWallet || eth.isCoinbaseBrowser) return { name: 'Coinbase', provider: eth };
+  if (eth.isTrust || eth.isTrustWallet) return { name: 'Trust', provider: eth };
+  if (eth.isBraveWallet) return { name: 'Brave', provider: eth };
+  if (eth.isOkxWallet || eth.isOKExWallet) return { name: 'OKX', provider: eth };
+  return { name: 'Wallet', provider: eth };
 }
 
 interface NavbarProps {
@@ -41,10 +59,11 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { open } = useAppKit();
   const { connect, connectors } = useConnect();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [injectedName, setInjectedName] = useState<string | null>(null);
+  const [injected, setInjected] = useState<{ name: string; provider: any } | null>(null);
+  const injectedName = injected?.name ?? null;
 
   useEffect(() => {
-    setInjectedName(detectInjectedWallet());
+    setInjected(detectInjectedWallet());
   }, []);
 
   useEffect(() => {
