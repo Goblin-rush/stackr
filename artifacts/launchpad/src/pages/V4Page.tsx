@@ -8,7 +8,7 @@ import {
   useWaitForTransactionReceipt,
   useSwitchChain,
 } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useWalletModal } from '@/components/wallet/WalletModalContext';
 import { formatEther, parseEther, formatUnits, parseUnits, maxUint256 } from 'viem';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -39,7 +39,7 @@ export default function V4Page() {
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  const { open } = useAppKit();
+  const { open } = useWalletModal();
   const wrongChain = isConnected && chainId !== MAINNET_CHAIN_ID;
 
   // Owner check

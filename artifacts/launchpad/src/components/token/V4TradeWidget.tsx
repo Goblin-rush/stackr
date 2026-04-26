@@ -12,7 +12,7 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useWalletModal } from '@/components/wallet/WalletModalContext';
 import { formatEther, formatUnits, maxUint256, parseEther, parseUnits } from 'viem';
 import { Loader2, ExternalLink, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,7 +34,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  const { open } = useAppKit();
+  const { open } = useWalletModal();
   const wrongChain = isConnected && chainId !== MAINNET;
   const disabled = !isConnected || wrongChain || graduated || cancelled;
 

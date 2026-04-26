@@ -1,6 +1,6 @@
 import { Link } from 'wouter';
 import { useAccount, useDisconnect, useConnect } from 'wagmi';
-import { useAppKit } from '@reown/appkit/react';
+import { useWalletModal } from '@/components/wallet/WalletModalContext';
 import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -56,7 +56,7 @@ export function XIcon({ className }: { className?: string }) {
 export function Navbar({ onCreate }: NavbarProps) {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
-  const { open } = useAppKit();
+  const { open } = useWalletModal();
   const { connect, connectors } = useConnect();
   const [menuOpen, setMenuOpen] = useState(false);
   const [injected, setInjected] = useState<{ name: string; provider: any } | null>(null);
@@ -75,13 +75,22 @@ export function Navbar({ onCreate }: NavbarProps) {
 
   // Connect handler. If an injected wallet is present (Phantom mobile,
   // MetaMask mobile, etc.), connect directly via the injected connector and
-  // bypass the Reown AppKit modal — this avoids the SIWX "Sign this message"
-  // prompt that fails inside Phantom's in-app browser.
+  // skip the modal entirely — fastest UX inside in-app browsers.
+  // Otherwise open our custom modal so the user can pick a wallet.
   const handleConnect = () => {
     if (injectedName) {
-      const inj = connectors.find((c) => c.id === 'injected' || c.type === 'injected');
-      if (inj) {
-        connect({ connector: inj });
+      // Prefer an EIP-6963 announced connector matching the detected wallet,
+      // otherwise fall back to the generic injected connector.
+      const match =
+        connectors.find(
+          (c) =>
+            c.type === 'injected' &&
+            c.id !== 'injected' &&
+            c.name?.toLowerCase().includes(injectedName.toLowerCase()),
+        ) ??
+        connectors.find((c) => c.id === 'injected' || c.type === 'injected');
+      if (match) {
+        connect({ connector: match });
         return;
       }
     }

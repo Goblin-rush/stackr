@@ -5,7 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as SonnerToaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { config } from "@/lib/wagmi";
-import "@/lib/appkit";
+import { WalletModalProvider } from "@/components/wallet/WalletModalContext";
+import { WalletModal } from "@/components/wallet/WalletModal";
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner";
 import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
@@ -37,14 +38,17 @@ function App() {
   return (
     <WagmiProvider config={config}>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <WrongNetworkBanner />
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          <Toaster />
-          <SonnerToaster position="top-right" theme="dark" richColors closeButton />
-        </TooltipProvider>
+        <WalletModalProvider>
+          <TooltipProvider>
+            <WrongNetworkBanner />
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            <WalletModal />
+            <Toaster />
+            <SonnerToaster position="top-right" theme="dark" richColors closeButton />
+          </TooltipProvider>
+        </WalletModalProvider>
       </QueryClientProvider>
     </WagmiProvider>
   );
