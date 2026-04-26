@@ -19,6 +19,7 @@ export default async function handler(req, res) {
              graduated, cancelled, v2_pair, real_eth, tokens_sold,
              last_trade_at, indexed_at, chain_id
       FROM token_records_v4
+      WHERE COALESCE(hidden, 0) = 0
       ORDER BY deployed_at DESC
     `;
     const tokens = rows
