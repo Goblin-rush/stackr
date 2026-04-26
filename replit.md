@@ -26,29 +26,76 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.
 
-## Stackr V3 — Token Launchpad (Base Mainnet) · Uniswap V4
+## Stackr V3 — Token Launchpad (ETH Mainnet) · Uniswap V4
 
-### Deployed Contracts (Base Mainnet)
-- **StackrHookV3**: `0xe88D16864cAD90E9d6e0731D67a8946bc30700cc` — Uniswap V4 hook
-- **StackrFactoryV3**: `0x77a29992f609A90d7d911B056145fF95Ca7e7e73` — token factory
-- **Uniswap V4 PoolManager**: `0x498581ff718922c3f8e6a244956af099b2652b2b`
+### Deployed Contracts (ETH Mainnet, chain ID 1)
+- **StackrHookV3**: `0x37d90eD6709A942dB0e4D76aAbCB7551c0bc40cC` — V4 hook, CREATE2-mined for `0xCC` flag mask, salt `0x...0396`, validateHookAddress() = `true`, funded with 0.005 ETH LP buffer
+- **StackrFactoryV3**: `0xF957c94763eD1E8211A19C8a73C862dF45690AB1` — token factory, owner = deployer, wired to hook + Chainlink feed
+- **Uniswap V4 PoolManager**: `0x000000000004444c5dc75cB358380D2e3dE08A90` (ETH mainnet)
+- **Chainlink ETH/USD AggregatorV3**: `0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419` (ETH mainnet, 8 decimals)
 - **Deployer EOA**: `0xaAd5f333dFBD6c5561C9D41E624A12069b337B46`
+- *Stale Base mainnet addresses (no longer used): hook `0xe88D...00cc`, factory `0x77a2...7e73`*
+- *Orphan ETH mainnet factory (deployed by accident on second run, NOT wired): `0x5A793060a8bec3B95C54C17916fF6B0eBE501019` — DO NOT USE*
 
-### V3 Architecture (NO BONDING CURVE)
+### V3 Architecture (bankr.bot / Doppler-style — NO BONDING CURVE)
 - Factory deploys Token (ERC20) + registers V4 pool immediately — no bonding curve
-- `factory.getRecord(tokenAddress)` returns `{ token, creator, deployedAt, metadataURI, poolKey }`
+- `factory.getRecord(tokenAddress)` returns `{ token, creator, deployedAt, metadataURI, poolKey, sqrtPriceX96AtLaunch, ethUsdPriceAtLaunch }`
 - All trades happen via Uniswap V4 PoolManager (pool key: ETH/token, fee=3000, tickSpacing=60)
-- Hook tax 3% on every swap: 1.5% holder rewards + 1.5% platform (100% anti-snipe to rewards)
-- LP fee 0.3% goes to pool LP held by factory
+- **Linear fee decay** on every swap (same fee for buys and sells):
+  - t = 0s → 80.0% (`LAUNCH_FEE_BPS`)
+  - linear interpolation 0–10s
+  - t ≥ 10s → 3.0% (`STEADY_FEE_BPS`)
+  - Computed by `currentFeeBps(poolId)` view on Hook
+- **Fee split** (constant 50/50): rewards / platform
+- **Anti-snipe REMOVED** — snipers pay the 80% launch fee themselves; that fee flows back to holders + platform
+- **Dynamic $5K starting FDV via Chainlink** — every launch reads ETH/USD live and computes `sqrtPriceX96` so FDV is always exactly $5,000 USD regardless of ETH price.
+  - `TARGET_USD_FDV = 5000` (immutable constant — deployer cannot override)
+  - `getEthUsdPrice8()` reverts on negative answers, zero updates, or staleness > 1 hour
+  - `computeLaunchSqrtPriceX96()` does the BigInt-safe sqrt math on-chain
+- **MasterChef-style holder rewards** (time-weighting DROPPED — was source of CRITICAL audit finding):
+  - `accRewardPerToken` accumulator increments on every hook deposit
+  - `pendingEth[user] = balance × accRewardPerToken − rewardDebt[user]`
+  - Settled BEFORE every transfer (`_update` override) and at `claim()`
+  - `setHook(_hook, _poolManager)` auto-excludes BOTH addresses from `isExcluded` — prevents the 1B tokens parked in the V4 PoolManager from diluting holder rewards
+  - Provably correct: `Σ pendingEth ≤ Σ deposited ETH` under any deposit cadence
+- **Pull-only `claim()`** on token — no keeper, no `pushRewards`, no `setKeeper`
+- **`withdrawLP()` retained** on factory for manual burn flow (owner withdraws → owner sends to 0xdead)
+- **Hook flag check is strict** — `validateHookAddress()` enforces `(addr & 0xFF) == 0xCC` exactly (rejects extra V4 hook permission bits the contract does not implement)
+- **No `updateFactory()` escape hatch** — factory wiring on hook is one-shot via `setFactory()`, immutable thereafter
+- LP fee 0.3% goes to pool LP held by hook
 - V3 event signatures:
+  - `HookSet(address indexed hook, address indexed poolManager)` on Token
+  - `AddressExcluded(address indexed addr)` on Token
+  - `RewardsDeposited(uint256 ethAmount, uint256 newAccRewardPerToken)` on Token *(was `newCumulative`)*
+  - `RewardsClaimed(address indexed user, uint256 ethAmount)` on Token
   - `PoolRegistered(bytes32 indexed poolId, address indexed token)` on Hook
-  - `TaxCollected(bytes32 indexed poolId, bool isBuy, uint256 ethAmount, uint256 antiSnipeBps)` on Hook
+  - `TaxCollected(bytes32 indexed poolId, bool isBuy, uint256 ethAmount, uint256 feeBps)` on Hook
   - `TaxDistributed(bytes32 indexed poolId, uint256 rewardEth, uint256 platformEth)` on Hook
   - `LPWithdrawn(bytes32 indexed poolId, address indexed to, uint256 ethReceived, uint256 tokensReceived)` on Hook
+  - `TokenDeployed(address token, address creator, string name, string symbol, string metadataURI, uint160 sqrtPriceX96, uint256 ethUsdPrice8)` on Factory
   - `Swap(bytes32 indexed id, ...)` on PoolManager (V4 standard)
-  - `TokenDeployed(address indexed token, address indexed creator, ...)` on Factory
-- `createToken(name, symbol, metadataURI)` — no dev buy, no ETH value needed (nonpayable)
-- Trading: redirect to `https://app.uniswap.org/swap?chain=base&outputCurrency={token}`
+- `createToken(name, symbol, metadataURI)` — optional dev buy via `msg.value` (payable)
+- Factory constructor signature: `constructor(IPoolManager _poolManager, StackrHookV3 _hook, AggregatorV3Interface _ethUsdFeed)` — verifies `_hook.poolManager() == _poolManager`
+- Solc bumped to **0.8.26** with `evmVersion: cancun` (matches V4 transient-storage requirements)
+- `auto-distributor.ts` retained but no longer started (claims now pull-only); permissionless `distributeTax(key)` remains on-chain
+
+### ⚠️ Pending after this refactor
+1. ~~Recompile contracts~~ ✓ DONE — Hardhat compiles 22 files clean (solc 0.8.26 / cancun)
+2. ~~CREATE2-mine hook salt~~ ✓ DONE — salt `0x...0396` → hook `0x37d9...40cC`
+3. ~~Deploy Hook → Factory → wire → fund~~ ✓ DONE — see addresses above
+4. **Update frontend addresses** in `artifacts/launchpad/src/lib/contracts.ts` (also switch chain to mainnet, chain ID 1)
+5. **Update frontend ABI + constants** to match new contract surface:
+   - Replace `V3_BASE_TAX_BPS` constant with `V3_LAUNCH_FEE_BPS=8000`, `V3_STEADY_FEE_BPS=300`, `V3_FEE_DECAY_SECONDS=10`
+   - Replace `getAntiSnipeStatus()` helper with `getCurrentFeeBps(poolLaunchTs)`
+   - Update `TaxCollected` event sig: `antiSnipeBps` → `feeBps` in 3 hook files (`use-launchpad-feed.ts`, `use-global-trade-tape.ts`, `use-chain-token-live.ts`)
+   - Replace token reward ABI: drop `checkpoints`, `cumulativeEthPerScore`, `lastRewardTimestamp`, `totalAccumulatedScore`, `totalSettledBalance`; add `accRewardPerToken`, `rewardDebt(address)`, `pendingEth(address)`, `totalEligibleSupply`
+   - Update `TokenDeployed` ABI: add `sqrtPriceX96` and `ethUsdPrice8` fields
+   - Add factory ABI: `getEthUsdPrice8()`, `computeLaunchSqrtPriceX96()`, `TARGET_USD_FDV`
+   - Add `TokenRecord` extra fields: `sqrtPriceX96AtLaunch`, `ethUsdPriceAtLaunch`
+   - Remove ABI entries: `antiSnipeBpsFor`, `lastBuyAt`, `pushRewards`, `setKeeper`, `updateHook`, `updateFactory`, `VIRTUAL_SQRT_PRICE_X96`
+   - Add ABI entry: `currentFeeBps(bytes32)` view on Hook
+   - Update `TradeWidget.tsx` to display live decaying fee instead of fixed 3%
+- Trading: redirect to `https://app.uniswap.org/swap?chain=mainnet&outputCurrency={token}`
 - PoolId = keccak256(abi.encode(ETH, token, 3000, 60, hookAddress))
 - Price: `sqrtPriceX96ToEthPerToken()` from PoolManager.getSlot0(poolId)
 

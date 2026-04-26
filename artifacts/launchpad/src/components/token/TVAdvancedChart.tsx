@@ -1,5 +1,9 @@
 import { useEffect, useRef, type MutableRefObject } from 'react';
-import type { Timeframe } from './PriceChart';
+
+// Locally-defined timeframe options. The original `./PriceChart` module no
+// longer exists, so the type is colocated here to keep callers' prop shapes
+// stable.
+export type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
 
 interface LiveBucket {
   time: number;   // seconds — bucket start
@@ -23,6 +27,9 @@ declare global {
 const VIRTUAL_ETH = 3.0;
 const VIRTUAL_TOKENS = 1_073_000_000;
 const K = VIRTUAL_ETH * VIRTUAL_TOKENS;
+// Total supply used for market-cap display, must match the header
+// (TOTAL_SUPPLY in V4TokenDetailPage / use-v4-feed = 1B).
+const TOTAL_SUPPLY = 1_000_000_000;
 
 function hashSeed(s: string): number {
   let h = 2166136261;
@@ -47,7 +54,7 @@ function mulberry32(seed: number) {
 // Returns market cap in USD: price_per_token_eth * total_supply * eth_price_usd
 function mcFromEthReserve(e: number, ethPrice: number): number {
   const pricePerTokenEth = (e * e) / K;
-  return pricePerTokenEth * VIRTUAL_TOKENS * ethPrice;
+  return pricePerTokenEth * TOTAL_SUPPLY * ethPrice;
 }
 
 const TF_SECONDS: Record<string, number> = {
@@ -276,7 +283,7 @@ export function TVAdvancedChart({
     const intervalSec = TF_SECONDS[resolutionRef.current] ?? 900;
     const tradeSec = Math.floor(lastTrade.timestamp / 1000);
     const bucketTime = Math.floor(tradeSec / intervalSec) * intervalSec;
-    const mcUsd = lastTrade.price * VIRTUAL_TOKENS * resolvedEthPrice;
+    const mcUsd = lastTrade.price * TOTAL_SUPPLY * resolvedEthPrice;
     const vol = lastTrade.ethAmount;
 
     const prev = bucketRef.current;

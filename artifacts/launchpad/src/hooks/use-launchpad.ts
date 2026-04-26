@@ -1,25 +1,41 @@
 import { useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
-import { FACTORY_V3_ADDRESS, FACTORY_V3_ABI } from '@/lib/contracts';
+import { ETH_FACTORY_V4_ADDRESS } from '@/lib/contracts';
+import { V4_FACTORY_ABI } from '@/lib/v4-abi';
 
 export function useCreateToken() {
   const { data: hash, isPending, writeContractAsync, error } = useWriteContract();
 
-  const { isLoading: isConfirming, isSuccess: isConfirmed } = useWaitForTransactionReceipt({
-    hash,
-  });
+  const {
+    isLoading: isConfirming,
+    isSuccess: isConfirmed,
+    data: receipt,
+  } = useWaitForTransactionReceipt({ hash });
 
+  /**
+   * Deploy a new token + curve.
+   * If `devBuyWei > 0n`, bundles an initial buy in the same tx via
+   * `deployTokenWithBuy`. Otherwise calls the cheaper `deployToken`.
+   */
   const createToken = async (
     name: string,
     symbol: string,
     metadataURI: string,
-    devBuyEth?: bigint,
+    devBuyWei: bigint = 0n,
   ) => {
+    if (devBuyWei > 0n) {
+      return writeContractAsync({
+        address: ETH_FACTORY_V4_ADDRESS,
+        abi: V4_FACTORY_ABI,
+        functionName: 'deployTokenWithBuy',
+        args: [name, symbol, metadataURI, 0n],
+        value: devBuyWei,
+      });
+    }
     return writeContractAsync({
-      address: FACTORY_V3_ADDRESS,
-      abi: FACTORY_V3_ABI,
-      functionName: 'createToken',
+      address: ETH_FACTORY_V4_ADDRESS,
+      abi: V4_FACTORY_ABI,
+      functionName: 'deployToken',
       args: [name, symbol, metadataURI],
-      value: devBuyEth ?? 0n,
     });
   };
 
@@ -30,5 +46,6 @@ export function useCreateToken() {
     isConfirmed,
     error,
     hash,
+    receipt,
   };
 }

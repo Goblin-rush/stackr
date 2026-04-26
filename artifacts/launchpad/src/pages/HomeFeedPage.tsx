@@ -1,11 +1,13 @@
 import { Navbar } from '@/components/layout/Navbar';
 import { CreateTokenModal } from '@/components/token/CreateTokenModal';
-import { useLaunchpadFeed, type FeedToken } from '@/hooks/use-launchpad-feed';
+import type { FeedToken } from '@/hooks/use-v4-feed';
+import { useV4Feed } from '@/hooks/use-v4-feed';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useState, useMemo, useRef } from 'react';
 import { Link } from 'wouter';
 import { Search, X, Plus, Rocket } from 'lucide-react';
 import { useTokenMetadata, ipfsToHttp, ipfsNextGateway } from '@/lib/token-metadata';
+import { isHiddenToken } from '@/lib/contracts';
 
 function ImgWithFallback({ src, alt, fallback, className }: { src: string; alt: string; fallback: string; className?: string }) {
   const [cur, setCur] = useState(src);
@@ -141,11 +143,14 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
   const mcUsd = ethPrice ? token.marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? token.currentPriceEth * ethPrice : null;
   const meta = useTokenMetadata(token.address);
-  const image = ipfsToHttp(meta?.image) ?? genAvatarUri(token.symbol || '?');
+  const image =
+    ipfsToHttp(meta?.image) ??
+    ipfsToHttp(token.metadataURI) ??
+    genAvatarUri(token.symbol || '?');
   return (
     <Row
       d={{
-        href: `/token/${token.chainId}/${token.address}`,
+        href: `/token/${token.address}`,
         symbol: token.symbol || '?',
         name: token.name || 'Unnamed',
         image,
@@ -158,7 +163,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
         tradeLabel: token.lastTradeMs ? timeAgo(token.lastTradeMs) : '—',
         ageLabel: timeAgo(token.createdAtMs),
         creatorLabel: shortAddr(token.creator),
-        chainLabel: token.chainId === 1 ? 'ETH · V4' : 'BASE · V4',
+        chainLabel: 'ETH · BONDING',
       }}
     />
   );
@@ -166,17 +171,21 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
 
 /* ─── Page ───────────────────────────────────────── */
 export default function HomeFeedPage() {
-  // Base only for now — ETH feed hidden
-  const baseFeed = useLaunchpadFeed(200, 8453);
-  const tokens   = useMemo(() => [...baseFeed.tokens], [baseFeed.tokens]);
-  const isLoading = baseFeed.isLoading;
+  // ETH mainnet V4 bonding curve
+  const v4Feed   = useV4Feed();
+  const tokens   = v4Feed.tokens;
+  const isLoading = v4Feed.isLoading;
   const { data: ethPrice } = useEthPrice();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [sort, setSort] = useState<FeedSort>('new');
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
-    let list = sortTokens(tokens, sort);
+    // Drop tokens marked as hidden (e.g. internal test deploys) before sort/search.
+    let list = sortTokens(
+      tokens.filter((t) => !isHiddenToken(t.address)),
+      sort,
+    );
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter(
@@ -259,14 +268,14 @@ export default function HomeFeedPage() {
               <TokenRow key={token.address} token={token} ethPrice={ethPrice} />
             ))}
           </div>
-        ) : tokens.length === 0 && !query.trim() ? (
+        ) : !query.trim() ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">
             <div className="w-14 h-14 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center mb-5">
               <Rocket className="h-6 w-6 text-primary" />
             </div>
             <h2 className="text-base font-bold mb-2">No tokens launched yet</h2>
             <p className="text-sm text-muted-foreground mb-6 max-w-xs leading-relaxed">
-              Be the first to launch a token on Base mainnet via Uniswap V4.
+              Be the first to launch a token on Ethereum mainnet via the bonding curve.
             </p>
             <button
               onClick={() => setIsCreateOpen(true)}

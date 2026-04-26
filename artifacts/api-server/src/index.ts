@@ -1,7 +1,6 @@
 import app from "./app";
 import { logger } from "./lib/logger";
-import { startIndexer } from "./lib/indexer";
-import { startAutoDistributor } from "./lib/auto-distributor";
+import { startIndexerV4 } from "./lib/indexer-v4";
 
 const rawPort = process.env["PORT"];
 
@@ -25,9 +24,6 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
 
-  // Start background chain indexer (V3 PoolRegistered events → DB).
-  startIndexer();
-
-  // Start auto-distributor: calls distributeTax on pools every 5 min when rewards accumulate.
-  startAutoDistributor();
+  // Start V4 bonding-curve indexer (mainnet only).
+  startIndexerV4();
 });

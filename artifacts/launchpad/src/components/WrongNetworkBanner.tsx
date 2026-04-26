@@ -10,7 +10,7 @@ export function WrongNetworkBanner() {
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 flex items-center justify-center gap-3 bg-red-600 px-4 py-2 text-sm font-medium text-white">
-      <span>Unsupported network — please switch to Base or Ethereum mainnet</span>
+      <span>Unsupported network — please switch to Ethereum mainnet</span>
     </div>
   );
 }

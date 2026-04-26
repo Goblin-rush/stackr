@@ -300,7 +300,7 @@ export default function DemoTokenPage() {
                     <p className="text-[11px] text-muted-foreground font-mono mt-1.5">
                       by{' '}
                       <a
-                        href={`https://basescan.org/address/${t.creatorAddress}`}
+                        href={`https://etherscan.io/address/${t.creatorAddress}`}
                         target="_blank"
                         rel="noreferrer noopener"
                         className="hover:text-primary transition-colors underline-offset-2 hover:underline"
@@ -324,7 +324,7 @@ export default function DemoTokenPage() {
                 <div className="flex flex-wrap items-center gap-x-2 gap-y-1 mb-4 font-mono">
                   <span className="text-[9px] font-semibold tracking-wider text-muted-foreground/50 uppercase shrink-0">CA</span>
                   <a
-                    href={`https://basescan.org/address/${t.address}`}
+                    href={`https://etherscan.io/address/${t.address}`}
                     target="_blank"
                     rel="noreferrer noopener"
                     className="text-[11px] text-muted-foreground/70 hover:text-primary transition-colors break-all"
@@ -333,7 +333,7 @@ export default function DemoTokenPage() {
                   </a>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <a
-                      href={`https://basescan.org/address/${t.address}`}
+                      href={`https://etherscan.io/address/${t.address}`}
                       target="_blank"
                       rel="noreferrer noopener"
                       className="text-muted-foreground hover:text-primary transition-colors"
@@ -473,7 +473,7 @@ export default function DemoTokenPage() {
                         </div>
                         <div className="col-span-3 text-right text-foreground/70">{tr.tokens}</div>
                         <div className="col-span-2 text-right">
-                          <a href={`https://basescan.org/address/${tr.addr}`} target="_blank" rel="noreferrer noopener"
+                          <a href={`https://etherscan.io/address/${tr.addr}`} target="_blank" rel="noreferrer noopener"
                             className="inline-flex items-center gap-1 text-muted-foreground/50 hover:text-primary transition-colors">
                             {tr.addr}<ExternalLink className="h-2.5 w-2.5 shrink-0" />
                           </a>
@@ -503,7 +503,7 @@ export default function DemoTokenPage() {
                     {pageHolders.map((h, i) => (
                       <div key={i} className="flex items-center gap-3 px-5 py-2.5 border-b border-border/30 last:border-0 text-xs font-mono hover:bg-white/2 transition-colors">
                         <span className="text-muted-foreground/40 tabular-nums w-4 shrink-0">{holderPage * PAGE_SIZE + i + 1}</span>
-                        <a href={`https://basescan.org/address/${h.addr}`} target="_blank" rel="noreferrer noopener"
+                        <a href={`https://etherscan.io/address/${h.addr}`} target="_blank" rel="noreferrer noopener"
                           className="flex-1 text-foreground/80 truncate hover:text-primary transition-colors inline-flex items-center gap-1">
                           {h.addr}<ExternalLink className="h-2.5 w-2.5 shrink-0 opacity-50" />
                         </a>

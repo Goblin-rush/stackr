@@ -4,42 +4,25 @@ export interface UploadResult {
   gatewayUrl: string;
 }
 
-const PINATA_JWT = import.meta.env.VITE_PINATA_JWT as string | undefined;
-const PINATA_API = 'https://api.pinata.cloud/pinning/pinFileToIPFS';
-const GATEWAY = 'https://gateway.pinata.cloud/ipfs';
-
+// All image uploads go through the server (`/api/upload-image`) so the Pinata
+// JWT stays on the backend. NEVER read a `VITE_PINATA_JWT` here — anything on
+// `import.meta.env.VITE_*` is bundled into the public JavaScript and would
+// leak the credential to every visitor.
 export async function uploadImage(file: File): Promise<UploadResult> {
-  if (PINATA_JWT) {
-    const fd = new FormData();
-    fd.append('file', file, file.name);
-    fd.append('pinataMetadata', JSON.stringify({ name: file.name }));
-    fd.append('pinataOptions', JSON.stringify({ cidVersion: 1 }));
-
-    const res = await fetch(PINATA_API, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${PINATA_JWT}` },
-      body: fd,
-    });
-
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Pinata upload failed: ${text}`);
-    }
-
-    const data = (await res.json()) as { IpfsHash: string };
-    const cid = data.IpfsHash;
-    return { cid, url: `ipfs://${cid}`, gatewayUrl: `${GATEWAY}/${cid}` };
-  }
-
   const fd = new FormData();
   fd.append('file', file);
-  const res = await fetch('/api/upload-image', { method: 'POST', body: fd });
+  // Use the artifact's BASE_URL so the path resolves correctly when the app
+  // is mounted under a sub-path by the Replit preview proxy.
+  const apiUrl = `${import.meta.env.BASE_URL}api/upload-image`.replace(/\/{2,}/g, '/');
+  const res = await fetch(apiUrl, { method: 'POST', body: fd });
   if (!res.ok) {
     let msg = 'Upload failed';
     try {
       const j = await res.json();
       if (j?.error) msg = j.error;
-    } catch {}
+    } catch {
+      /* non-JSON error body */
+    }
     throw new Error(msg);
   }
   return (await res.json()) as UploadResult;

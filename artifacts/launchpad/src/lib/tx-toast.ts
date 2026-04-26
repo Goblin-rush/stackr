@@ -6,7 +6,7 @@ export function shortHash(hash?: string) {
 }
 
 export function basescanTx(hash: string) {
-  return `https://basescan.org/tx/${hash}`;
+  return `https://etherscan.io/tx/${hash}`;
 }
 
 export function parseTxError(err: unknown): string {
@@ -32,7 +32,7 @@ export function txSubmittedToast(id: string | number, hash: `0x${string}`, label
     id,
     description: `Tx ${shortHash(hash)} pending…`,
     action: {
-      label: 'Basescan',
+      label: 'Etherscan',
       onClick: () => window.open(basescanTx(hash), '_blank'),
     },
   });
@@ -43,7 +43,7 @@ export function txSuccessToast(id: string | number, hash: `0x${string}`, label: 
     id,
     description: `Tx ${shortHash(hash)} confirmed`,
     action: {
-      label: 'Basescan',
+      label: 'Etherscan',
       onClick: () => window.open(basescanTx(hash), '_blank'),
     },
   });

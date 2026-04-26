@@ -1,6 +1,6 @@
 kind = "web"
 previewPath = "/"
-title = "Bonding Curve Launchpad"
+title = "Stackr Launchpad"
 version = "1.0.0"
 id = "artifacts/launchpad"
 router = "path"

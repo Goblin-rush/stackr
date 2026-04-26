@@ -3,45 +3,50 @@ import { Navbar } from '@/components/layout/Navbar';
 const faqs: { q: string; a: string | string[] }[] = [
   {
     q: 'What is Stackr?',
-    a: 'Stackr is a token launchpad on Base and Ethereum mainnet. Anyone can deploy a token with real Uniswap V4 liquidity from day one — no bonding curve. Every trade automatically distributes ETH rewards to holders.',
+    a: 'Stackr is a pump.fun-style bonding curve launchpad on Ethereum mainnet. Anyone can deploy a token at a fixed $5,000 starting market cap and trade it directly on the curve from block one. Once the curve raises 2.75 ETH, the token automatically graduates to a Uniswap V2 pool.',
   },
   {
-    q: 'How does trading work?',
-    a: 'Tokens on Stackr trade directly on Uniswap V4 from the moment they launch. There is no bonding curve and no graduation step. Real liquidity, real price discovery from block one.',
-  },
-  {
-    q: 'Do I need to do anything to receive holder rewards?',
-    a: 'No. Just hold the token. Every time someone buys or sells, 1.5% of the trade value is automatically sent to holders as ETH. No claiming, no staking.',
-  },
-  {
-    q: 'Where does the 3% tax go?',
+    q: 'How does the bonding curve work?',
     a: [
-      'Every buy and sell has a 3% swap tax, split as:',
-      '1.5% → distributed to token holders as ETH',
-      '1.5% → platform treasury',
-      '0.3% → Uniswap V4 LP fee (separate)',
-      'Zero goes to the creator.',
+      'Every token launches with the same parameters:',
+      'Total supply: 1,000,000,000 (1B) tokens',
+      'Curve allocation: 800,000,000 tokens (sold via constant-product curve)',
+      'LP reserve: 200,000,000 tokens (held back for the V2 pool at graduation)',
+      'Starting FDV: $5,000 (anchored to ETH/USD via Chainlink at deploy)',
+      'Bond threshold: 2.75 ETH raised → auto-graduates to Uniswap V2',
     ],
   },
   {
-    q: 'Can the creator rug?',
-    a: 'No. The factory contract is non-upgradeable. The creator has no special access to the liquidity pool or the reward distribution. Everything is handled by the smart contract.',
+    q: 'What happens at graduation?',
+    a: 'Once 2.75 ETH is raised on the curve, the next buy that pushes it over the threshold automatically deploys a Uniswap V2 pool, seeds it with the 200M LP reserve tokens + raised ETH, and burns the LP tokens. The curve is permanently closed and trading moves to V2.',
   },
   {
-    q: 'What chains is Stackr on?',
-    a: 'Base mainnet and Ethereum mainnet. You can launch and trade on either chain — just make sure your wallet is connected to the right network.',
+    q: 'Are there any trading fees?',
+    a: 'Yes — every buy and sell on the curve has a 1% fee that goes directly to the token creator. There is no platform fee on trades. The creator can claim accumulated fees at any time.',
   },
   {
-    q: 'What is the total supply of each token?',
-    a: '1,000,000,000 tokens (1 billion). Fixed at deploy time. No mint function exists.',
+    q: 'Who gets the LP value at graduation?',
+    a: 'All LP value from graduation goes to the factory owner only. Bonders (people who bought during the curve) do not receive any LP share. They hold the tokens themselves and can sell them on the V2 pool after graduation.',
+  },
+  {
+    q: 'Can the launch be cancelled?',
+    a: 'Yes. The creator can cancel an unbonded launch. There are NO refunds for bonders by design — buying on the curve is at your own risk. Treat every launch as if it can rug at any time before graduation.',
+  },
+  {
+    q: 'What chain is Stackr on?',
+    a: 'Ethereum mainnet only. You must connect your wallet to Ethereum mainnet to deploy or trade.',
+  },
+  {
+    q: 'How is the starting price set?',
+    a: 'The factory reads the live ETH/USD price from Chainlink at deploy time and computes the curve\'s virtual ETH reserve so that the implied FDV is exactly $5,000 USD. This means every launch starts at the same dollar valuation regardless of ETH price.',
   },
   {
     q: 'Is the smart contract audited?',
-    a: 'Not yet. This is an early version of the protocol. Only trade what you can afford to lose.',
+    a: 'Not yet — this is an early version of the protocol. The factory and curve contracts are immutable: no upgrade keys, no admin pause, no mint function. Creators cannot drain liquidity or change the curve once a token is launched. Still, only trade what you can afford to lose.',
   },
   {
     q: 'Can I deploy a token with any name or ticker?',
-    a: 'Yes. The factory does not check for duplicates. Anyone can use any name. Do your own verification before buying.',
+    a: 'Yes. The factory does not check for duplicates. Anyone can use any name. Verify the contract address yourself before buying.',
   },
 ];
 

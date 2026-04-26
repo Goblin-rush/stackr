@@ -118,7 +118,11 @@ export function saveTokenMetadataLocal(address: string, meta: Omit<TokenMetadata
   notify();
 }
 
-/** Save locally AND publish to the API server so other users can see it. */
+/**
+ * Save locally AND publish to the API server so other users can see it.
+ * Resolves only after the POST completes (or all retries are exhausted).
+ * Throws if the server ultimately rejects the write so callers can surface failure.
+ */
 export async function saveTokenMetadata(
   address: string,
   meta: Omit<TokenMetadata, 'createdAt'>,
@@ -131,21 +135,27 @@ export async function saveTokenMetadata(
   if (meta.website)     payload.website     = meta.website;
   if (meta.twitter)     payload.twitter     = meta.twitter;
   if (meta.telegram)    payload.telegram    = meta.telegram;
-  const tryPost = async (retries = 2): Promise<void> => {
+
+  let lastErr: unknown = null;
+  for (let attempt = 0; attempt <= 2; attempt++) {
     try {
       const r = await fetch(`/api/tokens/${key}/metadata`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!r.ok && retries > 0) { await new Promise((res) => setTimeout(res, 1000)); return tryPost(retries - 1); }
-      remoteCache.set(key, { ...meta, createdAt: Date.now() });
-      notify();
-    } catch {
-      if (retries > 0) { await new Promise((res) => setTimeout(res, 1000)); return tryPost(retries - 1); }
+      if (r.ok) {
+        remoteCache.set(key, { ...meta, createdAt: Date.now() });
+        notify();
+        return;
+      }
+      lastErr = new Error(`Server returned ${r.status}`);
+    } catch (e) {
+      lastErr = e;
     }
-  };
-  void tryPost();
+    if (attempt < 2) await new Promise((res) => setTimeout(res, 800 * (attempt + 1)));
+  }
+  throw lastErr instanceof Error ? lastErr : new Error('Network error saving metadata');
 }
 
 /** Update just the image field for an existing token metadata record. */

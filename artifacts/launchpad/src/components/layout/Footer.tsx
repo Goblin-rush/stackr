@@ -8,7 +8,7 @@ export function Footer() {
       <div className="container max-w-7xl mx-auto px-4 md:px-8 h-10 flex items-center text-[11px] font-mono text-muted-foreground overflow-x-auto scrollbar-none">
         <div className="flex items-center gap-4 whitespace-nowrap flex-1">
           <span className="flex items-center gap-1.5">
-            <span className="text-foreground/70">Base</span>
+            <span className="text-foreground/70">Ethereum Mainnet</span>
           </span>
         </div>
         <div className="flex items-center gap-4">

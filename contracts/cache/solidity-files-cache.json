@@ -2,18 +2,18 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/home/runner/workspace/contracts/contracts/AsteroidStrategy.sol": {
-      "lastModificationDate": 1776709451004,
+      "lastModificationDate": 1777172244821,
       "contentHash": "b6ebc880372392c5464e50a489c22e85",
       "sourceName": "contracts/AsteroidStrategy.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -42,18 +42,18 @@
       ]
     },
     "/home/runner/workspace/contracts/contracts/BondingCurveLaunchpad.sol": {
-      "lastModificationDate": 1776716071039,
+      "lastModificationDate": 1777172244822,
       "contentHash": "7a7d5a2db58f2b7cef280b901b27025d",
       "sourceName": "contracts/BondingCurveLaunchpad.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -83,18 +83,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/access/Ownable.sol": {
-      "lastModificationDate": 1776729345717,
+      "lastModificationDate": 1777172367571,
       "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
       "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -122,18 +122,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/utils/ReentrancyGuard.sol": {
-      "lastModificationDate": 1776729345724,
+      "lastModificationDate": 1777172367580,
       "contentHash": "6e5efb502dd6652d12ad15eea2c5bdf4",
       "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -161,18 +161,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol": {
-      "lastModificationDate": 1776729345613,
+      "lastModificationDate": 1777172367416,
       "contentHash": "d15c4d05583536e080f1960ab282772d",
       "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -203,18 +203,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/utils/Context.sol": {
-      "lastModificationDate": 1776729345576,
+      "lastModificationDate": 1777172367353,
       "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
       "sourceName": "@openzeppelin/contracts/utils/Context.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -240,18 +240,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/utils/StorageSlot.sol": {
-      "lastModificationDate": 1776729345741,
+      "lastModificationDate": 1777172367605,
       "contentHash": "e656d64c4ce918f3d13030b91c935134",
       "sourceName": "@openzeppelin/contracts/utils/StorageSlot.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -277,18 +277,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
-      "lastModificationDate": 1776729345681,
+      "lastModificationDate": 1777172367510,
       "contentHash": "9261adf6457863de3e9892f51317ec89",
       "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -314,18 +314,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol": {
-      "lastModificationDate": 1776729345592,
+      "lastModificationDate": 1777172367387,
       "contentHash": "bcc76f4747d56c28c40ae272ef3470a6",
       "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -353,18 +353,18 @@
       ]
     },
     "/home/runner/workspace/node_modules/.pnpm/@openzeppelin+contracts@5.6.1/node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol": {
-      "lastModificationDate": 1776729345683,
+      "lastModificationDate": 1777172367512,
       "contentHash": "513778b30d2750f5d2b9b19bbcf748a5",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -392,18 +392,18 @@
       ]
     },
     "/home/runner/workspace/contracts/contracts/LaunchpadFactory.sol": {
-      "lastModificationDate": 1776715836265,
+      "lastModificationDate": 1777172244823,
       "contentHash": "f567f1e792ada0e33a7ad9ec0a09b2c2",
       "sourceName": "contracts/LaunchpadFactory.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -431,19 +431,19 @@
         "LaunchpadFactory"
       ]
     },
-    "/home/runner/workspace/contracts/contracts/mocks/MockUniswapV2.sol": {
-      "lastModificationDate": 1776788364288,
-      "contentHash": "76bda36a6cb8964dad5e08b73e7fb07c",
-      "sourceName": "contracts/mocks/MockUniswapV2.sol",
+    "/home/runner/workspace/contracts/contracts/v4/StackrCurveV4.sol": {
+      "lastModificationDate": 1777189232559,
+      "contentHash": "1d9531a63e218d0a2a5166efd3f67aca",
+      "sourceName": "contracts/v4/StackrCurveV4.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -461,32 +461,70 @@
         }
       },
       "imports": [
-        "../../contracts/v2/interfaces/IUniswapV2Router02.sol",
-        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol",
+        "./StackrTokenV4.sol",
+        "./interfaces/IUniswapV2.sol"
       ],
       "versionPragmas": [
-        "^0.8.20"
+        "^0.8.26"
       ],
       "artifacts": [
-        "MockUniswapV2Factory",
-        "MockUniswapV2Pair",
-        "MockUniswapV2Router",
-        "MockWETH"
+        "StackrCurveV4"
       ]
     },
-    "/home/runner/workspace/contracts/contracts/v2/interfaces/IUniswapV2Router02.sol": {
-      "lastModificationDate": 1776847988285,
-      "contentHash": "54c8029674859ea7245d0832698a8c6f",
-      "sourceName": "contracts/v2/interfaces/IUniswapV2Router02.sol",
+    "/home/runner/workspace/contracts/contracts/v4/StackrTokenV4.sol": {
+      "lastModificationDate": 1777188614899,
+      "contentHash": "ed1e552c5a06524bb64f8bc00295e2b0",
+      "sourceName": "contracts/v4/StackrTokenV4.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/token/ERC20/ERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.26"
+      ],
+      "artifacts": [
+        "StackrTokenV4"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/v4/interfaces/IUniswapV2.sol": {
+      "lastModificationDate": 1777188618461,
+      "contentHash": "3ec0f16fec08e6c14b82fe8617ff7cdb",
+      "sourceName": "contracts/v4/interfaces/IUniswapV2.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -505,26 +543,108 @@
       },
       "imports": [],
       "versionPragmas": [
-        "^0.8.20"
+        "^0.8.26"
       ],
       "artifacts": [
+        "IERC20Minimal",
         "IUniswapV2Factory",
         "IUniswapV2Router02"
       ]
     },
-    "/home/runner/workspace/contracts/contracts/v2/AethpadTokenV2.sol": {
-      "lastModificationDate": 1776848217367,
-      "contentHash": "9dd2770f4bf7dbaf51a541b7b3a335b4",
-      "sourceName": "contracts/v2/AethpadTokenV2.sol",
+    "/home/runner/workspace/contracts/contracts/v4/StackrFactoryV4.sol": {
+      "lastModificationDate": 1777202796813,
+      "contentHash": "2743b568eacd66de89961824dc47e69e",
+      "sourceName": "contracts/v4/StackrFactoryV4.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/access/Ownable.sol",
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "./StackrTokenV4.sol",
+        "./StackrCurveV4.sol",
+        "./interfaces/AggregatorV3Interface.sol",
+        "./interfaces/IUniswapV2.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.26"
+      ],
+      "artifacts": [
+        "StackrFactoryV4"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/v4/interfaces/AggregatorV3Interface.sol": {
+      "lastModificationDate": 1777188468152,
+      "contentHash": "9786f36666b32bc30d5ad944b5d4c3a5",
+      "sourceName": "contracts/v4/interfaces/AggregatorV3Interface.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "AggregatorV3Interface"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/v2/AethpadTokenV2.sol": {
+      "lastModificationDate": 1777172244827,
+      "contentHash": "9dd2770f4bf7dbaf51a541b7b3a335b4",
+      "sourceName": "contracts/v2/AethpadTokenV2.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -553,19 +673,99 @@
         "AethpadTokenV2"
       ]
     },
-    "/home/runner/workspace/contracts/contracts/v2/AethpadFactoryV2.sol": {
-      "lastModificationDate": 1776848234210,
-      "contentHash": "9df8915df16492c2797dea23fbcaa01c",
-      "sourceName": "contracts/v2/AethpadFactoryV2.sol",
+    "/home/runner/workspace/contracts/contracts/v2/interfaces/IUniswapV2Router02.sol": {
+      "lastModificationDate": 1777172244828,
+      "contentHash": "54c8029674859ea7245d0832698a8c6f",
+      "sourceName": "contracts/v2/interfaces/IUniswapV2Router02.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "IUniswapV2Factory",
+        "IUniswapV2Router02"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/v2/AethpadBondingCurveV2.sol": {
+      "lastModificationDate": 1777172244825,
+      "contentHash": "b39ccb330d9043925fdc702d18a527ab",
+      "sourceName": "contracts/v2/AethpadBondingCurveV2.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
+        "./interfaces/IUniswapV2Router02.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "AethpadBondingCurveV2",
+        "IAethpadTokenV2",
+        "IERC20Like"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/v2/AethpadFactoryV2.sol": {
+      "lastModificationDate": 1777172244827,
+      "contentHash": "9df8915df16492c2797dea23fbcaa01c",
+      "sourceName": "contracts/v2/AethpadFactoryV2.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -596,61 +796,19 @@
         "AethpadFactoryV2"
       ]
     },
-    "/home/runner/workspace/contracts/contracts/v2/AethpadBondingCurveV2.sol": {
-      "lastModificationDate": 1776848203809,
-      "contentHash": "b39ccb330d9043925fdc702d18a527ab",
-      "sourceName": "contracts/v2/AethpadBondingCurveV2.sol",
-      "solcConfig": {
-        "version": "0.8.20",
-        "settings": {
-          "optimizer": {
-            "enabled": true,
-            "runs": 1
-          },
-          "viaIR": true,
-          "evmVersion": "paris",
-          "outputSelection": {
-            "*": {
-              "*": [
-                "abi",
-                "evm.bytecode",
-                "evm.deployedBytecode",
-                "evm.methodIdentifiers",
-                "metadata"
-              ],
-              "": [
-                "ast"
-              ]
-            }
-          }
-        }
-      },
-      "imports": [
-        "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
-        "./interfaces/IUniswapV2Router02.sol"
-      ],
-      "versionPragmas": [
-        "^0.8.20"
-      ],
-      "artifacts": [
-        "AethpadBondingCurveV2",
-        "IAethpadTokenV2",
-        "IERC20Like"
-      ]
-    },
     "/home/runner/workspace/contracts/contracts/v2/AethpadDeployer.sol": {
-      "lastModificationDate": 1776787888206,
+      "lastModificationDate": 1777172244826,
       "contentHash": "1cdb0397b5b583f018fae75f1cb320c3",
       "sourceName": "contracts/v2/AethpadDeployer.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.26",
         "settings": {
           "optimizer": {
             "enabled": true,
             "runs": 1
           },
           "viaIR": true,
-          "evmVersion": "paris",
+          "evmVersion": "cancun",
           "outputSelection": {
             "*": {
               "*": [
@@ -676,6 +834,49 @@
       ],
       "artifacts": [
         "AethpadDeployer"
+      ]
+    },
+    "/home/runner/workspace/contracts/contracts/mocks/MockUniswapV2.sol": {
+      "lastModificationDate": 1777172244824,
+      "contentHash": "76bda36a6cb8964dad5e08b73e7fb07c",
+      "sourceName": "contracts/mocks/MockUniswapV2.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 1
+          },
+          "viaIR": true,
+          "evmVersion": "cancun",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../../contracts/v2/interfaces/IUniswapV2Router02.sol",
+        "@openzeppelin/contracts/token/ERC20/IERC20.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "MockUniswapV2Factory",
+        "MockUniswapV2Pair",
+        "MockUniswapV2Router",
+        "MockWETH"
       ]
     }
   }

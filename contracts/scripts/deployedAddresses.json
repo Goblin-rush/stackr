@@ -1,7 +1,25 @@
 {
-  "network": "mainnet",
-  "poolManager": "0x000000000004444c5dc75cB358380D2e3dE08A90",
-  "hook": "0x76F3624d08D120162377F9Ba195362293C2440cC",
-  "factory": "0x6d9907040C25C0B3675bbAcef54a3c42710826E9",
-  "deployedAt": "2026-04-23T23:11:41.911Z"
+  "v4": {
+    "network": "mainnet",
+    "chainId": 1,
+    "factory": "0xCd2eF35fbe85460dbc4cb549945fd119d17F03D1",
+    "ethUsdFeed": "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    "v2Router": "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D",
+    "v2Factory": "0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f",
+    "weth": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+    "owner": "0xaAd5f333dFBD6c5561C9D41E624A12069b337B46",
+    "deployedAt": "2026-04-26T11:38:04.462Z",
+    "deployTx": "0xe73c2a6049c35ea24c5e1f669d522e75553f52a7c5b48c849b33e11b6ab82a9b",
+    "block": 24963944,
+    "config": {
+      "launchFdvUsd": 5000,
+      "bondThresholdEth": "2.75",
+      "curveTokenSupply": "800000000",
+      "lpReserveTokens": "200000000",
+      "totalSupply": "1000000000",
+      "feeBps": 100,
+      "feeRecipient": "token creator",
+      "lpRecipient": "factory owner"
+    }
+  }
 }

@@ -1,7 +1,6 @@
 import { Link } from 'wouter';
 import { useAccount, useDisconnect } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
-import { useV3Contracts } from '@/hooks/use-v3-contracts';
 import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
@@ -24,7 +23,6 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { disconnect } = useDisconnect();
   const { open } = useAppKit();
   const [menuOpen, setMenuOpen] = useState(false);
-  const { chainName } = useV3Contracts();
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -48,14 +46,13 @@ export function Navbar({ onCreate }: NavbarProps) {
 
           {/* Chain chip */}
           <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-widest rounded-full border border-primary/40 text-primary px-2.5 py-1 leading-none bg-primary/8">
-            {chainName}
+            ETH Mainnet
           </span>
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-0.5 ml-3">
             {[
               { href: '/', label: 'Feed' },
-              { href: '/dashboard', label: 'Profile' },
               { href: '/docs', label: 'Docs' },
               { href: '/faq', label: 'FAQ' },
               { href: '/disclaimer', label: 'Disclaimer' },
@@ -151,7 +148,6 @@ export function Navbar({ onCreate }: NavbarProps) {
             <nav className="flex-1 px-2 py-3 space-y-0.5">
               {[
                 { href: '/', label: 'Feed' },
-                { href: '/dashboard', label: 'Profile' },
                 { href: '/docs', label: 'Docs' },
                 { href: '/faq', label: 'FAQ' },
                 { href: '/disclaimer', label: 'Disclaimer' },

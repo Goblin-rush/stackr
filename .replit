@@ -32,27 +32,8 @@ localPort = 8082
 externalPort = 3002
 
 [[ports]]
-localPort = 8083
-externalPort = 6000
-
-[[ports]]
 localPort = 19433
-externalPort = 3003
-
-[[ports]]
-localPort = 21783
 externalPort = 3000
-
-[[ports]]
-localPort = 21784
-externalPort = 3001
 
 [nix]
 channel = "stable-25_05"
-
-[userenv]
-
-[userenv.shared]
-VITE_ALCHEMY_RPC_URL = "https://eth-mainnet.g.alchemy.com/v2/-ukJuDymTWUsoMl6jc041"
-VITE_FACTORY_V2_ADDRESS = "0x95849D817d442a8BBC774103741AD23b241a7341"
-VITE_DEPLOYER_V2_ADDRESS = "0x47b779A99f73fCD2F1E403a324A15E3a351AcFB8"

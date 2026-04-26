@@ -9,9 +9,8 @@ import "@/lib/appkit";
 import { WrongNetworkBanner } from "@/components/WrongNetworkBanner";
 import NotFound from "@/pages/not-found";
 import HomeFeedPage from "@/pages/HomeFeedPage";
-import TokenDetailPage from "@/pages/TokenDetailPage";
-import AdminPage from "@/pages/AdminPage";
-import DashboardPage from "@/pages/DashboardPage";
+import V4Page from "@/pages/V4Page";
+import V4TokenDetailPage from "@/pages/V4TokenDetailPage";
 import DemoTokenPage from "@/pages/DemoTokenPage";
 import DocsPage from "@/pages/DocsPage";
 import FaqPage from "@/pages/FaqPage";
@@ -23,14 +22,12 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={HomeFeedPage} />
-      <Route path="/dashboard" component={DashboardPage} />
-      <Route path="/token/:address" component={TokenDetailPage} />
-      <Route path="/token/:chainId/:address" component={TokenDetailPage} />
       <Route path="/demo/:symbol" component={DemoTokenPage} />
       <Route path="/docs" component={DocsPage} />
       <Route path="/faq" component={FaqPage} />
       <Route path="/disclaimer" component={DisclaimerPage} />
-      <Route path="/admin" component={AdminPage} />
+      <Route path="/admin" component={V4Page} />
+      <Route path="/token/:address" component={V4TokenDetailPage} />
       <Route component={NotFound} />
     </Switch>
   );
