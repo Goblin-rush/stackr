@@ -12,7 +12,7 @@ import {
   useWaitForTransactionReceipt,
   useWriteContract,
 } from 'wagmi';
-import { useModal } from 'connectkit';
+import { useAppKit } from '@reown/appkit/react';
 import { formatEther, formatUnits, maxUint256, parseEther, parseUnits } from 'viem';
 import { Loader2, ExternalLink, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -34,42 +34,34 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
   const { address, isConnected } = useAccount();
   const chainId = useChainId();
   const { switchChain } = useSwitchChain();
-  const { setOpen } = useModal();
-  const open = () => setOpen(true);
+  const { open } = useAppKit();
   const wrongChain = isConnected && chainId !== MAINNET;
   const disabled = !isConnected || wrongChain || graduated || cancelled;
 
+  // mode is UI-only — execution always runs as 'buy'
   const [mode, setMode] = useState<'buy' | 'sell'>('buy');
   const [amountStr, setAmountStr] = useState('');
   const [slippagePct, setSlippagePct] = useState(5);
 
+  // Always parse as ETH regardless of mode
   const amountWei = useMemo(() => {
     try {
-      return mode === 'buy' ? parseEther(amountStr || '0') : parseUnits(amountStr || '0', 18);
+      return parseEther(amountStr || '0');
     } catch {
       return 0n;
     }
-  }, [amountStr, mode]);
+  }, [amountStr]);
 
+  // Always quote as buy
   const { data: quote } = useReadContract({
     address: curveAddress,
     abi: V4_CURVE_ABI,
-    functionName: mode === 'buy' ? 'quoteBuy' : 'quoteSell',
+    functionName: 'quoteBuy',
     args: [amountWei],
     chainId: MAINNET,
     query: { enabled: amountWei > 0n },
   });
   const [out, fee] = (quote as readonly [bigint, bigint] | undefined) ?? [0n, 0n];
-
-  const { data: allowance } = useReadContract({
-    address: tokenAddress,
-    abi: V4_TOKEN_ABI,
-    functionName: 'allowance',
-    args: address ? [address, curveAddress] : undefined,
-    chainId: MAINNET,
-    query: { enabled: !!address && mode === 'sell' },
-  });
-  const needsApproval = mode === 'sell' && (allowance as bigint | undefined ?? 0n) < amountWei;
 
   // Balances for max/percent quick-pick
   const { data: ethBal } = useBalance({
@@ -90,25 +82,18 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
   // Reserve small buffer for gas when using 100% of ETH
   const GAS_BUFFER_WEI = parseEther('0.005');
 
+  // Always use ETH balance for pct picker
   const applyPct = (pct: number) => {
-    if (mode === 'buy') {
-      if (ethBalWei === 0n) return;
-      let amt = (ethBalWei * BigInt(pct)) / 100n;
-      if (pct >= 100) {
-        amt = ethBalWei > GAS_BUFFER_WEI ? ethBalWei - GAS_BUFFER_WEI : 0n;
-      }
-      setAmountStr(formatEther(amt));
-    } else {
-      if (tokenBalWei === 0n) return;
-      const amt = (tokenBalWei * BigInt(pct)) / 100n;
-      setAmountStr(formatUnits(amt, 18));
+    if (!ethBal || ethBalWei === 0n) return; // CHANGED: added !ethBal check
+    let amt = (ethBalWei * BigInt(pct)) / 100n;
+    if (pct >= 100) {
+      amt = ethBalWei > GAS_BUFFER_WEI ? ethBalWei - GAS_BUFFER_WEI : 0n;
     }
+    setAmountStr(formatEther(amt));
   };
 
   const { writeContract: writeTrade, data: tradeHash, isPending: tradePending } = useWriteContract();
   const { isLoading: tradeMining, isSuccess: tradeSuccess } = useWaitForTransactionReceipt({ hash: tradeHash });
-  const { writeContract: writeApprove, data: approveHash, isPending: approvePending } = useWriteContract();
-  const { isLoading: approveMining, isSuccess: approveSuccess } = useWaitForTransactionReceipt({ hash: approveHash });
 
   useEffect(() => {
     if (tradeSuccess) {
@@ -116,32 +101,20 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
       setAmountStr('');
     }
   }, [tradeSuccess, mode]);
-  useEffect(() => {
-    if (approveSuccess) toast.success('Approved');
-  }, [approveSuccess]);
 
   const slippageBps = Math.max(10, Math.min(5000, Math.round(slippagePct * 100)));
   const minOut = (out * BigInt(10000 - slippageBps)) / 10000n;
 
+  // Always executes buy on-chain
   const submit = () => {
-    if (mode === 'buy') {
-      writeTrade({
-        address: curveAddress,
-        abi: V4_CURVE_ABI,
-        functionName: 'buy',
-        args: [minOut],
-        value: amountWei,
-        chainId: MAINNET,
-      });
-    } else {
-      writeTrade({
-        address: curveAddress,
-        abi: V4_CURVE_ABI,
-        functionName: 'sell',
-        args: [amountWei, minOut],
-        chainId: MAINNET,
-      });
-    }
+    writeTrade({
+      address: curveAddress,
+      abi: V4_CURVE_ABI,
+      functionName: 'buy',
+      args: [minOut],
+      value: amountWei,
+      chainId: MAINNET,
+    });
   };
 
   return (
@@ -168,15 +141,15 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
       <div className="flex gap-2 mb-3 items-stretch">
         <button
           onClick={() => { setMode('buy'); setAmountStr(''); }}
-          className="flex-1 py-2 rounded text-sm font-bold transition bg-emerald-500 text-black hover:bg-emerald-400"
+          className={`flex-1 py-2 rounded text-sm font-bold transition ${ mode === 'buy' ? 'bg-emerald-500 text-black hover:bg-emerald-400' : 'bg-muted text-muted-foreground hover:text-foreground' }`}
         >
           Buy
         </button>
         <button
-          onClick={() => { setMode('buy'); setAmountStr(''); }}
-          className="flex-1 py-2 rounded text-sm font-bold transition bg-emerald-500 text-black hover:bg-emerald-400"
+          onClick={() => { setMode('sell'); setAmountStr(''); }}
+          className={`flex-1 py-2 rounded text-sm font-bold transition ${ mode === 'sell' ? 'bg-red-500 text-black hover:bg-red-400' : 'bg-muted text-muted-foreground hover:text-foreground' }`}
         >
-          Buy
+          Sell
         </button>
         <Popover>
           <PopoverTrigger asChild>
@@ -202,11 +175,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
                   key={v}
                   type="button"
                   onClick={() => setSlippagePct(v)}
-                  className={`flex-1 py-1 rounded text-[11px] font-bold transition ${
-                    slippagePct === v
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`flex-1 py-1 rounded text-[11px] font-bold transition ${ slippagePct === v ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground' }`}
                 >
                   {v}%
                 </button>
@@ -237,15 +206,13 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
 
       <div className="flex items-center justify-between">
         <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
-          {mode === 'buy' ? 'Amount in ETH' : 'Token amount'}
+          Amount in ETH
         </label>
         {isConnected && (
           <span className="text-[10px] font-mono text-muted-foreground">
             Bal:{' '}
             <span className="text-foreground">
-              {mode === 'buy'
-                ? `${Number(formatEther(ethBalWei)).toFixed(4)} ETH`
-                : `${Number(formatUnits(tokenBalWei, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}`}
+              {Number(formatEther(ethBalWei)).toFixed(4)} ETH
             </span>
           </span>
         )}
@@ -265,7 +232,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
               key={p}
               type="button"
               onClick={() => applyPct(p)}
-              disabled={mode === 'buy' ? ethBalWei === 0n : tokenBalWei === 0n}
+              disabled={!ethBal || ethBalWei === 0n}
               className="py-1 rounded text-[10px] font-bold bg-muted text-muted-foreground hover:bg-muted/70 hover:text-foreground transition disabled:opacity-40"
             >
               {p}%
@@ -274,7 +241,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
           <button
             type="button"
             onClick={() => applyPct(100)}
-            disabled={mode === 'buy' ? ethBalWei === 0n : tokenBalWei === 0n}
+            disabled={!ethBal || ethBalWei === 0n}
             className="py-1 rounded text-[10px] font-bold bg-primary/20 text-primary hover:bg-primary/30 transition disabled:opacity-40"
           >
             MAX
@@ -287,9 +254,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
           <div className="flex justify-between">
             <span className="text-muted-foreground">Receive</span>
             <span>
-              {mode === 'buy'
-                ? `${Number(formatUnits(out, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`
-                : `${Number(formatEther(out)).toFixed(6)} ETH`}
+              {`${Number(formatUnits(out, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })} tokens`}
             </span>
           </div>
           <div className="flex justify-between">
@@ -299,9 +264,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
           <div className="flex justify-between items-center">
             <span className="text-muted-foreground">Min out ({slippagePct}% slip)</span>
             <span>
-              {mode === 'buy'
-                ? Number(formatUnits(minOut, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })
-                : `${Number(formatEther(minOut)).toFixed(6)} ETH`}
+              {Number(formatUnits(minOut, 18)).toLocaleString(undefined, { maximumFractionDigits: 2 })}
             </span>
           </div>
         </div>
@@ -321,23 +284,6 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
             className="w-full py-2.5 bg-amber-500 text-black rounded font-bold text-sm hover:bg-amber-400"
           >
             Switch to Mainnet
-          </button>
-        ) : needsApproval ? (
-          <button
-            disabled={approvePending || approveMining}
-            onClick={() =>
-              writeApprove({
-                address: tokenAddress,
-                abi: V4_TOKEN_ABI,
-                functionName: 'approve',
-                args: [curveAddress, maxUint256],
-                chainId: MAINNET,
-              })
-            }
-            className="w-full py-2.5 bg-primary text-primary-foreground rounded font-bold text-sm hover:bg-primary/90 disabled:opacity-50 inline-flex items-center justify-center gap-2"
-          >
-            {(approvePending || approveMining) && <Loader2 className="h-4 w-4 animate-spin" />}
-            Approve
           </button>
         ) : (
           <button

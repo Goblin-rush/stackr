@@ -76,9 +76,14 @@
   },
   "dependencies": {
     "@neondatabase/serverless": "^0.10.4",
-    "connectkit": "^1.9.2",
+    "@privy-io/react-auth": "^3.22.1",
+    "@privy-io/wagmi": "^4.0.5",
+    "@rainbow-me/rainbowkit": "^2.2.10",
+    "@reown/appkit": "^1.8.19",
+    "@reown/appkit-adapter-wagmi": "^1.8.19",
+    "@reown/appkit-siwx": "^1.8.19",
     "lightweight-charts": "^4.2.3",
     "viem": "^2.48.1",
-    "wagmi": "^2.19.5"
+    "wagmi": "^3.6.3"
   }
 }
