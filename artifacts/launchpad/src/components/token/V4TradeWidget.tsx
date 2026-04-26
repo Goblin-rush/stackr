@@ -1,4 +1,3 @@
-cat > /mnt/user-data/outputs/V4TradeWidget.tsx << 'ENDOFFILE'
 /**
  * V4 buy/sell widget for the bonding curve.
  * Standalone, uses V4_CURVE_ABI / V4_TOKEN_ABI directly.
@@ -14,7 +13,7 @@ import {
   useWriteContract,
 } from 'wagmi';
 import { useAppKit } from '@reown/appkit/react';
-import { formatEther, formatUnits, parseEther } from 'viem';
+import { formatEther, formatUnits, maxUint256, parseEther, parseUnits } from 'viem';
 import { Loader2, ExternalLink, Settings2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { V4_FEE_BPS } from '@/lib/contracts';
@@ -64,20 +63,28 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
   });
   const [out, fee] = (quote as readonly [bigint, bigint] | undefined) ?? [0n, 0n];
 
-  // ETH balance only — always used for pct/max picker
+  // Balances for max/percent quick-pick
   const { data: ethBal } = useBalance({
     address,
     chainId: MAINNET,
     query: { enabled: !!address, refetchInterval: 8000 },
   });
+  const { data: tokenBal } = useReadContract({
+    address: tokenAddress,
+    abi: V4_TOKEN_ABI,
+    functionName: 'balanceOf',
+    args: address ? [address] : undefined,
+    chainId: MAINNET,
+    query: { enabled: !!address, refetchInterval: 8000 },
+  });
   const ethBalWei = ethBal?.value ?? 0n;
-
+  const tokenBalWei = (tokenBal as bigint | undefined) ?? 0n;
   // Reserve small buffer for gas when using 100% of ETH
   const GAS_BUFFER_WEI = parseEther('0.005');
 
-  // Always use ETH balance for pct picker — both buy and sell mode
+  // Always use ETH balance for pct picker
   const applyPct = (pct: number) => {
-    if (!ethBal || ethBalWei === 0n) return;
+    if (!ethBal || ethBalWei === 0n) return; // CHANGED: added !ethBal check
     let amt = (ethBalWei * BigInt(pct)) / 100n;
     if (pct >= 100) {
       amt = ethBalWei > GAS_BUFFER_WEI ? ethBalWei - GAS_BUFFER_WEI : 0n;
@@ -134,21 +141,13 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
       <div className="flex gap-2 mb-3 items-stretch">
         <button
           onClick={() => { setMode('buy'); setAmountStr(''); }}
-          className={`flex-1 py-2 rounded text-sm font-bold transition ${
-            mode === 'buy'
-              ? 'bg-emerald-500 text-black hover:bg-emerald-400'
-              : 'bg-muted text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 py-2 rounded text-sm font-bold transition ${ mode === 'buy' ? 'bg-emerald-500 text-black hover:bg-emerald-400' : 'bg-muted text-muted-foreground hover:text-foreground' }`}
         >
           Buy
         </button>
         <button
           onClick={() => { setMode('sell'); setAmountStr(''); }}
-          className={`flex-1 py-2 rounded text-sm font-bold transition ${
-            mode === 'sell'
-              ? 'bg-red-500 text-black hover:bg-red-400'
-              : 'bg-muted text-muted-foreground hover:text-foreground'
-          }`}
+          className={`flex-1 py-2 rounded text-sm font-bold transition ${ mode === 'sell' ? 'bg-red-500 text-black hover:bg-red-400' : 'bg-muted text-muted-foreground hover:text-foreground' }`}
         >
           Sell
         </button>
@@ -176,11 +175,7 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
                   key={v}
                   type="button"
                   onClick={() => setSlippagePct(v)}
-                  className={`flex-1 py-1 rounded text-[11px] font-bold transition ${
-                    slippagePct === v
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground hover:text-foreground'
-                  }`}
+                  className={`flex-1 py-1 rounded text-[11px] font-bold transition ${ slippagePct === v ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground hover:text-foreground' }`}
                 >
                   {v}%
                 </button>
@@ -209,7 +204,6 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
         </Popover>
       </div>
 
-      {/* Label and balance — always ETH regardless of mode */}
       <div className="flex items-center justify-between">
         <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-mono">
           Amount in ETH
@@ -228,11 +222,9 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
         step="any"
         value={amountStr}
         onChange={(e) => setAmountStr(e.target.value)}
-        placeholder="0.01"
+        placeholder={mode === 'buy' ? '0.01' : '1000'}
         className="w-full mt-1 px-3 py-2 bg-background border border-border rounded font-mono text-sm focus:outline-none focus:border-primary"
       />
-
-      {/* Pct/MAX buttons — always based on ETH balance */}
       {isConnected && (
         <div className="mt-2 grid grid-cols-5 gap-1">
           {[25, 50, 75, 100].map((p) => (
@@ -321,4 +313,3 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
     </div>
   );
 }
-ENDOFFILE
