@@ -26,13 +26,15 @@ createAppKit({
     socials: false,
     swaps: false,
     onramp: false,
+    // Disable Sign-In With X (SIWX) / Reown Authentication. This prevents
+    // AppKit from prompting users to sign a message after wallet connect.
+    // Phantom mobile in-app browser fails this prompt with
+    // "Error signing message". Setting this to false also overrides
+    // remoteFeatures.reownAuthentication coming from the Reown Cloud
+    // dashboard.
+    reownAuthentication: false,
   },
-  // Explicitly disable Sign-In With X (SIWX) / One-Click Auth so users are
-  // not prompted to sign a message after connecting. Phantom mobile in-app
-  // browser fails on this prompt with "Error signing message".
   siwx: undefined,
-  enableWalletGuide: false,
-  enableWallets: true,
   themeMode: 'dark',
   themeVariables: {
     '--w3m-accent': '#e63946',
