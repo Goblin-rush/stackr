@@ -203,20 +203,31 @@ export default function V4TokenDetailPage() {
   const { data: ethPrice } = useEthPrice();
   const meta = useTokenMetadata(tokenAddress);
 
-  // Derived stats (prefer live values from chain when available)
-  const realEth = liveRealEth !== undefined ? Number(liveRealEth) / 1e18 : bnToEth(token?.realEth);
-  const tokensSold = liveTokensSold !== undefined ? Number(liveTokensSold) / 1e18 : bnToEth(token?.tokensSold);
+  // Derived stats (prefer live values from chain, but for terminal states the
+  // on-chain curve state can read back as zeros — fall back to the DB snapshot
+  // so the historical bonded amount/price stay visible).
+  const graduated = liveGraduated ?? (token?.graduated === 1);
+  const cancelled = liveCancelled ?? (token?.cancelled === 1);
+  const liveActive = !graduated && !cancelled;
+  const dbRealEth = bnToEth(token?.realEth);
+  const dbTokensSold = bnToEth(token?.tokensSold);
+  const realEth = liveActive && liveRealEth !== undefined
+    ? Number(liveRealEth) / 1e18
+    : dbRealEth;
+  const tokensSold = liveActive && liveTokensSold !== undefined
+    ? Number(liveTokensSold) / 1e18
+    : dbTokensSold;
   const virtualEth = bnToEth(token?.virtualEthReserve);
   const remaining = Math.max(CURVE_TOKENS - tokensSold, 1);
-  const priceEthPerToken = livePrice !== undefined ? Number(livePrice) / 1e18 : (virtualEth + realEth) / remaining;
+  const priceEthPerToken = liveActive && livePrice !== undefined && livePrice > 0n
+    ? Number(livePrice) / 1e18
+    : (virtualEth + realEth) / remaining;
   const marketCapEth = priceEthPerToken * TOTAL_SUPPLY;
   const marketCapUsd = ethPrice ? marketCapEth * ethPrice : null;
   const priceUsd = ethPrice ? priceEthPerToken * ethPrice : null;
-  const bondPct = livePctBps !== undefined
+  const bondPct = liveActive && livePctBps !== undefined
     ? Number(livePctBps) / 100
     : Math.min((realEth / (Number(V4_BOND_THRESHOLD_WEI) / 1e18)) * 100, 100);
-  const graduated = liveGraduated ?? (token?.graduated === 1);
-  const cancelled = liveCancelled ?? (token?.cancelled === 1);
 
   // Convert latest trade to chart tick
   const lastTrade: LiveTradeTick | null = useMemo(() => {
