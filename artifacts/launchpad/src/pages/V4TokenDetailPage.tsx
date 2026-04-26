@@ -200,6 +200,18 @@ export default function V4TokenDetailPage() {
   const [liveRealEth, liveTokensSold, livePrice, livePctBps, liveGraduated, liveCancelled] =
     (liveState as readonly [bigint, bigint, bigint, bigint, boolean, boolean] | undefined) ?? [];
 
+  // On-chain creator fees accrued (10s refresh)
+  const { data: creatorFeesAccrued } = useReadContract({
+    address: token?.curveAddress as `0x${string}` | undefined,
+    abi: V4_CURVE_ABI,
+    functionName: 'creatorFeesAccrued',
+    chainId: 1,
+    query: { enabled: !!token, refetchInterval: 10000 },
+  });
+  const creatorFeesEth = creatorFeesAccrued !== undefined
+    ? Number(creatorFeesAccrued as bigint) / 1e18
+    : 0;
+
   const { data: ethPrice } = useEthPrice();
   const meta = useTokenMetadata(tokenAddress);
 
@@ -350,7 +362,26 @@ export default function V4TokenDetailPage() {
                   <Copy className="h-3 w-3" />
                 </button>
               </span>
-              <span>creator {shortAddr(token.creator)}</span>
+              <span>
+                creator{' '}
+                <a
+                  href={`${ETHERSCAN}/address/${token.creator}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  {shortAddr(token.creator)}
+                </a>
+              </span>
+              <span>
+                · creator earned{' '}
+                <span className="text-foreground font-bold">{creatorFeesEth.toFixed(4)} ETH</span>
+                {ethPrice && creatorFeesEth > 0 && (
+                  <span className="text-muted-foreground/70">
+                    {' '}(${(creatorFeesEth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 2 })})
+                  </span>
+                )}
+              </span>
               <span>· {timeAgo(token.deployedAt * 1000)}</span>
             </div>
             {meta?.description && (
