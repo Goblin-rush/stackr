@@ -394,15 +394,8 @@ export default function V4TokenDetailPage() {
               style={{ width: `${Math.min(100, Math.max(0, bondPct))}%` }}
             />
           </div>
-          <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-muted-foreground">
-            <span>
-              <span className="text-foreground font-bold">{realEth.toFixed(4)}</span>
-              {' / '}
-              {(Number(V4_BOND_THRESHOLD_WEI) / 1e18).toFixed(2)} ETH bonded
-            </span>
-            {ethPrice && realEth > 0 && (
-              <span>≈ ${(realEth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-            )}
+          <div className="mt-2 text-[11px] font-mono text-muted-foreground">
+            {(Number(V4_BOND_THRESHOLD_WEI) / 1e18).toFixed(2)} ETH to graduate
           </div>
         </div>
 

@@ -168,7 +168,7 @@ function TokenRow({ token, ethPrice }: { token: FeedToken; ethPrice: number | un
     ipfsToHttp(token.metadataURI) ??
     genAvatarUri(token.symbol || '?');
   const bondPct = Math.min((token.realEthRaised / V4_BOND_THRESHOLD_ETH) * 100, 100);
-  const bondLabel = `${token.realEthRaised.toFixed(4)} / ${V4_BOND_THRESHOLD_ETH.toFixed(2)} ETH`;
+  const bondLabel = `${V4_BOND_THRESHOLD_ETH.toFixed(2)} ETH`;
   return (
     <Row
       d={{
