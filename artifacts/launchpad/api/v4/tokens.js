@@ -1,5 +1,11 @@
 import { getSql, rowToTokenRecord } from './_lib.js';
 
+const HIDDEN_TOKENS_V4 = new Set([
+  '0xad9a072d6a98f022038c8b2b27f688de69a4b3fb',
+  '0x8fab3c308e641402e53d39aa4f7abfa7f633fa34',
+  '0xa3b9648cf0cf4c6b5ea2c2f3f56a339ffa62f771',
+]);
+
 export default async function handler(req, res) {
   if (req.method !== 'GET') {
     res.status(405).json({ error: 'Method not allowed' });
@@ -15,7 +21,9 @@ export default async function handler(req, res) {
       FROM token_records_v4
       ORDER BY deployed_at DESC
     `;
-    const tokens = rows.map(rowToTokenRecord);
+    const tokens = rows
+      .map(rowToTokenRecord)
+      .filter((t) => !HIDDEN_TOKENS_V4.has(String(t.address || '').toLowerCase()));
     res.setHeader('Cache-Control', 's-maxage=5, stale-while-revalidate=15');
     res.status(200).json({ count: tokens.length, tokens });
   } catch (err) {
