@@ -8,12 +8,14 @@ if (!projectId) {
   throw new Error('VITE_WALLETCONNECT_PROJECT_ID is required');
 }
 
-// Mainnet RPC: prefer Alchemy via VITE_BASE_RPC_URL (despite the name, it's
-// an Ethereum mainnet endpoint); fall back to a public RPC if missing.
-// The default chain RPC (cloudflare-eth.com) is unreliable for balance reads.
+// Ethereum mainnet RPC. Hardcoded Alchemy endpoint because the wagmi/viem
+// default (eth.merkle.io) is rate-limited and frequently fails to return
+// account balances, leaving the trade widget stuck at "0.0000 ETH" even when
+// the user is fully connected. Read-only key — safe to ship in the client
+// bundle. The optional VITE_ETH_RPC_URL env var overrides this if set.
 const MAINNET_RPC =
-  (import.meta.env.VITE_BASE_RPC_URL as string | undefined) ||
-  'https://eth.llamarpc.com';
+  (import.meta.env.VITE_ETH_RPC_URL as string | undefined) ||
+  'https://eth-mainnet.g.alchemy.com/v2/-ukJuDymTWUsoMl6jc041';
 
 // Bridge Phantom's EVM provider to window.ethereum so wagmi's injected
 // connector can find it inside the Phantom mobile in-app browser when the
