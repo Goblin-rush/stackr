@@ -164,12 +164,6 @@ export function V4TradeWidget({ tokenAddress, curveAddress, graduated, cancelled
           Launch cancelled.
         </div>
       )}
-      {!graduated && !cancelled && (
-        <div className="mb-3 p-2 bg-amber-500/10 border border-amber-500/30 rounded text-[11px] text-amber-300 font-mono leading-snug">
-          Buy-only during bonding. Sells enabled on Uniswap after graduation (2.75 ETH bonded).
-        </div>
-      )}
-
       <div className="flex gap-2 mb-3 items-stretch">
         <button
           onClick={() => { setMode('buy'); setAmountStr(''); }}
