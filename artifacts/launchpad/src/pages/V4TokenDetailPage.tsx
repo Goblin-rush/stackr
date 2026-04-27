@@ -10,11 +10,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'wouter';
 import { Navbar } from '@/components/layout/Navbar';
-import { TVAdvancedChart, type LiveTradeTick } from '@/components/token/TVAdvancedChart';
+import { TVAdvancedChart, type LiveTradeTick, type RealTrade } from '@/components/token/TVAdvancedChart';
 import { V4TradeWidget } from '@/components/token/V4TradeWidget';
 import { useEthPrice } from '@/hooks/use-eth-price';
 import { useTokenMetadata, ipfsToHttp } from '@/lib/token-metadata';
-import { useReadContract } from 'wagmi';
+import { useAccount, useReadContract, useWaitForTransactionReceipt, useWriteContract } from 'wagmi';
 import { ETH_FACTORY_V4_ADDRESS, V4_BOND_THRESHOLD_WEI } from '@/lib/contracts';
 import { V4_FACTORY_ABI, V4_CURVE_ABI } from '@/lib/v4-abi';
 import { ExternalLink, Globe, Twitter, Send, Copy, Check } from 'lucide-react';
@@ -201,7 +201,7 @@ export default function V4TokenDetailPage() {
     (liveState as readonly [bigint, bigint, bigint, bigint, boolean, boolean] | undefined) ?? [];
 
   // On-chain creator fees accrued (10s refresh)
-  const { data: creatorFeesAccrued } = useReadContract({
+  const { data: creatorFeesAccrued, refetch: refetchCreatorFees } = useReadContract({
     address: token?.curveAddress as `0x${string}` | undefined,
     abi: V4_CURVE_ABI,
     functionName: 'creatorFeesAccrued',
@@ -211,6 +211,51 @@ export default function V4TokenDetailPage() {
   const creatorFeesEth = creatorFeesAccrued !== undefined
     ? Number(creatorFeesAccrued as bigint) / 1e18
     : 0;
+
+  // Claim creator fees (only the creator wallet can call)
+  const { address: connectedAddress } = useAccount();
+  const isCreator =
+    !!connectedAddress &&
+    !!token?.creator &&
+    connectedAddress.toLowerCase() === token.creator.toLowerCase();
+  const {
+    writeContract: writeClaim,
+    data: claimHash,
+    isPending: claimPending,
+    error: claimError,
+    reset: resetClaim,
+  } = useWriteContract();
+  const { isLoading: claimMining, isSuccess: claimSuccess } = useWaitForTransactionReceipt({
+    hash: claimHash,
+  });
+  useEffect(() => {
+    if (claimSuccess) {
+      toast.success('Creator fees claimed', {
+        description: `${creatorFeesEth.toFixed(6)} ETH sent to your wallet.`,
+      });
+      void refetchCreatorFees();
+      resetClaim();
+    }
+  }, [claimSuccess]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (claimError) {
+      toast.error('Claim failed', {
+        description: (claimError as Error).message?.slice(0, 140) ?? 'Transaction rejected.',
+      });
+    }
+  }, [claimError]);
+  const handleClaim = () => {
+    if (!token || !connectedAddress) return;
+    writeClaim({
+      address: token.curveAddress as `0x${string}`,
+      abi: V4_CURVE_ABI,
+      functionName: 'claimCreatorFees',
+      args: [connectedAddress],
+      chainId: 1,
+    });
+  };
+  const claimBusy = claimPending || claimMining;
+  const canClaim = isCreator && creatorFeesAccrued !== undefined && (creatorFeesAccrued as bigint) > 0n && !claimBusy;
 
   const { data: ethPrice } = useEthPrice();
   const meta = useTokenMetadata(tokenAddress);
@@ -253,6 +298,18 @@ export default function V4TokenDetailPage() {
       ethAmount: ethAmt,
       timestamp: t.timestamp * 1000,
     };
+  }, [trades]);
+
+  // Convert ALL trades to RealTrade[] for the chart's historical bars
+  const chartTrades: RealTrade[] = useMemo(() => {
+    return trades
+      .map((t) => ({
+        type: t.type,
+        ethAmount: bnToEth(t.ethAmount),
+        tokenAmount: bnToEth(t.tokenAmount),
+        timestamp: t.timestamp,
+      }))
+      .filter((t) => t.tokenAmount > 0 && t.ethAmount > 0);
   }, [trades]);
 
   if (notFound) return <NotFound />;
@@ -373,13 +430,30 @@ export default function V4TokenDetailPage() {
                   {shortAddr(token.creator)}
                 </a>
               </span>
-              <span>
-                · creator earned{' '}
+              <span className="inline-flex items-center gap-1.5">
+                <span>· creator earned</span>{' '}
                 <span className="text-foreground font-bold">{creatorFeesEth.toFixed(4)} ETH</span>
                 {ethPrice && creatorFeesEth > 0 && (
                   <span className="text-muted-foreground/70">
-                    {' '}(${(creatorFeesEth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 2 })})
+                    (${(creatorFeesEth * ethPrice).toLocaleString(undefined, { maximumFractionDigits: 2 })})
                   </span>
+                )}
+                {isCreator && (
+                  <button
+                    type="button"
+                    onClick={handleClaim}
+                    disabled={!canClaim}
+                    className="ml-1 inline-flex items-center gap-1 rounded border border-emerald-400/40 bg-emerald-400/10 px-2 py-0.5 text-[10px] font-bold tracking-wider text-emerald-300 hover:bg-emerald-400/20 disabled:opacity-40 disabled:cursor-not-allowed"
+                    title={
+                      creatorFeesEth === 0
+                        ? 'No fees to claim yet'
+                        : claimBusy
+                        ? 'Claiming…'
+                        : 'Claim accrued creator fees to your wallet'
+                    }
+                  >
+                    {claimBusy ? 'CLAIMING…' : 'CLAIM'}
+                  </button>
                 )}
               </span>
               <span>· {timeAgo(token.deployedAt * 1000)}</span>
@@ -436,10 +510,9 @@ export default function V4TokenDetailPage() {
             <TVAdvancedChart
               seed={token.address}
               symbol={token.symbol}
-              baseEthRaised={realEth}
               graduated={graduated}
               ethPrice={ethPrice ?? 3000}
-              currentMcUsd={marketCapUsd ?? undefined}
+              trades={chartTrades}
               lastTrade={lastTrade}
               height={420}
             />

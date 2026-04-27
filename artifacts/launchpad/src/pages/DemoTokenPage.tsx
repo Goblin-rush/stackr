@@ -426,11 +426,10 @@ export default function DemoTokenPage() {
             <div className="rounded-xl border border-border/60 overflow-hidden">
               <TVAdvancedChart
                 seed={t.symbol}
-                baseEthRaised={t.raisedEth}
                 graduated={t.graduated}
                 symbol={`${t.symbol}/ETH`}
                 height={440}
-                currentMcUsd={parseFloat(t.mcapUsd.replace(/[^0-9.]/g, '')) || null}
+                trades={[]}
               />
             </div>
 
