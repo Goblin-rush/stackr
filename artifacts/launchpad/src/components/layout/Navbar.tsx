@@ -1,43 +1,8 @@
 import { Link } from 'wouter';
-import { useAccount, useDisconnect, useConnect } from 'wagmi';
+import { useAccount, useDisconnect } from 'wagmi';
 import { useWalletModal } from '@/components/wallet/WalletModalContext';
 import { Plus, Menu, X, LogOut } from 'lucide-react';
 import { useState, useEffect } from 'react';
-
-// Detect any injected EVM wallet (Phantom mobile, MetaMask mobile, Rainbow,
-// Trust, Coinbase, etc.) and return both display name and the provider object.
-// Returns null on SSR or if no wallet is injected.
-//
-// Phantom mobile in-app browser injects window.phantom.ethereum even when
-// Phantom is NOT set as the default Ethereum wallet (in which case
-// window.ethereum is undefined). We detect both namespaces.
-function detectInjectedWallet(): { name: string; provider: any } | null {
-  if (typeof window === 'undefined') return null;
-  const w: any = window;
-
-  // Phantom mobile / desktop — prefer the Phantom-specific namespace.
-  const phantomEth = w.phantom?.ethereum;
-  if (phantomEth) {
-    return { name: 'Phantom', provider: phantomEth };
-  }
-
-  // User-Agent fallback for Phantom in-app browser when no provider is yet
-  // injected at first paint.
-  if (/Phantom/i.test(w.navigator?.userAgent || '')) {
-    return { name: 'Phantom', provider: w.ethereum };
-  }
-
-  const eth: any = w.ethereum;
-  if (!eth) return null;
-  if (eth.isPhantom) return { name: 'Phantom', provider: eth };
-  if (eth.isMetaMask) return { name: 'MetaMask', provider: eth };
-  if (eth.isRainbow) return { name: 'Rainbow', provider: eth };
-  if (eth.isCoinbaseWallet || eth.isCoinbaseBrowser) return { name: 'Coinbase', provider: eth };
-  if (eth.isTrust || eth.isTrustWallet) return { name: 'Trust', provider: eth };
-  if (eth.isBraveWallet) return { name: 'Brave', provider: eth };
-  if (eth.isOkxWallet || eth.isOKExWallet) return { name: 'OKX', provider: eth };
-  return { name: 'Wallet', provider: eth };
-}
 
 interface NavbarProps {
   onCreate?: () => void;
@@ -57,14 +22,7 @@ export function Navbar({ onCreate }: NavbarProps) {
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const { open } = useWalletModal();
-  const { connect, connectors } = useConnect();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [injected, setInjected] = useState<{ name: string; provider: any } | null>(null);
-  const injectedName = injected?.name ?? null;
-
-  useEffect(() => {
-    setInjected(detectInjectedWallet());
-  }, []);
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -73,29 +31,10 @@ export function Navbar({ onCreate }: NavbarProps) {
     return () => window.removeEventListener('keydown', close);
   }, [menuOpen]);
 
-  // Connect handler. If an injected wallet is present (Phantom mobile,
-  // MetaMask mobile, etc.), connect directly via the injected connector and
-  // skip the modal entirely — fastest UX inside in-app browsers.
-  // Otherwise open our custom modal so the user can pick a wallet.
-  const handleConnect = () => {
-    if (injectedName) {
-      // Prefer an EIP-6963 announced connector matching the detected wallet,
-      // otherwise fall back to the generic injected connector.
-      const match =
-        connectors.find(
-          (c) =>
-            c.type === 'injected' &&
-            c.id !== 'injected' &&
-            c.name?.toLowerCase().includes(injectedName.toLowerCase()),
-        ) ??
-        connectors.find((c) => c.id === 'injected' || c.type === 'injected');
-      if (match) {
-        connect({ connector: match });
-        return;
-      }
-    }
-    open();
-  };
+  // Always open the picker modal so users with multiple wallets installed
+  // (Phantom + MetaMask + Rainbow + ...) can choose which one to connect.
+  // EIP-6963 discovery inside the modal lists every announced wallet.
+  const handleConnect = () => open();
 
   return (
     <>
@@ -160,7 +99,7 @@ export function Navbar({ onCreate }: NavbarProps) {
                 onClick={handleConnect}
                 className="inline-flex items-center text-[12px] font-semibold bg-primary text-primary-foreground px-4 py-2 rounded-md hover:bg-primary/90 transition-all glow-primary"
               >
-                {injectedName ? `Connect ${injectedName}` : 'Connect'}
+                Connect
               </button>
             )}
             <button
@@ -205,7 +144,7 @@ export function Navbar({ onCreate }: NavbarProps) {
                   onClick={() => { handleConnect(); setMenuOpen(false); }}
                   className="flex items-center gap-2 text-[12px] font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
-                  {injectedName ? `Connect ${injectedName}` : 'Connect Wallet'}
+                  Connect Wallet
                 </button>
               )}
             </div>

@@ -17,20 +17,6 @@ const MAINNET_RPC =
   (import.meta.env.VITE_ETH_RPC_URL as string | undefined) ||
   'https://eth-mainnet.g.alchemy.com/v2/-ukJuDymTWUsoMl6jc041';
 
-// Bridge Phantom's EVM provider to window.ethereum so wagmi's injected
-// connector can find it inside the Phantom mobile in-app browser when the
-// user hasn't set Phantom as their default Ethereum wallet.
-if (typeof window !== 'undefined') {
-  const w: any = window;
-  if (w.phantom?.ethereum && !w.ethereum) {
-    try {
-      w.ethereum = w.phantom.ethereum;
-    } catch {
-      /* read-only on some platforms */
-    }
-  }
-}
-
 const APP_NAME = 'Stackr';
 const APP_URL = 'https://www.stackr.fun';
 const APP_ICON = 'https://www.stackr.fun/icon.png';
